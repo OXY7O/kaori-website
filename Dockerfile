@@ -8,7 +8,8 @@ COPY public ./public
 COPY src ./src
 RUN npm run check && npm run build && test -s dist/index.html
 
-FROM nginxinc/nginx-unprivileged:1.29.3-alpine AS production
+# Pinned current stable NGINX on supported Alpine 3.24; release Trivy remains authoritative.
+FROM nginxinc/nginx-unprivileged:1.30.6-alpine3.24-slim AS production
 ARG APP_BUILD_SHA
 ARG APP_VERSION=0.1.0-dev
 ARG APP_BUILD_DATE
