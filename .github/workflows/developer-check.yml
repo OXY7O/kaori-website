@@ -125,3 +125,22 @@ jobs:
           test -s dist/index.html
           test -s dist/branding/kaori-logo.svg
           grep -qi 'kaori' dist/index.html
+
+  container-smoke:
+    name: Docker Runtime Smoke
+    needs: route
+    if: ${{ needs.route.outputs.container == 'true' }}
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact work SHA
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.KAORI_WEBSITE_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Shell syntax and static Docker runtime smoke
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash -n deploy/server/deploy.sh deploy/server/rollback.sh deploy/server/verify.sh scripts/container_smoke.sh
+          bash scripts/container_smoke.sh "$KAORI_WEBSITE_SOURCE_SHA"
