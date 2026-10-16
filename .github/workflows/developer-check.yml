@@ -30,6 +30,7 @@ jobs:
       web: ${{ steps.route.outputs.web }}
       dependencies: ${{ steps.route.outputs.dependencies }}
       container: ${{ steps.route.outputs.container }}
+      release-config: ${{ steps.route.outputs.release_config }}
     steps:
       - name: Validate issue-linked source branch
         shell: bash
@@ -60,6 +61,7 @@ jobs:
           web=false
           dependencies=false
           container=false
+          release_config=false
           while IFS= read -r path; do
             case "$path" in
               src/*|public/*|tests/*|astro.config.mjs|tsconfig.json|package.json|package-lock.json|Dockerfile|compose.*|.devcontainer/*|.github/workflows/*|scripts/*|deploy/server/*)
@@ -67,10 +69,12 @@ jobs:
             esac
             case "$path" in package.json|package-lock.json) dependencies=true ;; esac
             case "$path" in Dockerfile|compose.*|deploy/server/*|scripts/container_smoke.sh) container=true ;; esac
+            case "$path" in scripts/release/*|.github/workflows/uat-once.yml|.github/workflows/publish-staging-image.yml|.github/workflows/deploy-staging-host.yml) release_config=true ;; esac
           done < changed-files.txt
           echo "web=$web" >> "$GITHUB_OUTPUT"
           echo "dependencies=$dependencies" >> "$GITHUB_OUTPUT"
           echo "container=$container" >> "$GITHUB_OUTPUT"
+          echo "release_config=$release_config" >> "$GITHUB_OUTPUT"
   targeted:
     name: Targeted Validation
     needs: route
@@ -144,3 +148,23 @@ jobs:
           set -Eeuo pipefail
           bash -n deploy/server/deploy.sh deploy/server/rollback.sh deploy/server/verify.sh scripts/container_smoke.sh
           bash scripts/container_smoke.sh "$KAORI_WEBSITE_SOURCE_SHA"
+
+  release-registry-preflight:
+    name: Website Registry Namespace Preflight
+    needs: route
+    if: ${{ needs.route.outputs.release-config == 'true' }}
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 5
+    env:
+      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+    steps:
+      - name: Verify independent KAORI Website image repository
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ -n "$REGISTRY_HOST" && -n "$REGISTRY_IMAGE" ]] || { echo 'BLOCK: registry repository Variables missing' >&2; exit 1; }
+          [[ "$REGISTRY_HOST" != *://* && "$REGISTRY_HOST" != *' '* ]] || { echo 'BLOCK: registry host invalid' >&2; exit 1; }
+          [[ "$REGISTRY_IMAGE" == "$REGISTRY_HOST/"* && "$REGISTRY_IMAGE" == */kaori-website ]] || { echo 'BLOCK: image namespace must be dedicated to KAORI Website, ending /kaori-website' >&2; exit 1; }
+          [[ "$REGISTRY_IMAGE" != *' '* && "$REGISTRY_IMAGE" != *':'* ]] || { echo 'BLOCK: registry image must not be mutable tag or malformed' >&2; exit 1; }
+          printf 'PASS: website registry Variables identify an independent /kaori-website repository. Values withheld.\n'

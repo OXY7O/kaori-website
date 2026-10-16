@@ -15,6 +15,7 @@ headers=(-H "Authorization: Bearer ${GH_TOKEN:?}" -H 'Accept: application/vnd.gi
 [[ "$(git rev-parse HEAD)" == "$sha" ]] || fail 'source mismatch'
 [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'candidate must use vX.Y.Z-rc.N'
 [[ -n "$host" && "$image" == "$host/"* && "$host" != *://* ]] || fail 'registry variables missing or inconsistent'
+[[ "$image" == */kaori-website ]] || fail 'website image must use dedicated /kaori-website repository, never KAORI Application image'
 [[ -n "${REGISTRY_USER:-}" && -n "${REGISTRY_PASSWORD:-}" ]] || fail 'registry credentials missing'
 command -v jq >/dev/null && command -v curl >/dev/null && docker info >/dev/null || fail 'runner prerequisites unavailable'
 current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"

@@ -114,3 +114,7 @@ ssh -N -L 18080:127.0.0.1:18080 -p <SSH_PORT> <ADMIN_USER>@<VPS_HOST>
 ```
 
 Visit `http://127.0.0.1:18080/` locally to inspect desktop/mobile layout, theme toggle and accessibility. Do not use an untrusted SSH host or disable host key checks. DNS/TLS/public edge publication is a separately reviewed workstream and is **not** implied by successful private UAT deployment.
+
+## Repository image namespace preflight for issue #10
+
+The first one-time UAT RC attempt failed at the required Trivy vulnerability gate; it did not publish an OCI tag or deploy to VPS. A separate security workstream #12 updated the runtime image and enforced a release-equivalent Trivy check during Docker smoke. The repo-level Variable `KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE` is **still an operator-owned prerequisite**: it MUST end with `/kaori-website`, separate from the KAORI Application image. Both publisher and SSH deployment adapter now reject other image repository paths. The retry workflow must not merge until this setting is corrected and recorded in issue #10.

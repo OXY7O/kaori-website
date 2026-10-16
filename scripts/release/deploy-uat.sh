@@ -8,6 +8,7 @@ fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 [[ "$RC_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'invalid prerelease tag'
 [[ "$APPROVAL_REF" =~ ^https://github.com/OXY7O/kaori-website/(issues|pull)/[0-9]+ ]] || fail 'explicit GitHub authorization reference is required'
 [[ -n "${REGISTRY_HOST:-}" && "$REGISTRY_IMAGE" == "$REGISTRY_HOST/"* ]] || fail 'website registry variables missing or inconsistent'
+[[ "$REGISTRY_IMAGE" == */kaori-website ]] || fail 'website image namespace is not dedicated; deployment blocked'
 [[ -n "${REGISTRY_USER:-}" && -n "${REGISTRY_PASSWORD:-}" ]] || fail 'registry credentials missing'
 [[ -n "${WEBSITE_HOST:-}" && -n "${WEBSITE_SSH_USER:-}" ]] || fail 'website deployment host/user missing'
 [[ "$WEBSITE_HOST" =~ ^[a-zA-Z0-9._-]+$ && "$WEBSITE_SSH_USER" =~ ^[a-zA-Z0-9._-]+$ ]] || fail 'invalid SSH host or username'
