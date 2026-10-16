@@ -32,4 +32,10 @@ docker run --rm --network none --read-only \
     done
     wget -q -O - http://127.0.0.1:8080/ | grep -qi KAORI
   '
+# Image security is release-authoritative; fail early during Docker-path validation too.
+docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock \
+  --volume kaori-website-trivy-cache:/root/.cache/trivy \
+  aquasec/trivy:0.74.0 image --cache-dir /root/.cache/trivy \
+  --exit-code 1 --ignore-unfixed --severity HIGH,CRITICAL \
+  --scanners vuln "$image"
 printf 'PASS: static Docker container starts non-root, read-only, no host ports or edge changes\n'
