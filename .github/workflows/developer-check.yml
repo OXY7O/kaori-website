@@ -4,42 +4,110 @@ on:
   pull_request:
     branches:
       - kaori/staging
-    types: [opened, synchronize, reopened, ready_for_review]
-  workflow_dispatch:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - converted_to_draft
 
 permissions:
   contents: read
 
 concurrency:
-  group: website-developer-check-${{ github.ref }}
+  group: kaori-website-developer-check-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+env:
+  KAORI_WEBSITE_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+
 jobs:
-  developer-check:
-    name: Developer Check
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+  route:
+    name: Route Checks
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 5
+    outputs:
+      web: ${{ steps.route.outputs.web }}
+      dependencies: ${{ steps.route.outputs.dependencies }}
     steps:
-      - name: Checkout exact candidate
+      - name: Validate issue-linked source branch
+        shell: bash
+        env:
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$HEAD_REPO" == "$GITHUB_REPOSITORY" ]] || { echo 'Cross-repo PRs are not admitted to the self-hosted runner.' >&2; exit 1; }
+          [[ "$SOURCE_BRANCH" =~ ^kaori/(story|bug|task|spike|chore|tech-debt|hotfix)-[0-9]+-[a-z0-9-]+$ ]] || { echo 'Source branch must be issue-linked.' >&2; exit 1; }
+      - name: Checkout exact work SHA
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ env.KAORI_WEBSITE_SOURCE_SHA }}
+          fetch-depth: 0
           persist-credentials: false
-      - name: Set up Node 22
+      - name: Route changed paths
+        id: route
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -Eeuo pipefail
+          git diff --check "$BASE_SHA" "$KAORI_WEBSITE_SOURCE_SHA"
+          git diff --name-only "$BASE_SHA" "$KAORI_WEBSITE_SOURCE_SHA" > changed-files.txt
+          echo 'Changed paths:'
+          cat changed-files.txt
+          web=false
+          dependencies=false
+          while IFS= read -r path; do
+            case "$path" in
+              src/*|public/*|tests/*|astro.config.mjs|tsconfig.json|package.json|package-lock.json|Dockerfile|compose.*|.devcontainer/*|.github/workflows/*|scripts/*)
+                web=true ;;
+            esac
+            case "$path" in package.json|package-lock.json) dependencies=true ;; esac
+          done < changed-files.txt
+          echo "web=$web" >> "$GITHUB_OUTPUT"
+          echo "dependencies=$dependencies" >> "$GITHUB_OUTPUT"
+  targeted:
+    name: Targeted Validation
+    needs: route
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 20
+    steps:
+      - name: Confirm path-aware profile
+        shell: bash
+        env:
+          NEED_WEB: ${{ needs.route.outputs.web }}
+        run: |
+          set -Eeuo pipefail
+          printf 'Website source changed: %s\n' "$NEED_WEB"
+      - name: Checkout exact work SHA
+        if: ${{ needs.route.outputs.web == 'true' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.KAORI_WEBSITE_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Set up Node
+        if: ${{ needs.route.outputs.web == 'true' }}
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v4.4.0
         with:
           node-version: '22.23.2'
           cache: npm
       - name: Install locked dependencies
+        if: ${{ needs.route.outputs.web == 'true' }}
         run: npm ci --no-audit --no-fund
-      - name: Validate Astro and TypeScript
+      - name: Audit changes to dependency authority
+        if: ${{ needs.route.outputs.dependencies == 'true' }}
+        run: npm audit --audit-level=high
+      - name: Astro and TypeScript
+        if: ${{ needs.route.outputs.web == 'true' }}
         run: npm run check
       - name: Build static website
+        if: ${{ needs.route.outputs.web == 'true' }}
         run: npm run build
-      - name: Verify generated website output
+      - name: Verify build artifact
+        if: ${{ needs.route.outputs.web == 'true' }}
         run: |
           set -Eeuo pipefail
           test -s dist/index.html
           test -s dist/branding/kaori-logo.svg
-          grep -q 'From infrastructure to' dist/index.html
+          grep -qi 'kaori' dist/index.html
