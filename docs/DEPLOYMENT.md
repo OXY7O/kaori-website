@@ -45,7 +45,7 @@ Production image/Compose use an unprivileged server, health endpoint at `/health
 
 ## Planned repository Actions configuration
 
-These keys are **not yet consumed by a complete release workflow**. Provision them in `OXY7O/kaori-website` repository settings; do not assume organization-level or environment-level secrets will reach a private GitHub Free repository.
+Repository-level keys are now wired into the manual-only release candidate publisher (#4) and UAT SSH deployment workflow (#5) on issue-linked review branches. Their presence does not imply that an actual release has run or that credentials have been independently verified. Provision them in `OXY7O/kaori-website` repository settings; do not assume organization-level or environment-level secrets will reach a private GitHub Free repository.
 
 - Variables: `KAORI_WEBSITE_DOCKER_REGISTRY_HOST`, `KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE`, `KAORI_WEBSITE_HOST`, `KAORI_WEBSITE_HOST_PORT`, `KAORI_WEBSITE_HOST_USER`, `KAORI_WEBSITE_HOST_DEPLOY_ROOT`, `KAORI_WEBSITE_PUBLIC_DOMAIN`.
 - Secrets: `KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME`, `KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD`, `KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY`, `KAORI_WEBSITE_HOST_SSH_PASSPHRASE` when the private key is encrypted, and `KAORI_WEBSITE_HOST_KNOWN_HOSTS` pinned out of band.
@@ -98,3 +98,7 @@ Edge apply owns trusted DNS/TLS readiness, HSTS, host/SNI checks and certificate
 ## UAT evidence
 
 Collect the exact SHA, image digest, immutable OCI release metadata, application container ID and health result, edge registration, TLS/Host/SNI check result, browser desktop/tablet/mobile light/dark screenshots, keyboard/accessibility evidence, and the human acceptance decision. Do not close #5 or promote until required evidence is committed and approved.
+
+## UAT deployment dispatch (manual only)
+
+Once a unique prerelease for the current admitted staging SHA exists, an operator may dispatch `deploy-staging-host.yml` from `kaori/staging`, providing the exact `candidate_tag` and a link to explicit maintainer authorization (`approval_reference`). The workflow validates GitHub RC evidence for the exact SHA/image digest, checks repository-level credentials without printing them, verifies the SSH pinned host key, and transfers the reviewed adapter via a separate SSH deployment identity. There is no automated dispatch from a feature branch, and no automatic shared-edge publication. A GitHub Free private repository does not enforce human approval; the authorization link is audit evidence for the operating procedure, not a substitute for technical branch protection.

@@ -61,8 +61,8 @@ agent_started=true
 export SSH_ASKPASS="$askpass" SSH_ASKPASS_REQUIRE=force DISPLAY=:0
 setsid -w ssh-add "$key_file" </dev/null >/dev/null
 target="$WEBSITE_SSH_USER@$WEBSITE_HOST"
-ssh_opts=(-p "$port" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
-scp_opts=(-P "$port" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
+ssh_opts=(-p "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
+scp_opts=(-P "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
 remote_release="$WEBSITE_DEPLOY_ROOT/releases/$ACCEPTED_SHA"
 {
   printf 'set -Eeuo pipefail\n'
