@@ -29,6 +29,7 @@ jobs:
     outputs:
       web: ${{ steps.route.outputs.web }}
       dependencies: ${{ steps.route.outputs.dependencies }}
+      container: ${{ steps.route.outputs.container }}
     steps:
       - name: Validate issue-linked source branch
         shell: bash
@@ -58,15 +59,18 @@ jobs:
           cat changed-files.txt
           web=false
           dependencies=false
+          container=false
           while IFS= read -r path; do
             case "$path" in
-              src/*|public/*|tests/*|astro.config.mjs|tsconfig.json|package.json|package-lock.json|Dockerfile|compose.*|.devcontainer/*|.github/workflows/*|scripts/*)
+              src/*|public/*|tests/*|astro.config.mjs|tsconfig.json|package.json|package-lock.json|Dockerfile|compose.*|.devcontainer/*|.github/workflows/*|scripts/*|deploy/server/*)
                 web=true ;;
             esac
             case "$path" in package.json|package-lock.json) dependencies=true ;; esac
+            case "$path" in Dockerfile|compose.*|deploy/server/*|scripts/container_smoke.sh) container=true ;; esac
           done < changed-files.txt
           echo "web=$web" >> "$GITHUB_OUTPUT"
           echo "dependencies=$dependencies" >> "$GITHUB_OUTPUT"
+          echo "container=$container" >> "$GITHUB_OUTPUT"
   targeted:
     name: Targeted Validation
     needs: route
@@ -114,3 +118,21 @@ jobs:
           test -s dist/index.html
           test -s dist/branding/kaori-logo.svg
           grep -qi 'kaori' dist/index.html
+  container-smoke:
+    name: Docker Runtime Smoke
+    needs: route
+    if: ${{ needs.route.outputs.container == 'true' }}
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact work SHA
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.KAORI_WEBSITE_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Shell syntax and static Docker runtime smoke
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash -n deploy/server/deploy.sh deploy/server/rollback.sh deploy/server/verify.sh scripts/container_smoke.sh
+          bash scripts/container_smoke.sh "$KAORI_WEBSITE_SOURCE_SHA"
