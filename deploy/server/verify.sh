@@ -10,7 +10,14 @@ container="$(docker compose -f "$compose_file" ps -q web)"
 [[ -n "$container" ]] || { echo 'BLOCK: website container missing' >&2; exit 1; }
 image="$(docker inspect --format '{{.Config.Image}}' "$container")"
 [[ "$image" == "$expected_image" ]] || { echo "BLOCK: expected $expected_image, found $image" >&2; exit 1; }
-status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' "$container")"
+# Compose returns before the healthcheck has completed. Wait within a bounded window.
+status='starting'
+for attempt in $(seq 1 30); do
+    status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' "$container")"
+    [[ "$status" == healthy ]] && break
+    [[ "$status" == unhealthy || "$status" == missing ]] && break
+    sleep 3
+done
 [[ "$status" == healthy ]] || { echo "BLOCK: website health $status" >&2; exit 1; }
 uid="$(docker exec "$container" id -u)"
 [[ "$uid" != 0 ]] || { echo 'BLOCK: website process runs as root' >&2; exit 1; }

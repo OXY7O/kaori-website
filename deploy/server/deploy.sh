@@ -30,8 +30,31 @@ cleanup() { rm -f -- "$candidate"; }
 trap cleanup EXIT
 printf 'KAORI_WEBSITE_IMAGE=%s\nKAORI_WEBSITE_SOURCE_SHA=%s\nKAORI_WEBSITE_VERSION=%s\n' "$image" "$source_sha" "$release_version" > "$candidate"
 
-docker compose -f "$compose_file" up -d --pull never --no-build web
-bash "$script_dir/verify.sh" || fail 'runtime validation failed; active release metadata NOT advanced'
+# Keep the prior immutable identity separate; failed candidate must not advance state.
+previous_image=''
+if [[ -f "$state_dir/release.env" ]]; then
+    # The release receipt is private to the approved website deployment identity.
+    # shellcheck source=/dev/null
+    source "$state_dir/release.env"
+    if [[ "${KAORI_WEBSITE_IMAGE:-}" =~ @sha256:[a-f0-9]{64}$ ]]; then
+        previous_image="$KAORI_WEBSITE_IMAGE"
+    fi
+fi
+export KAORI_WEBSITE_IMAGE="$image"
+
+if ! docker compose -f "$compose_file" up -d --pull never --no-build web || ! bash "$script_dir/verify.sh"; then
+    echo 'FAIL: candidate unhealthy; current release receipt is NOT changed' >&2
+    if [[ -n "$previous_image" && "$previous_image" != "$image" ]]; then
+        echo 'Attempting recovery of last committed website digest' >&2
+        export KAORI_WEBSITE_IMAGE="$previous_image"
+        if docker compose -f "$compose_file" up -d --no-build web && bash "$script_dir/verify.sh"; then
+            echo 'RECOVERED: previous website digest is healthy; release receipt unchanged' >&2
+        else
+            echo 'CRITICAL: previous website recovery failed; manual intervention required' >&2
+        fi
+    fi
+    fail 'candidate deployment rejected'
+fi
 
 if [[ -f "$state_dir/release.env" ]]; then
     cp -- "$state_dir/release.env" "$state_dir/previous-release.env"

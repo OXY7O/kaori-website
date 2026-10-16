@@ -56,7 +56,7 @@ bash /opt/kaori-website/deploy.sh \
   'v0.1.0-rc.1'
 ```
 
-The script rejects mutable tags, mismatched image labels, missing state or Compose files, and unhealthy containers. Active receipt is committed only after internal health passes. Static rollback uses the previous digest and version identity:
+The script rejects mutable tags, mismatched image labels, missing state or Compose files, and unhealthy containers. Active receipt is committed only after internal health passes. Health verification waits for the container's bounded startup window. If candidate health fails after a replacement, the adapter attempts recovery using the previous committed digest and leaves the active receipt unchanged; any failed recovery is an explicit critical operator incident. Static rollback uses the previous digest and version identity:
 
 ```bash
 bash /opt/kaori-website/rollback.sh
