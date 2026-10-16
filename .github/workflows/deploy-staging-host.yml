@@ -1,0 +1,58 @@
+name: KAORI Website Staging Deployment
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_tag:
+        description: Exact prerelease already accepted for UAT (vX.Y.Z-rc.N)
+        type: string
+        required: true
+      approval_reference:
+        description: Link to explicit maintainer UAT deployment authorization
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: kaori-website-uat-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    name: Manual UAT Deployment
+    runs-on: [self-hosted, linux, x64, kaori-ci]
+    timeout-minutes: 45
+    env:
+      ACCEPTED_SHA: ${{ github.sha }}
+      RC_TAG: ${{ inputs.candidate_tag }}
+      APPROVAL_REF: ${{ inputs.approval_reference }}
+      GH_TOKEN: ${{ github.token }}
+      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
+      WEBSITE_HOST: ${{ vars.KAORI_WEBSITE_HOST }}
+      WEBSITE_SSH_PORT: ${{ vars.KAORI_WEBSITE_HOST_PORT }}
+      WEBSITE_SSH_USER: ${{ vars.KAORI_WEBSITE_HOST_USER }}
+      WEBSITE_DEPLOY_ROOT: ${{ vars.KAORI_WEBSITE_HOST_DEPLOY_ROOT }}
+      WEBSITE_SSH_KEY: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY }}
+      WEBSITE_SSH_PASSPHRASE: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PASSPHRASE }}
+      WEBSITE_KNOWN_HOSTS: ${{ secrets.KAORI_WEBSITE_HOST_KNOWN_HOSTS }}
+    steps:
+      - name: Checkout exact staged SHA
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify prerelease, pinned host and explicit approval reference
+        shell: bash
+        run: bash scripts/release/deploy-uat.sh preflight
+      - name: Deploy via separate pinned SSH trust boundary
+        shell: bash
+        run: bash scripts/release/deploy-uat.sh deploy
+      - name: Record pending public-edge and browser acceptance
+        shell: bash
+        run: |
+          printf 'UAT container deployment requested for %s at source %s\n' "$RC_TAG" "$ACCEPTED_SHA" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Approval reference: %s\n' "$APPROVAL_REF" >> "$GITHUB_STEP_SUMMARY"
+          printf 'PUBLIC EDGE / TLS / BROWSER QA / HUMAN ACCEPTANCE: PENDING\n' >> "$GITHUB_STEP_SUMMARY"
