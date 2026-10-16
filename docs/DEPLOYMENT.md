@@ -13,7 +13,7 @@ Website application paths (proposed, not deployed):
 
 Never modify `/opt/kaori`, `/etc/kaori`, `/var/lib/kaori`, the KAORI application Compose project or the preexisting `kaori.cloud` site registration to deploy the website.
 
-The same versioned **application deployment protocol** as KAORI is used: exact accepted staging SHA → Full Admission → build once → immutable OCI image digest → dedicated host SSH trust boundary → health verification → UAT evidence → human acceptance → promotion of the same digest to production. A docker image build or Astro CI success alone is **not** website release acceptance.
+The same versioned **application deployment protocol** as KAORI is used: exact accepted staging SHA â Full Admission â build once â immutable OCI image digest â dedicated host SSH trust boundary â health verification â UAT evidence â human acceptance â promotion of the same digest to production. A docker image build or Astro CI success alone is **not** website release acceptance.
 
 ## Container and development smoke
 
@@ -68,7 +68,7 @@ Rollback is **not** a database restore because this is a stateless website. Pres
 
 Follow **`OXY7O/KAORI/example/shared-edge/README.md`** and **`docs/deployment/SHARED_EDGE_OPERATIONS.md`** with the **already installed** host scripts. Do not copy/reimplement Nginx/Certbot here or mutate `/opt/shared-edge` until the website container and DNS identity are approved.
 
-Example *shape only*, run as an explicitly authorized shared-edge operator after the website container is healthy:
+Example _shape only_, run as an explicitly authorized shared-edge operator after the website container is healthy:
 
 ```bash
 cd /opt/shared-edge/runtime
