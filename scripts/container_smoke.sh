@@ -8,6 +8,11 @@ docker compose version >/dev/null
 export KAORI_WEBSITE_IMAGE="example.invalid/kaori-website@sha256:$(printf '%064d' 0)"
 docker compose -f deploy/server/compose.website.yml config --quiet
 docker compose -f deploy/server/compose.website.yml -f deploy/server/compose.uat.yml config --quiet
+# UAT remains loopback-only with a separate publishable bridge; no host 0.0.0.0.
+config="$(docker compose -f deploy/server/compose.website.yml -f deploy/server/compose.uat.yml config --format json)"
+printf '%s' "$config" | grep -Fq '"host_ip": "127.0.0.1"' || { echo 'BLOCK: UAT host binding not localhost-only' >&2; exit 1; }
+printf '%s' "$config" | grep -Fq '"website-uat-loopback"' || { echo 'BLOCK: UAT ingress bridge missing' >&2; exit 1; }
+
 image="kaori-website-smoke:${source_sha:0:12}"
 docker build --target production \
   --build-arg APP_BUILD_SHA="$source_sha" \

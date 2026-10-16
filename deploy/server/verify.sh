@@ -29,5 +29,24 @@ uid="$(docker exec "$container" id -u)"
 [[ "$uid" != 0 ]] || { echo 'BLOCK: website process runs as root' >&2; exit 1; }
 docker exec "$container" wget -q -O - http://127.0.0.1:8080/healthz | grep -Fxq healthy
 docker exec "$container" wget -q -O - http://127.0.0.1:8080/ | grep -qi KAORI
+if [[ "${KAORI_WEBSITE_UAT_LOCAL_ONLY:-}" == 1 ]]; then
+    # Internal health does not prove the host published a loopback port.
+    mapping="$(docker port "$container" 8080/tcp 2>/dev/null || true)"
+    [[ "$mapping" == '127.0.0.1:18080' ]] || {
+        echo "BLOCK: effective Docker port mapping must be exactly 127.0.0.1:18080 (found: ${mapping:-none})" >&2
+        exit 1
+    }
+    command -v curl >/dev/null || { echo 'BLOCK: curl required for host-loopback UAT verification' >&2; exit 1; }
+    ready=false
+    for attempt in $(seq 1 15); do
+        if [[ "$(curl --fail --silent --show-error --max-time 3 http://127.0.0.1:18080/healthz 2>/dev/null)" == healthy ]]; then
+            ready=true
+            break
+        fi
+        sleep 2
+    done
+    [[ "$ready" == true ]] || { echo 'BLOCK: host-loopback UAT health unavailable on 127.0.0.1:18080' >&2; exit 1; }
+    printf 'PASS: host-loopback mapping and HTTP health on 127.0.0.1:18080\n'
+fi
 printf 'PASS: isolated website digest, health and non-root HTTP response verified\n'
 printf 'Container: %s\nImage: %s\n' "$container" "$expected_image"
