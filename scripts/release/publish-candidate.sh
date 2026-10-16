@@ -77,6 +77,19 @@ jq -n --arg src "$repo" --arg source_sha "$sha" --arg run "$GITHUB_RUN_ID" \
      resolvedDependencies:[{uri:("https://github.com/"+$src),digest:{gitCommit:$source_sha}}]},
     runDetails:{builder:{id:("https://github.com/"+$src+"/actions/runs/"+$run)},
       metadata:{invocationId:$run}}}' > website-provenance.json
+identity="https://github.com/$GITHUB_WORKFLOW_REF"
+# Sign the immutable image itself before independently attesting its evidence.
+docker run --rm --user 0:0 \
+  -e ACTIONS_ID_TOKEN_REQUEST_TOKEN -e ACTIONS_ID_TOKEN_REQUEST_URL \
+  -e DOCKER_CONFIG=/root/.docker \
+  -v "$HOME/.docker:/root/.docker:ro" \
+  ghcr.io/sigstore/cosign/cosign:v3.1.3 sign --yes "$ref"
+docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker \
+  -v "$HOME/.docker:/root/.docker:ro" \
+  ghcr.io/sigstore/cosign/cosign:v3.1.3 verify \
+  --certificate-identity "$identity" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com "$ref" > website-signature-verification.json
+test -s website-signature-verification.json
 for entry in 'website-sbom.spdx.json:spdxjson' 'website-provenance.json:slsaprovenance1'; do
   predicate="${entry%%:*}"
   kind="${entry#*:}"
@@ -87,7 +100,6 @@ for entry in 'website-sbom.spdx.json:spdxjson' 'website-provenance.json:slsaprov
     ghcr.io/sigstore/cosign/cosign:v3.1.3 attest --yes \
     --predicate "/workspace/$predicate" --type "$kind" "$ref"
 done
-identity="https://github.com/$repo/.github/workflows/publish-staging-image.yml@$GITHUB_REF"
 for kind in spdxjson slsaprovenance1; do
   docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker \
     -v "$HOME/.docker:/root/.docker:ro" \
