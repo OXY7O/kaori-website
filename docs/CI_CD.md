@@ -29,7 +29,7 @@ Temporary UAT co-location with the deployment VPS retains the SSH trust boundary
 
 **Approved temporary exception (private GitHub Free organization):** protected branches/rulesets and protected GitHub Environments are not enforced under the current plan. Use issue-linked Draft PRs, a recorded manual reviewer decision, exact-SHA Developer Check, staging admission, and explicit human UAT/release acceptance. This is a compensating **procedure**, not equivalent enforcement. Do not claim protection is enabled; revisit enforcement if the plan changes.
 
-Use **repository-level** Actions Variables and Secrets for this private repository; organization-level and environment-level secrets/variables must not be relied on. The Developer Check and currently authored Full Admission require no custom credentials. Website registry and SSH secrets are planned for release/deployment workflows and are not yet consumed by these YAML files.
+Use **repository-level** Actions Variables and Secrets for this private repository; organization-level and environment-level secrets/variables must not be relied on. The Developer Check and Full Admission require no custom credentials. The manual `publish-staging-image.yml` RC publisher now consumes repository-level registry credentials and variables, but remains unavailable for mutation until this issue's workflow is admitted to staging, exact Full Admission PASS exists, and an operator explicitly dispatches a unique RC tag. Website SSH secrets remain exclusive to the #5 UAT deployment workflow.
 
 Runner access, GitHub Project custom fields, native relationships, and review metadata still require GitHub-side setup where connector capabilities are absent. **A YAML check cannot substitute for server-enforced branch protection.**
 

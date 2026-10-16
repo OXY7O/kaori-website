@@ -101,6 +101,13 @@ jobs:
       - name: Website format gate
         if: ${{ needs.route.outputs.web == 'true' }}
         run: npm run check-format
+      - name: Validate committed shell script syntax
+        if: ${{ needs.route.outputs.web == 'true' }}
+        run: |
+          set -Eeuo pipefail
+          while IFS= read -r path; do
+            bash -n "$path"
+          done < <(git ls-files '*.sh')
       - name: Astro and TypeScript
         if: ${{ needs.route.outputs.web == 'true' }}
         run: npm run check

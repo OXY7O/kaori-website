@@ -79,6 +79,12 @@ jobs:
           cache: npm
       - name: Restore locked dependencies
         run: npm ci --no-audit --no-fund
+      - name: Validate committed shell script syntax
+        run: |
+          set -Eeuo pipefail
+          while IFS= read -r path; do
+            bash -n "$path"
+          done < <(git ls-files '*.sh')
       - name: Format and style gate
         run: npm run check-format
       - name: Type and Astro gate
