@@ -1,5 +1,15 @@
-# One-time private UAT access; no public host ports or external edge publication.
+# Private UAT ingress only: keep base network internal and attach a separate
+# dedicated bridge for effective localhost port publishing.
+# No public binding, KAORI App attachment or shared-edge mutation.
 services:
   web:
+    networks:
+      - website-internal
+      - website-uat-loopback
     ports:
       - "127.0.0.1:18080:8080"
+
+networks:
+  website-uat-loopback:
+    driver: bridge
+    internal: false
