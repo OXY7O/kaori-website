@@ -1,31 +1,31 @@
 # Development and DevContainer
 
-The DevContainer uses a dedicated Docker Compose project (\`kaori-website-dev\`), the Node.js 22 toolchain matching the KAORI application frontend baseline, and a separate local Astro port (\`4321\`). No PostgreSQL, Redis, Celery, Kubernetes provider, or external operational secret is needed.
+The DevContainer uses a dedicated Docker Compose project (`kaori-website-dev`), the Node.js 22 toolchain matching the KAORI application frontend baseline, and a separate local Astro port (`4321`). No PostgreSQL, Redis, Celery, Kubernetes provider, or external operational secret is needed.
 
 ## VS Code
 
-Open **Dev Containers: Reopen in Container**. The container runs as user \`node\`, stores \`node_modules\` in a dedicated Docker volume and forwards port \`4321\`. The post-create command uses \`npm ci\`, which must use the committed lockfile.
+Open **Dev Containers: Reopen in Container**. The container runs as user `node`, stores `node_modules` in a dedicated Docker volume and forwards port `4321`. The post-create command uses `npm ci`, which must use the committed lockfile.
 
 From the integrated terminal:
 
-\`\`\`bash
+```bash
 npm run dev
 npm run check
 npm run build
 npm run check-format
-\`\`\`
+```
 
 The initial site is only the foundation placeholder. Full homepage visual acceptance is tracked in issue #3.
 
 ## Docker CLI (dev)
 
-\`\`\`bash
+```bash
 docker compose -f compose.dev.yml up -d --build
 docker compose -f compose.dev.yml exec workspace npm ci
 docker compose -f compose.dev.yml exec workspace npm run dev
-\`\`\`
+```
 
-The DevContainer and this CLI use the same Compose project. Stop it with \`docker compose -f compose.dev.yml down\`. Do not use \`down -v\` unless deliberately discarding local dependencies.
+The DevContainer and this CLI use the same Compose project. Stop it with `docker compose -f compose.dev.yml down`. Do not use `down -v` unless deliberately discarding local dependencies.
 
 ## Runtime and security
 
