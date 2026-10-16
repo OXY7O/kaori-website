@@ -6,7 +6,13 @@ compose_file="${KAORI_WEBSITE_COMPOSE_FILE:-$script_dir/compose.website.yml}"
 expected_image="${KAORI_WEBSITE_IMAGE:?Set KAORI_WEBSITE_IMAGE to the accepted digest-qualified image}"
 [[ "$expected_image" =~ @sha256:[a-f0-9]{64}$ ]] || { echo 'BLOCK: digest-qualified image required' >&2; exit 1; }
 command -v docker >/dev/null || { echo 'BLOCK: Docker is not available' >&2; exit 1; }
-container="$(docker compose -f "$compose_file" ps -q web)"
+compose_args=(-f "$compose_file")
+if [[ "${KAORI_WEBSITE_UAT_LOCAL_ONLY:-}" == 1 ]]; then
+    override="$script_dir/compose.uat.yml"
+    [[ -f "$override" && ! -L "$override" ]] || { echo 'BLOCK: missing trusted loopback override' >&2; exit 1; }
+    compose_args+=(-f "$override")
+fi
+container="$(docker compose "${compose_args[@]}" ps -q web)"
 [[ -n "$container" ]] || { echo 'BLOCK: website container missing' >&2; exit 1; }
 image="$(docker inspect --format '{{.Config.Image}}' "$container")"
 [[ "$image" == "$expected_image" ]] || { echo "BLOCK: expected $expected_image, found $image" >&2; exit 1; }

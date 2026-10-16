@@ -14,6 +14,12 @@ state_dir="${KAORI_WEBSITE_STATE_DIR:-/var/lib/kaori-website/deploy-state}"
 [[ -f "$compose_file" && ! -L "$compose_file" ]] || fail 'compose file missing or symlinked'
 [[ -d "$state_dir" && ! -L "$state_dir" && -w "$state_dir" ]] || fail 'website release state directory must be prepared and writable by deployment identity'
 docker info >/dev/null || fail 'Docker daemon unavailable'
+compose_args=(-f "$compose_file")
+if [[ "${KAORI_WEBSITE_UAT_LOCAL_ONLY:-}" == 1 ]]; then
+    override="$script_dir/compose.uat.yml"
+    [[ -f "$override" && ! -L "$override" ]] || { echo 'BLOCK: missing trusted loopback override' >&2; exit 1; }
+    compose_args+=(-f "$override")
+fi
 umask 077
 
 # Image pull, metadata validation, and container reconciliation occur without touching KAORI app.
@@ -23,7 +29,7 @@ revision="$(docker image inspect --format '{{index .Config.Labels "org.openconta
 configured_version="$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$image")"
 [[ "$configured_version" == "${release_version#v}" ]] || fail 'OCI version differs from admitted release identity'
 export KAORI_WEBSITE_IMAGE="$image"
-docker compose -f "$compose_file" config --quiet || fail 'Compose validation failed'
+docker compose "${compose_args[@]}" config --quiet || fail 'Compose validation failed'
 
 candidate="$(mktemp "$state_dir/.release-candidate.XXXXXXXX")"
 cleanup() { rm -f -- "$candidate"; }
@@ -42,12 +48,12 @@ if [[ -f "$state_dir/release.env" ]]; then
 fi
 export KAORI_WEBSITE_IMAGE="$image"
 
-if ! docker compose -f "$compose_file" up -d --pull never --no-build web || ! bash "$script_dir/verify.sh"; then
+if ! docker compose "${compose_args[@]}" up -d --pull never --no-build web || ! bash "$script_dir/verify.sh"; then
     echo 'FAIL: candidate unhealthy; current release receipt is NOT changed' >&2
     if [[ -n "$previous_image" && "$previous_image" != "$image" ]]; then
         echo 'Attempting recovery of last committed website digest' >&2
         export KAORI_WEBSITE_IMAGE="$previous_image"
-        if docker compose -f "$compose_file" up -d --no-build web && bash "$script_dir/verify.sh"; then
+        if docker compose "${compose_args[@]}" up -d --no-build web && bash "$script_dir/verify.sh"; then
             echo 'RECOVERED: previous website digest is healthy; release receipt unchanged' >&2
         else
             echo 'CRITICAL: previous website recovery failed; manual intervention required' >&2

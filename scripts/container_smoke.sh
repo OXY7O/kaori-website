@@ -7,6 +7,7 @@ docker info >/dev/null
 docker compose version >/dev/null
 export KAORI_WEBSITE_IMAGE="example.invalid/kaori-website@sha256:$(printf '%064d' 0)"
 docker compose -f deploy/server/compose.website.yml config --quiet
+docker compose -f deploy/server/compose.website.yml -f deploy/server/compose.uat.yml config --quiet
 image="kaori-website-smoke:${source_sha:0:12}"
 docker build --target production \
   --build-arg APP_BUILD_SHA="$source_sha" \

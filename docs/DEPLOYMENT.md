@@ -102,3 +102,15 @@ Collect the exact SHA, image digest, immutable OCI release metadata, application
 ## UAT deployment dispatch (manual only)
 
 Once a unique prerelease for the current admitted staging SHA exists, an operator may dispatch `deploy-staging-host.yml` from `kaori/staging`, providing the exact `candidate_tag` and a link to explicit maintainer authorization (`approval_reference`). The workflow validates GitHub RC evidence for the exact SHA/image digest, checks repository-level credentials without printing them, verifies the SSH pinned host key, and transfers the reviewed adapter via a separate SSH deployment identity. There is no automated dispatch from a feature branch, and no automatic shared-edge publication. A GitHub Free private repository does not enforce human approval; the authorization link is audit evidence for the operating procedure, not a substitute for technical branch protection.
+
+## Private UAT browser access (no shared-edge publication)
+
+For the initial website UAT release, the deployment adapter can opt into a **loopback-only** Compose override with `KAORI_WEBSITE_UAT_LOCAL_ONLY=1`. This binds the web service exclusively to `127.0.0.1:18080` on the target VPS and leaves 80/443 and shared-edge sites untouched. It is not a public deployment.
+
+Once the container health and immutable digest have been verified, an authorized reviewer can open an SSH tunnel from their workstation (using their own trusted administrator access):
+
+```bash
+ssh -N -L 18080:127.0.0.1:18080 -p <SSH_PORT> <ADMIN_USER>@<VPS_HOST>
+```
+
+Visit `http://127.0.0.1:18080/` locally to inspect desktop/mobile layout, theme toggle and accessibility. Do not use an untrusted SSH host or disable host key checks. DNS/TLS/public edge publication is a separately reviewed workstream and is **not** implied by successful private UAT deployment.
