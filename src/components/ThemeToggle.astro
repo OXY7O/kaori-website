@@ -1,0 +1,44 @@
+---
+import Icon from "./Icon.astro";
+---
+
+<button
+  class="theme-toggle"
+  type="button"
+  data-theme-toggle
+  aria-label="Switch color theme"
+  title="Switch color theme"
+>
+  <span class="theme-toggle-light"><Icon name="sun" size={19} /></span>
+  <span class="theme-toggle-dark"><Icon name="moon" size={19} /></span>
+</button>
+<script>
+  const themeButtons = document.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]");
+  function updateThemeLabel() {
+    const current = document.documentElement.getAttribute("data-theme");
+    themeButtons.forEach((button) => {
+      button.setAttribute(
+        "aria-label",
+        current === "dark" ? "Switch to light mode" : "Switch to dark mode",
+      );
+      button.setAttribute(
+        "title",
+        current === "dark" ? "Switch to light mode" : "Switch to dark mode",
+      );
+    });
+  }
+  themeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      try {
+        localStorage.setItem("kaori-website-theme", next);
+      } catch (_) {
+        // Runtime remains usable even when client-side storage is unavailable.
+      }
+      updateThemeLabel();
+    });
+  });
+  updateThemeLabel();
+</script>

@@ -15,7 +15,7 @@ npm run build
 npm run check-format
 ```
 
-The initial site is only the foundation placeholder. Full homepage visual acceptance is tracked in issue #3.
+The approved editorial Home Page is implemented on issue #3's work branch; its browser/light-dark/mobile acceptance remains pending until staging/UAT.
 
 ## Docker CLI (dev)
 
