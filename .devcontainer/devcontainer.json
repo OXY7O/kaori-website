@@ -1,0 +1,38 @@
+{
+  "name": "KAORI Website Development",
+  "dockerComposeFile": [
+    "../compose.dev.yml"
+  ],
+  "service": "workspace",
+  "runServices": [
+    "workspace"
+  ],
+  "workspaceFolder": "/workspace/kaori-website",
+  "shutdownAction": "stopCompose",
+  "remoteUser": "node",
+  "updateRemoteUserUID": true,
+  "forwardPorts": [
+    4321
+  ],
+  "portsAttributes": {
+    "4321": {
+      "label": "KAORI Website (Astro)",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "astro-build.astro-vscode",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "files.eol": "\n",
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+      }
+    }
+  },
+  "postCreateCommand": "npm ci --no-audit --no-fund"
+}

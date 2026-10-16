@@ -1,0 +1,30 @@
+name: Task
+description: Define a bounded technical or operational task.
+title: ""
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What must change and why?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: In Scope / Out of Scope
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Include observable Given/When/Then cases where useful.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification / UAT Evidence
+    validations:
+      required: true
