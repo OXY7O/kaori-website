@@ -40,8 +40,17 @@ Production image/Compose use an unprivileged server, health endpoint at `/health
 3. Prepare the above app and state directories with restricted ownership; verify no naming/Compose project collision.
 4. Review the DNS hostname to use. Do not assume or overwrite `kaori.cloud`.
 5. Verify exact staging SHA, completed website Full Admission and immutable digest; ensure OCI labels match SHA and SemVer candidate.
-6. Establish a separate protected GitHub Environment and SSH host-key pin for the website target. Never use a direct runner-to-localhost deployment shortcut.
+6. With GitHub Free/private, use repository-level Actions secrets/variables and an explicit manual UAT authorization record; protected GitHub Environments and environment-level secrets are not available. Pin the website target's SSH host key. Never use a direct runner-to-localhost deployment shortcut.
 7. A release candidate build should retain verified SBOM, vulnerability scan, provenance and signature evidence consistent with KAORI App policy. Those workflows are tracked in #4 and remain incomplete until implemented and executed.
+
+## Planned repository Actions configuration
+
+These keys are **not yet consumed by a complete release workflow**. Provision them in `OXY7O/kaori-website` repository settings; do not assume organization-level or environment-level secrets will reach a private GitHub Free repository.
+
+- Variables: `KAORI_WEBSITE_DOCKER_REGISTRY_HOST`, `KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE`, `KAORI_WEBSITE_HOST`, `KAORI_WEBSITE_HOST_PORT`, `KAORI_WEBSITE_HOST_USER`, `KAORI_WEBSITE_HOST_DEPLOY_ROOT`, `KAORI_WEBSITE_PUBLIC_DOMAIN`.
+- Secrets: `KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME`, `KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD`, `KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY`, `KAORI_WEBSITE_HOST_SSH_PASSPHRASE` when the private key is encrypted, and `KAORI_WEBSITE_HOST_KNOWN_HOSTS` pinned out of band.
+
+Reuse the KAORI Application's **registry host**, if appropriate, but not its image repository identity or runtime secrets. Use an independently scoped registry robot account and website deployment SSH identity. No database/API credentials are needed for static Astro output.
 
 ## Server operation (once release authorized)
 
