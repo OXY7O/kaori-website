@@ -27,7 +27,11 @@ Temporary UAT co-location with the deployment VPS retains the SSH trust boundary
 
 ## External protection configuration
 
-Branch rulesets, required reviewers, signature policy, GitHub Environment permission, runner group sharing, GitHub Project custom fields and native relationship metadata must be configured through GitHub UI when the connector does not support their mutation. **A YAML check cannot substitute for server-enforced branch protection.**
+**Approved temporary exception (private GitHub Free organization):** protected branches/rulesets and protected GitHub Environments are not enforced under the current plan. Use issue-linked Draft PRs, a recorded manual reviewer decision, exact-SHA Developer Check, staging admission, and explicit human UAT/release acceptance. This is a compensating **procedure**, not equivalent enforcement. Do not claim protection is enabled; revisit enforcement if the plan changes.
+
+Use **repository-level** Actions Variables and Secrets for this private repository; organization-level and environment-level secrets/variables must not be relied on. The Developer Check and Full Admission require no custom credentials. The manual `publish-staging-image.yml` RC publisher now consumes repository-level registry credentials and variables, but remains unavailable for mutation until this issue's workflow is admitted to staging, exact Full Admission PASS exists, and an operator explicitly dispatches a unique RC tag. Website SSH secrets remain exclusive to the #5 UAT deployment workflow.
+
+Runner access, GitHub Project custom fields, native relationships, and review metadata still require GitHub-side setup where connector capabilities are absent. **A YAML check cannot substitute for server-enforced branch protection.**
 
 Full admission checks must not be weakened or renamed to hide failures. Before marking it PASS, ensure that every relevant browser, artifact, security, runtime, and rollout check for the current scope has executed. An incomplete gate is a **BLOCK** for release, even when basic build checks pass.
 

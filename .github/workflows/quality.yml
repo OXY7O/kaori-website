@@ -107,6 +107,7 @@ jobs:
           set -Eeuo pipefail
           printf 'Full website admission source: %s\n' "$KAORI_WEBSITE_SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
           printf 'Output: statically built website (not yet container or browser UAT evidence)\n' >> "$GITHUB_STEP_SUMMARY"
+
   container-admission:
     name: Docker Runtime Admission
     needs: full-admission
