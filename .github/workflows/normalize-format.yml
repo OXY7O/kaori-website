@@ -23,6 +23,14 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run format
+      - name: Emit formatted CI workflows for reviewed source commit
+        run: |
+          set -Eeuo pipefail
+          printf 'KAORI_FORMAT_DEV_BEGIN\n'
+          ./node_modules/.bin/prettier .github/workflows/developer-check.yml | base64 -w0
+          printf '\nKAORI_FORMAT_DEV_END\nKAORI_FORMAT_FULL_BEGIN\n'
+          ./node_modules/.bin/prettier .github/workflows/quality.yml | base64 -w0
+          printf '\nKAORI_FORMAT_FULL_END\n'
       - name: Commit formatter result on issue branch
         run: |
           set -Eeuo pipefail
