@@ -107,3 +107,19 @@ jobs:
           set -Eeuo pipefail
           printf 'Full website admission source: %s\n' "$KAORI_WEBSITE_SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
           printf 'Output: statically built website (not yet container or browser UAT evidence)\n' >> "$GITHUB_STEP_SUMMARY"
+
+  container-admission:
+    name: Docker Runtime Admission
+    needs: full-admission
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    runs-on: [self-hosted, linux, x64, kaori-ci]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact admitted source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.KAORI_WEBSITE_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Verify container runtime without publishing
+        shell: bash
+        run: bash scripts/container_smoke.sh "$KAORI_WEBSITE_SOURCE_SHA"
