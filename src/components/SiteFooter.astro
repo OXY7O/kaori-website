@@ -1,0 +1,33 @@
+---
+import Icon from "./Icon.astro";
+const year = new Date().getFullYear();
+---
+<footer class="site-footer">
+  <div class="container footer-content">
+    <div class="footer-identity">
+      <a class="brand-lockup" href="/" aria-label="KAORI homepage">
+        <img src="/branding/kaori-logo.svg" alt="" width="38" height="38" />
+        <span>KAORI</span>
+      </a>
+      <p>Infrastructure operations, connected by evidence.</p>
+      <span class="footer-note">An OXY7 ORBITAL project.</span>
+    </div>
+    <div class="footer-links">
+      <div>
+        <strong>Explore</strong>
+        <a href="#platform">Platform</a>
+        <a href="#integrations">Integrations</a>
+        <a href="#architecture">Architecture</a>
+      </div>
+      <div>
+        <strong>Resources</strong>
+        <a href="#experience">Product experience</a>
+        <a href="https://github.com/OXY7O/KAORI" rel="noopener noreferrer" target="_blank">KAORI repository <Icon name="arrow-up-right" size={12} /></a>
+      </div>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <span>© {year} KAORI. All rights reserved.</span>
+    <span>Internal-use proprietary project · Public product overview</span>
+  </div>
+</footer>
