@@ -1,0 +1,116 @@
+name: KAORI Website One-Time UAT Rollout
+on:
+  push:
+    branches:
+      - kaori/staging
+    paths:
+      - .github/workflows/uat-once.yml
+permissions:
+  contents: write
+  actions: read
+  id-token: write
+concurrency:
+  group: kaori-website-one-time-uat-issue-10
+  cancel-in-progress: false
+env:
+  RC_TAG: v0.1.0-rc.1
+  ACCEPTED_SHA: ${{ github.sha }}
+  GH_TOKEN: ${{ github.token }}
+jobs:
+  verify-admission:
+    name: Verify Exact Staging Admission
+    if: ${{ contains(github.event.head_commit.message, '[KAORI_UAT_ISSUE_10]') }}
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact staging source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Wait for exact staging Full Admission without bypass
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || exit 1
+          [[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || exit 1
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
+          for attempt in $(seq 1 65); do
+            current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r .object.sha)"
+            [[ "$current" == "$ACCEPTED_SHA" ]] || { echo 'BLOCK: staging changed during admission' >&2; exit 1; }
+            data="$(curl -fsS "${headers[@]}" "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
+            record="$(jq -c --arg sha "$ACCEPTED_SHA" '[.workflow_runs[] | select(.head_sha==$sha)] | sort_by(.run_number) | last // empty' <<< "$data")"
+            if [[ -n "$record" ]]; then
+              status="$(jq -r .status <<< "$record")"
+              result="$(jq -r .conclusion <<< "$record")"
+              if [[ "$status" == completed ]]; then
+                [[ "$result" == success ]] || { echo "BLOCK: exact Full Admission $result" >&2; exit 1; }
+                printf 'PASS exact staging Full Admission: %s\n' "$(jq -r .html_url <<< "$record")"
+                exit 0
+              fi
+            fi
+            sleep 15
+          done
+          echo 'BLOCK: timed out waiting for exact staging Full Admission' >&2
+          exit 1
+  publish:
+    name: Publish Signed Immutable RC
+    needs: verify-admission
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 110
+    env:
+      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
+    steps:
+      - name: Checkout exact admitted staging source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Fail-closed RC preflight
+        run: bash scripts/release/publish-candidate.sh preflight
+      - name: Build once scan attest and publish
+        run: bash scripts/release/publish-candidate.sh publish
+      - name: Registry logout
+        if: always()
+        run: |
+          if [[ -n "$REGISTRY_HOST" ]]; then docker logout "$REGISTRY_HOST" || true; fi
+  deploy:
+    name: Deploy UAT to Isolated VPS
+    needs: publish
+    runs-on: [self-hosted, linux, x64, kaori-ci]
+    timeout-minutes: 50
+    env:
+      APPROVAL_REF: https://github.com/OXY7O/kaori-website/issues/10
+      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
+      WEBSITE_HOST: ${{ vars.KAORI_WEBSITE_HOST }}
+      WEBSITE_SSH_PORT: ${{ vars.KAORI_WEBSITE_HOST_PORT }}
+      WEBSITE_SSH_USER: ${{ vars.KAORI_WEBSITE_HOST_USER }}
+      WEBSITE_DEPLOY_ROOT: ${{ vars.KAORI_WEBSITE_HOST_DEPLOY_ROOT }}
+      WEBSITE_SSH_KEY: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY }}
+      WEBSITE_SSH_PASSPHRASE: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PASSPHRASE }}
+      WEBSITE_KNOWN_HOSTS: ${{ secrets.KAORI_WEBSITE_HOST_KNOWN_HOSTS }}
+    steps:
+      - name: Checkout exact admitted staging source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Fail-closed prerelease and host preflight
+        run: bash scripts/release/deploy-uat.sh preflight
+      - name: Deploy accepted digest over pinned SSH
+        run: bash scripts/release/deploy-uat.sh deploy
+      - name: Record pending UAT evidence
+        run: |
+          echo "Deployed staging SHA: $ACCEPTED_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "RC tag: $RC_TAG" >> "$GITHUB_STEP_SUMMARY"
+          echo 'Container smoke is not browser UAT; light/dark, keyboard, mobile, and human acceptance remain pending.' >> "$GITHUB_STEP_SUMMARY"

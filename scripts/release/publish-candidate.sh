@@ -25,9 +25,14 @@ matched="$(jq -c --arg sha "$sha" '[.workflow_runs[] | select(.head_sha==$sha)] 
 [[ "$(jq -r '.status' <<< "$matched")" == completed && "$(jq -r '.conclusion' <<< "$matched")" == success ]] || fail 'Full Admission not PASS'
 echo "Full Admission: $(jq -r '.html_url' <<< "$matched")"
 if [[ "$mode" == preflight ]]; then
-  if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
-    fail 'candidate tag already reserved'
-  fi
+  # Private repositories use an API-authenticated lookup; checkout intentionally does
+  # not persist write-capable credentials into Git configuration.
+  tag_status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/git/ref/tags/$tag")"
+  case "$tag_status" in
+    404) ;;
+    200) fail 'candidate tag already reserved' ;;
+    *) fail "GitHub tag authority check failed (HTTP $tag_status)" ;;
+  esac
   printf 'PASS: RC config and admitted source validated (%s)\n' "$sha"
   exit 0
 fi
