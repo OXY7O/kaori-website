@@ -118,3 +118,9 @@ Visit `http://127.0.0.1:18080/` locally to inspect desktop/mobile layout, theme 
 ## Repository image namespace preflight for issue #10
 
 The first one-time UAT RC attempt failed at the required Trivy vulnerability gate; it did not publish an OCI tag or deploy to VPS. A separate security workstream #12 updated the runtime image and enforced a release-equivalent Trivy check during Docker smoke. The repo-level Variable `KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE` is **still an operator-owned prerequisite**: it MUST end with `/kaori-website`, separate from the KAORI Application image. Both publisher and SSH deployment adapter now reject other image repository paths. The retry workflow must not merge until this setting is corrected and recorded in issue #10.
+
+## UAT loopback incident and correction (#15)
+
+A real SSH tunnel attempt reached the VPS but failed because Docker only recorded the intended `127.0.0.1:18080` HostConfig entry: the effective `docker port` mapping and host HTTP listener were absent on the originally internal-only bridge. Read-only evidence: https://github.com/OXY7O/kaori-website/actions/runs/38981974418.
+
+For private UAT only, the overlay attaches the static container to a **separate user-defined bridge** (`website-uat-loopback`) while retaining the base internal network. Host publication remains explicitly `127.0.0.1:18080:8080`. The deployment adapter must verify **both** effective Docker port binding and host-loopback HTTP before reporting PASS. A narrowly scoped, issue #15 staging-only remediation reuses the already signed `v0.1.0-rc.1` digest (no rebuild or tag rewrite); it does not modify production/shared-edge 80/443. Human browser acceptance is still required.
