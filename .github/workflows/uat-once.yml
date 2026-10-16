@@ -1,3 +1,5 @@
+# Retry gate for issue #10 only. DO NOT MERGE before repository registry image
+# Variable is corrected to a dedicated /kaori-website namespace and reviewed.
 name: KAORI Website One-Time UAT Rollout
 on:
   push:
