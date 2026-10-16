@@ -1,0 +1,35 @@
+name: Normalize website source formatting (temporary)
+
+on:
+  push:
+    branches: [kaori/task-4-governed-ci-pipeline]
+    paths:
+      - .github/workflows/normalize-format.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v4.4.0
+        with:
+          node-version: '22.23.2'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run format
+      - name: Commit formatter result on issue branch
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'style(dev): normalize website frontend source #4'
+            git push origin HEAD:kaori/task-4-governed-ci-pipeline
+          fi

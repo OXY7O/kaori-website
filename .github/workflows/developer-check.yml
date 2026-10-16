@@ -98,6 +98,9 @@ jobs:
       - name: Audit changes to dependency authority
         if: ${{ needs.route.outputs.dependencies == 'true' }}
         run: npm audit --audit-level=high
+      - name: Website format gate
+        if: ${{ needs.route.outputs.web == 'true' }}
+        run: npm run check-format
       - name: Astro and TypeScript
         if: ${{ needs.route.outputs.web == 'true' }}
         run: npm run check
