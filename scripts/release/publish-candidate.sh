@@ -25,9 +25,14 @@ matched="$(jq -c --arg sha "$sha" '[.workflow_runs[] | select(.head_sha==$sha)] 
 [[ "$(jq -r '.status' <<< "$matched")" == completed && "$(jq -r '.conclusion' <<< "$matched")" == success ]] || fail 'Full Admission not PASS'
 echo "Full Admission: $(jq -r '.html_url' <<< "$matched")"
 if [[ "$mode" == preflight ]]; then
-  if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
-    fail 'candidate tag already reserved'
-  fi
+  # Private repositories use an API-authenticated lookup; checkout intentionally does
+  # not persist write-capable credentials into Git configuration.
+  tag_status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/git/ref/tags/$tag")"
+  case "$tag_status" in
+    404) ;;
+    200) fail 'candidate tag already reserved' ;;
+    *) fail "GitHub tag authority check failed (HTTP $tag_status)" ;;
+  esac
   printf 'PASS: RC config and admitted source validated (%s)\n' "$sha"
   exit 0
 fi
@@ -72,6 +77,19 @@ jq -n --arg src "$repo" --arg source_sha "$sha" --arg run "$GITHUB_RUN_ID" \
      resolvedDependencies:[{uri:("https://github.com/"+$src),digest:{gitCommit:$source_sha}}]},
     runDetails:{builder:{id:("https://github.com/"+$src+"/actions/runs/"+$run)},
       metadata:{invocationId:$run}}}' > website-provenance.json
+identity="https://github.com/$GITHUB_WORKFLOW_REF"
+# Sign the immutable image itself before independently attesting its evidence.
+docker run --rm --user 0:0 \
+  -e ACTIONS_ID_TOKEN_REQUEST_TOKEN -e ACTIONS_ID_TOKEN_REQUEST_URL \
+  -e DOCKER_CONFIG=/root/.docker \
+  -v "$HOME/.docker:/root/.docker:ro" \
+  ghcr.io/sigstore/cosign/cosign:v3.1.3 sign --yes "$ref"
+docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker \
+  -v "$HOME/.docker:/root/.docker:ro" \
+  ghcr.io/sigstore/cosign/cosign:v3.1.3 verify \
+  --certificate-identity "$identity" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com "$ref" > website-signature-verification.json
+test -s website-signature-verification.json
 for entry in 'website-sbom.spdx.json:spdxjson' 'website-provenance.json:slsaprovenance1'; do
   predicate="${entry%%:*}"
   kind="${entry#*:}"
@@ -82,7 +100,6 @@ for entry in 'website-sbom.spdx.json:spdxjson' 'website-provenance.json:slsaprov
     ghcr.io/sigstore/cosign/cosign:v3.1.3 attest --yes \
     --predicate "/workspace/$predicate" --type "$kind" "$ref"
 done
-identity="https://github.com/$repo/.github/workflows/publish-staging-image.yml@$GITHUB_REF"
 for kind in spdxjson slsaprovenance1; do
   docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker \
     -v "$HOME/.docker:/root/.docker:ro" \
