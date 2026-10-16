@@ -1,15 +1,18 @@
 # KAORI Website Home Page — Visual Review Contract
 
 ## Authority
+
 - OXY7O/KAORI/docs/product/README.md
 - OXY7O/KAORI/docs/design/KAORI_DESIGN_SYSTEM.md
 - OXY7O/KAORI/docs/design/components/DARK_MODE.md
 - Approved Option 3 editorial infrastructure storytelling concept (light + dark).
 
 ## Page scope
+
 Single public informational Home Page only. It is not a live source of operational truth and does not require KAORI authentication. The Open Application CTA navigates to the separate existing KAORI application.
 
 ## Structure
+
 1. Public navigation with theme toggle
 2. Hero — From infrastructure to insight
 3. Evidence-first / provider-authoritative operating principles
@@ -20,6 +23,7 @@ Single public informational Home Page only. It is not a live source of operation
 8. CTA and footer
 
 ## Safety / accuracy
+
 - Never present a mocked number as a KAORI performance metric or integration coverage claim.
 - Example vendor technology names are not a per-provider readiness guarantee.
 - UI concept and hero illustration must be labeled as such.
@@ -27,6 +31,7 @@ Single public informational Home Page only. It is not a live source of operation
 - Product descriptions are inherited from the KAORI product authority. Not open source.
 
 ## Visual acceptance pending
+
 - Desktop >=1280 light/dark
 - Tablet 768–1024 light/dark
 - Mobile 375–430 light/dark

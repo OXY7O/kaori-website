@@ -8,6 +8,7 @@ const links = [
   { label: "Experience", href: "#experience" },
 ];
 ---
+
 <header class="site-header">
   <div class="container nav-shell">
     <a class="brand-lockup" href="/" aria-label="KAORI homepage">
@@ -19,12 +20,18 @@ const links = [
     </nav>
     <div class="nav-actions">
       <ThemeToggle />
-      <a class="button button-primary nav-app-link" href="https://kaori.cloud" rel="noopener noreferrer" target="_blank">
+      <a
+        class="button button-primary nav-app-link"
+        href="https://kaori.cloud"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
         Open Application <Icon name="arrow-up-right" size={16} />
       </a>
     </div>
     <details class="mobile-nav">
-      <summary aria-label="Open website navigation"><span></span><span></span><span></span></summary>
+      <summary aria-label="Open website navigation"><span></span><span></span><span></span></summary
+      >
       <nav aria-label="Mobile navigation">
         {links.map((item) => <a href={item.href}>{item.label}</a>)}
         <a href="https://kaori.cloud" rel="noopener noreferrer" target="_blank">Open Application</a>

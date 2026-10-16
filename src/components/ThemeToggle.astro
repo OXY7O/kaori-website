@@ -1,7 +1,14 @@
 ---
 import Icon from "./Icon.astro";
 ---
-<button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch color theme" title="Switch color theme">
+
+<button
+  class="theme-toggle"
+  type="button"
+  data-theme-toggle
+  aria-label="Switch color theme"
+  title="Switch color theme"
+>
   <span class="theme-toggle-light"><Icon name="sun" size={19} /></span>
   <span class="theme-toggle-dark"><Icon name="moon" size={19} /></span>
 </button>
@@ -10,8 +17,14 @@ import Icon from "./Icon.astro";
   function updateThemeLabel() {
     const current = document.documentElement.getAttribute("data-theme");
     themeButtons.forEach((button) => {
-      button.setAttribute("aria-label", current === "dark" ? "Switch to light mode" : "Switch to dark mode");
-      button.setAttribute("title", current === "dark" ? "Switch to light mode" : "Switch to dark mode");
+      button.setAttribute(
+        "aria-label",
+        current === "dark" ? "Switch to light mode" : "Switch to dark mode",
+      );
+      button.setAttribute(
+        "title",
+        current === "dark" ? "Switch to light mode" : "Switch to dark mode",
+      );
     });
   }
   themeButtons.forEach((button) => {

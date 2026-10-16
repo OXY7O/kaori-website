@@ -10,6 +10,7 @@ interface Props {
 
 const { title, description } = Astro.props;
 ---
+
 <!doctype html>
 <html lang="en" data-theme="light">
   <head>
@@ -27,9 +28,12 @@ const { title, description } = Astro.props;
       (function () {
         try {
           const saved = localStorage.getItem("kaori-website-theme");
-          const mode = saved === "light" || saved === "dark"
-            ? saved
-            : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          const mode =
+            saved === "light" || saved === "dark"
+              ? saved
+              : window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
           document.documentElement.setAttribute("data-theme", mode);
         } catch (_) {
           document.documentElement.setAttribute("data-theme", "light");
