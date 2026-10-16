@@ -1,19 +1,13 @@
 {
   "name": "KAORI Website Development",
-  "dockerComposeFile": [
-    "../compose.dev.yml"
-  ],
+  "dockerComposeFile": ["../compose.dev.yml"],
   "service": "workspace",
-  "runServices": [
-    "workspace"
-  ],
+  "runServices": ["workspace"],
   "workspaceFolder": "/workspace/kaori-website",
   "shutdownAction": "stopCompose",
   "remoteUser": "node",
   "updateRemoteUserUID": true,
-  "forwardPorts": [
-    4321
-  ],
+  "forwardPorts": [4321],
   "portsAttributes": {
     "4321": {
       "label": "KAORI Website (Astro)",
