@@ -11,7 +11,7 @@ Website application paths (existing deployment layout):
 - Container project: `kaori-website`; internal upstream HTTP port **8080**, with **no host ports**.
 - Edge DNS / Nginx / Certbot and host **80/443** remain owned by `/opt/shared-edge`, outside this repository.
 
-Never modify `/opt/kaori`, `/etc/kaori`, `/var/lib/kaori`, the KAORI application Compose project or the existing shared-edge registrations for `kaori.cloud` or `app.kaori.cloud` to deploy the website.
+Never modify `/opt/kaori`, `/etc/kaori`, `/var/lib/kaori` or the KAORI application Compose project while deploying the website. The approved public hostname split is `kaori.cloud` for this website and `app.kaori.cloud` for the application (migration authority `OXY7O/KAORI#2210`). If the legacy apex edge registration still points to the application, reassignment requires a **separately reviewed shared-edge cutover**, safe rollback, and DNS/TLS evidence. The application and automation site registrations must remain intact.
 
 The same versioned **application deployment protocol** as KAORI is used: exact accepted staging SHA â Full Admission â build once â immutable OCI image digest â dedicated host SSH trust boundary â health verification â release verification evidence â human acceptance â promotion of the same digest to production. A docker image build or Astro CI success alone is **not** website release acceptance.
 
@@ -75,6 +75,8 @@ Rollback is **not** a database restore because this is a stateless website. Pres
 
 ## Public-edge publication is separate
 
+**Approved routing:** `https://kaori.cloud` → KAORI Website (static landing page); `https://app.kaori.cloud` → KAORI Application (login/dashboard). Both remain separate upstreams and registrations. The existing application migration was handled under `OXY7O/KAORI#2210`; apex reassignment requires independent approval and must preserve `auto.kaori.cloud` plus unrelated registrations. Private release verification is not proof of public cutover.
+
 Follow **`OXY7O/KAORI/example/shared-edge/README.md`** and **`docs/deployment/SHARED_EDGE_OPERATIONS.md`** with the **already installed** host scripts. Do not copy/reimplement Nginx/Certbot here or mutate `/opt/shared-edge` until the website container and DNS identity are approved.
 
 Example _shape only_, run as an explicitly authorized shared-edge operator after the website container is healthy:
@@ -83,7 +85,7 @@ Example _shape only_, run as an explicitly authorized shared-edge operator after
 cd /opt/shared-edge/runtime
 bash ./publish-container.sh \
   --site-id kaori-website \
-  --domain '<approved-website-hostname>' \
+  --domain kaori.cloud \
   --container '<verified-website-web-container-id>' \
   --alias kaori-website-web \
   --port 8080 \
@@ -99,7 +101,7 @@ Edge apply owns trusted DNS/TLS readiness, HSTS, host/SNI checks and certificate
 
 Collect the exact SHA, image digest, immutable OCI release metadata, application container ID and health result, edge registration, TLS/Host/SNI check result, browser desktop/tablet/mobile light/dark screenshots, keyboard/accessibility evidence, and the human acceptance decision. Do not close #5 or promote until required evidence is committed and approved.
 
-## release deployment dispatch (manual only)
+## Release deployment dispatch (manual only)
 
 Once a unique prerelease for the current admitted staging SHA exists, an operator may dispatch `deploy-staging-host.yml` from `kaori/staging`, providing the exact `candidate_tag` and a link to explicit maintainer authorization (`approval_reference`). The workflow validates GitHub RC evidence for the exact SHA/image digest, checks repository-level credentials without printing them, verifies the SSH pinned host key, and transfers the reviewed adapter via a separate SSH deployment identity. There is no automated dispatch from a feature branch, and no automatic shared-edge publication. A GitHub Free private repository does not enforce human approval; the authorization link is audit evidence for the operating procedure, not a substitute for technical branch protection.
 

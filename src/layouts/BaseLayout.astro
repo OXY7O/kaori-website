@@ -9,6 +9,7 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
 ---
 
 <!doctype html>
@@ -20,8 +21,10 @@ const { title, description } = Astro.props;
     <meta name="theme-color" content="#7C3AED" />
     <meta name="description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
     <link rel="icon" type="image/svg+xml" href="/branding/kaori-logo.svg" />
     <title>{title}</title>
     <script is:inline>
