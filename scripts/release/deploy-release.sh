@@ -79,6 +79,7 @@ scp "${scp_opts[@]}" -r deploy/server "$target:$remote_release/"
   printf 'deploy_root=%q\nremote_release=%q\n' "$WEBSITE_DEPLOY_ROOT" "$remote_release"
   printf 'registry_host=%q\nregistry_user=%q\nregistry_pass=%q\n' "$REGISTRY_HOST" "$REGISTRY_USER" "$REGISTRY_PASSWORD"
   printf 'image_ref=%q\nsource_sha=%q\nrelease_tag=%q\n' "$image_ref" "$ACCEPTED_SHA" "$RC_TAG"
+  printf 'attach_existing_edge=%q\n' "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}"
   cat <<'REMOTE_DEPLOY'
 docker_config="$(mktemp -d)"
 chmod 700 "$docker_config"
@@ -87,10 +88,22 @@ trap cleanup_remote EXIT
 export DOCKER_CONFIG="$docker_config"
 printf '%s' "$registry_pass" | docker login "$registry_host" --username "$registry_user" --password-stdin >/dev/null
 test -s "$remote_release/server/deploy.sh"
-# Site remains local to the VPS; authorized reviewer reaches it over SSH tunnel.
+if [[ "$attach_existing_edge" == 1 ]]; then
+  test -s "$remote_release/server/reattach-existing-site.sh"
+  # Verify the operator's existing domain registration before replacing the live web container.
+  bash "$remote_release/server/reattach-existing-site.sh" preflight
+fi
+# Website stays loopback-only unless the approved existing public edge is explicitly reattached.
 export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1
 bash "$remote_release/server/deploy.sh" "$image_ref" "$source_sha" "$release_tag"
+if [[ "$attach_existing_edge" == 1 ]]; then
+  bash "$remote_release/server/reattach-existing-site.sh" attach
+fi
 docker logout "$registry_host" >/dev/null 2>&1 || true
 REMOTE_DEPLOY
 } | ssh "${ssh_opts[@]}" "$target" 'bash -se'
-echo "Release container deployed at accepted digest $digest; public edge and browser/human acceptance pending."
+if [[ "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" == 1 ]]; then
+  echo "PASS: accepted release $digest installed and published through the existing approved website edge; browser/human visual acceptance pending."
+else
+  echo "Release container deployed at accepted digest $digest; public edge and browser/human acceptance pending."
+fi
