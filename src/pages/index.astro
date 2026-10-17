@@ -10,7 +10,7 @@ const values = [
     body: "From operational data to trustworthy context.",
   },
   {
-    icon: "box",
+    icon: "shield-check",
     title: "Provider authoritative",
     body: "Keep your infrastructure systems in control.",
   },
@@ -20,7 +20,7 @@ const values = [
     body: "Connect visibility, workflows, and governance.",
   },
   {
-    icon: "shield",
+    icon: "shield-check",
     title: "Governed by design",
     body: "Maintain traceability across operational changes.",
   },
@@ -28,25 +28,25 @@ const values = [
 
 const capabilities = [
   {
-    icon: "layers",
+    icon: "eye",
     title: "Infrastructure visibility",
     body: "Understand assets, inventory, relationships, and the scope of your operations.",
     tag: "Observe",
   },
   {
-    icon: "workflow",
+    icon: "sliders-horizontal",
     title: "Operational workflows",
     body: "Coordinate selected tasks with explicit authorization, validation, and evidence.",
     tag: "Act",
   },
   {
-    icon: "activity",
+    icon: "chart-no-axes-column",
     title: "Analytics & intelligence",
     body: "Connect historical context and operational signals to support better decisions.",
     tag: "Interpret",
   },
   {
-    icon: "shield",
+    icon: "shield-check",
     title: "Governance & audit",
     body: "Keep permissions, change history, and operational responsibility visible.",
     tag: "Assure",
@@ -54,12 +54,12 @@ const capabilities = [
 ];
 
 const technologies = [
-  { name: "Kubernetes", short: "K8s", category: "Runtime orchestration" },
-  { name: "S3-compatible", short: "S3", category: "Object storage" },
-  { name: "Prometheus", short: "P", category: "Metrics" },
-  { name: "Alertmanager", short: "A", category: "Alerting" },
-  { name: "GitHub", short: "GH", category: "Source control" },
-  { name: "Harbor", short: "H", category: "Artifact registry" },
+  { name: "Kubernetes", icon: "box", category: "Runtime orchestration" },
+  { name: "S3-compatible", icon: "database", category: "Object storage" },
+  { name: "Prometheus", icon: "activity", category: "Metrics" },
+  { name: "Alertmanager", icon: "bell-ring", category: "Alerting" },
+  { name: "GitHub", icon: "git-branch", category: "Source control" },
+  { name: "Harbor", icon: "layers", category: "Artifact registry" },
 ];
 const summary =
   "KAORI provides unified infrastructure visibility, operational workflows, analytics, reporting, and governance while keeping integrated infrastructure systems authoritative.";
@@ -70,22 +70,22 @@ const summary =
     <div class="hero-atmosphere" aria-hidden="true"></div>
     <div class="container hero-grid">
       <div class="hero-copy">
-        <p class="eyebrow"><span class="eyebrow-line"></span> Unified infrastructure operations</p>
+        <p class="eyebrow"><span class="eyebrow-line"></span> Infrastructure Operations Platform</p>
         <h1>From infrastructure <span>to insight.</span></h1>
         <p class="hero-description">
-          Connect infrastructure context, transform evidence into insight, and govern operational
-          workflows across your ecosystem.
+          Unified infrastructure visibility, governed operations, and evidence-driven intelligence.
+          Keep your existing systems authoritative while connecting the context that matters.
         </p>
         <div class="hero-actions">
-          <a class="button button-primary" href="#platform"
-            >Explore Platform <Icon name="arrow-right" size={18} /></a
+          <a class="button button-primary" href="https://app.kaori.cloud"
+            >Open Application <Icon name="arrow-up-right" size={18} /></a
           >
-          <a class="button button-secondary" href="#architecture"
-            >How KAORI Works <Icon name="arrow-up-right" size={17} /></a
+          <a class="button button-secondary" href="#platform"
+            >Explore Platform <Icon name="arrow-right" size={17} /></a
           >
         </div>
         <p class="hero-micro">
-          <span class="micro-indicator"></span> Evidence first. Provider authority preserved.
+          <span class="micro-indicator"></span> Visibility · Control · Intelligence · Assurance
         </p>
       </div>
       <HeroVisual />
@@ -118,8 +118,8 @@ const summary =
         <p class="eyebrow">Built for real infrastructure</p>
         <h2>Operate with context.<br /><span>Not isolated tools.</span></h2>
         <p>
-          KAORI connects operational capability domains instead of becoming another silo. Inventory,
-          workflows, analytics, reporting, and governance share consistent context.
+          Connect infrastructure inventory, workflows, analytics, reporting, and governance without
+          replacing your existing tools or their source authority.
         </p>
         <a class="text-link" href="#architecture"
           >See the architecture <Icon name="arrow-right" size={17} /></a
@@ -139,6 +139,19 @@ const summary =
               </div>
               <h3>{feature.title}</h3>
               <p>{feature.body}</p>
+              <div class="capability-art" aria-hidden="true">
+                <div class="capability-art-orbit">
+                  <span class="capability-art-node capability-art-node-one">
+                    <Icon name="database" size={18} />
+                  </span>
+                  <span class="capability-art-core">
+                    <Icon name={feature.icon} size={34} />
+                  </span>
+                  <span class="capability-art-node capability-art-node-two">
+                    <Icon name="network" size={18} />
+                  </span>
+                </div>
+              </div>
             </article>
           ))
         }
@@ -166,7 +179,7 @@ const summary =
           technologies.map((tech) => (
             <div class="technology-card">
               <span class="technology-symbol" aria-hidden="true">
-                {tech.short}
+                <Icon name={tech.icon} size={25} />
               </span>
               <strong>{tech.name}</strong>
               <span>{tech.category}</span>
@@ -201,22 +214,25 @@ const summary =
         <div class="diagram-column source">
           <span class="diagram-eyebrow">External authority</span>
           <Icon name="server" size={27} />
-          <strong>Infrastructure tools</strong>
+          <strong>Integrated systems</strong>
           <span>Compute · Storage · Observability</span>
+          <span>External sources remain authoritative</span>
         </div>
         <span class="diagram-arrow" aria-hidden="true">→</span>
         <div class="diagram-column center">
           <img src="/branding/kaori-logo.svg" alt="" width="38" height="38" />
           <strong>KAORI</strong>
-          <span>Normalize</span><span>Correlate</span><span>Commit evidence</span><span>Govern</span
+          <span>Normalize</span><span>Correlate</span><span>Committed evidence</span><span
+            >Govern</span
+          >
           >
         </div>
         <span class="diagram-arrow" aria-hidden="true">→</span>
         <div class="diagram-column consumer">
           <span class="diagram-eyebrow">Operational context</span>
           <Icon name="network" size={27} />
-          <strong>Teams & workflows</strong>
-          <span>Platform · Operations · Security</span>
+          <strong>Operational outcomes</strong>
+          <span>Visibility · Intelligence · Auditability</span>
         </div>
       </div>
     </div>
@@ -226,10 +242,10 @@ const summary =
     <div class="container experience-layout">
       <div class="section-intro">
         <p class="eyebrow">Product experience</p>
-        <h2>See the bigger<br /><span>operational picture.</span></h2>
+        <h2>See the platform<br /><span>in action.</span></h2>
         <p>
-          Unified navigation and evidence-backed views let operators connect what happened, where it
-          happened, and what should happen next.
+          KAORI connects visibility, evidence and governed workflows in one operational workspace.
+          This interface illustrates the experience, not live operational data.
         </p>
         <a
           class="button button-primary"
@@ -297,15 +313,20 @@ const summary =
     <div class="container closing-inner">
       <div>
         <p class="eyebrow">Explore KAORI</p><h2>
-          Infrastructure operations,<br />connected by evidence.
+          Ready to explore<br /><span>KAORI?</span>
         </h2>
+        <p class="closing-description">
+          Move from infrastructure signals to governed operational clarity.
+        </p>
       </div>
-      <a
-        class="button button-light"
-        href="https://app.kaori.cloud"
-        target="_blank"
-        rel="noopener noreferrer">Open Application <Icon name="arrow-up-right" size={18} /></a
-      >
+      <div class="closing-actions">
+        <a class="button button-primary" href="https://app.kaori.cloud"
+          >Open Application <Icon name="arrow-up-right" size={18} /></a
+        >
+        <a class="button button-outline-light" href="#architecture"
+          >Review Architecture <Icon name="arrow-right" size={17} /></a
+        >
+      </div>
     </div>
   </section>
 </BaseLayout>
