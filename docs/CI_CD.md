@@ -27,7 +27,7 @@ Temporary release runner co-location with the deployment VPS retains the SSH tru
 
 ## External protection configuration
 
-**Approved temporary exception (private GitHub Free organization):** protected branches/rulesets and protected GitHub Environments are not enforced under the current plan. Use issue-linked Draft PRs, a recorded manual reviewer decision, exact-SHA Developer Check, staging admission, and explicit human release verification/release acceptance. This is a compensating **procedure**, not equivalent enforcement. Do not claim protection is enabled; revisit enforcement if the plan changes.
+**Approved temporary exception (private GitHub Free organization):** protected branches/rulesets and protected GitHub Environments are not enforced under the current plan. Use issue-linked Draft PRs, a recorded manual reviewer decision, exact-SHA Developer Check, staging admission, and explicit release verification and human acceptance. This is a compensating **procedure**, not equivalent enforcement. Do not claim protection is enabled; revisit enforcement if the plan changes.
 
 Use **repository-level** Actions Variables and Secrets for this private repository; organization-level and environment-level secrets/variables must not be relied on. The Developer Check and Full Admission require no custom credentials. The canonical `publish-staging-image.yml` RC publisher and `deploy-staging-host.yml` release deployment use repository-scoped registry and SSH credentials with explicit operator authority and an admitted exact staging SHA. These are **manual** release operations and must not be turned into unconditional push-to-deploy behavior. Both were authored on staging, and the default-branch dispatch limitation is documented below.
 
@@ -37,7 +37,7 @@ Full admission checks must not be weakened or renamed to hide failures. Before m
 
 ## Source state
 
-The foundation, Home Page, CI/CD, container adapter and private ingress fixes were integrated in reviewed staging PRs #6–#17. The signed v0.1.0-rc.1 website candidate remains the last deployed **private** release verification artifact; it must not be treated as the current staging-source image after subsequent merges. A source change (such as website/app domain routing PR #19) requires a new exact-SHA Full Admission and immutable candidate before deployment. Public-edge publication at `kaori.cloud` remains a separate, reviewable release publication operation under #21; `app.kaori.cloud` remains the application (authority OXY7O/KAORI#2210).
+The foundation, Home Page, CI/CD, container adapter and private ingress fixes were integrated in reviewed staging PRs #6–#17. The signed v0.1.0-rc.1 website candidate remains the last deployed **private** release artifact; it must not be treated as the current staging-source image after subsequent merges. A source change (such as website/app domain routing PR #19) requires a new exact-SHA Full Admission and immutable candidate before deployment. Public-edge publication at `kaori.cloud` remains a separate, reviewable release publication operation under #21; `app.kaori.cloud` remains the application (authority OXY7O/KAORI#2210).
 
 ## Canonical Release Workflows
 
@@ -46,14 +46,14 @@ The foundation, Home Page, CI/CD, container adapter and private ingress fixes we
 | `developer-check.yml`       | Issue-linked PR → `kaori/staging`                                | Path-aware Route Checks, targeted Astro/format/build, optional Docker/Trivy and registry preflight.                        |
 | `quality.yml`               | Staging/main push, promotion PR, manual admission when available | Full Admission (format, typecheck, npm audit, static build) **and Docker Runtime Admission**; no deployment.               |
 | `publish-staging-image.yml` | Explicit RC manual dispatch                                      | Exact admitted staging SHA, immutable image, Trivy HIGH/CRITICAL, SBOM/provenance, keyless signature and release evidence. |
-| `deploy-staging-host.yml`   | Explicit release verification manual dispatch                                     | Pin SSH trust, validate signed RC/digest and approval reference; deploy only the standalone website.                       |
+| `deploy-staging-host.yml`   | Explicit release deployment dispatch                                     | Pin SSH trust, validate signed RC/digest and approval reference; deploy only the standalone website.                       |
 
 **Retired release bootstrap automation:** The prior single-use activation, private-port diagnosis, and ingress repair workflows/scripts were removed under #20. Their execution evidence remains linked to issues #10 and #15. These temporary staging triggers are not a supported release mechanism and must not be reactivated.
 
-GitHub `workflow_dispatch` requires the workflow on the **default branch**. Because the current `main` is still an initial seed pending human release acceptance, the two canonical manual workflows can be reviewed on staging but cannot be dispatched normally yet. **Do not promote unaccepted website code to main just to enable the button.** Public website release verification publication requires a _separate reviewed and one-time issue-authorized staging execution adapter_ until approved promotion makes manual dispatch available. It must be removed after use and preserve SHA, OCI, edge and human approval gates.
+GitHub `workflow_dispatch` requires the workflow on the **default branch**. Because the current `main` is still an initial seed pending human release acceptance, the two canonical manual workflows can be reviewed on staging but cannot be dispatched normally yet. **Do not promote unaccepted website code to main just to enable the button.** Public website publication requires a _separate reviewed and one-time issue-authorized staging execution adapter_ until approved promotion makes manual dispatch available. It must be removed after use and preserve SHA, OCI, edge and human approval gates.
 
 ## Release boundary and edge acceptance
 
-`https://kaori.cloud` belongs to KAORI Website; `https://app.kaori.cloud` belongs to KAORI Application; `https://auto.kaori.cloud` is unrelated automation. Domain authority does **not** mean live DNS/TLS cutover has happened. The website's currently working `127.0.0.1:18080` SSH-tunnel release verification proves only private host readiness, not public website publication.
+`https://kaori.cloud` belongs to KAORI Website; `https://app.kaori.cloud` belongs to KAORI Application; `https://auto.kaori.cloud` is unrelated automation. Domain authority does **not** mean live DNS/TLS cutover has happened. The website's currently working `127.0.0.1:18080` SSH-tunnel access verifies only private host readiness, not public website publication.
 
 Use only the existing KAORI shared-edge scripts and host-side DNS/TLS readiness/rollback runbook. Collect apex-vs-app routing, HTTPS certificate, Host/SNI negative checks, n8n unaffected, visual/accessibility and explicit human acceptance before promotion. Every public edge cutover is reviewed separately from the website container release.

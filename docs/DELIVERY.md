@@ -6,9 +6,9 @@ Follows the KAORI application delivery model, adapted to a static Astro site.
 2. Create issue-linked branch from `kaori/staging`. Never implement features on `main`.
 3. Draft PR to `kaori/staging`, run targeted Developer Check on exact work SHA.
 4. Review, approve and merge using traceable merge commit.
-5. Run Full Admission on exact staging SHA (Astro typecheck, formatter, npm security audit, build and Docker Runtime Admission). Browser accessibility/visual evidence is a separate real release verification gate, not a CI claim.
+5. Run Full Admission on exact staging SHA (Astro typecheck, formatter, npm security audit, build and Docker Runtime Admission). Browser accessibility/visual evidence is a separate release verification requirement, not a CI claim.
 6. Build/publish one immutable OCI image; retain exact SHA, digest, SBOM and security scan evidence.
-7. Deploy candidate independently to website release verification; collect light/dark/mobile visual acceptance.
+7. Deploy the candidate independently to the website release runtime; collect light/dark/mobile visual acceptance.
 8. Promote only through `kaori/staging` → `main` PR. Preserve the accepted image digest.
 9. Record post-promotion verification, release metadata and rollback reference.
 

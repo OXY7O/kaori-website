@@ -40,4 +40,4 @@ Single public informational Home Page only. It is not a live source of operation
 - No destination to missing pages / broken CTA
 - Human acceptance after staging integration
 
-Developer source/build checks are distinct from release verification. This issue is blocked by the foundation issue #2 until it is accepted and integrated into kaori/staging.
+Developer source/build checks are distinct from release verification. Its original foundation prerequisite #2 has been integrated into staging; final browser verification and human acceptance remain pending.
