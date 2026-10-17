@@ -4,6 +4,8 @@ Official public product website for **KAORI — Knowledge, Automation, Operation
 
 This repository is **not** the KAORI operational application. Product claims, UI identity and capability maturity inherit authority from [OXY7O/KAORI](https://github.com/OXY7O/KAORI), especially `docs/product/README.md` and `docs/design/KAORI_DESIGN_SYSTEM.md`. The website remains a static Astro site; no provider credentials, live operational data or runtime backend are included.
 
+**Public hostname contract:** landing page `https://kaori.cloud` · operational application `https://app.kaori.cloud`. This describes approved routing, not proof that the website's public DNS/TLS cutover has completed; private UAT remains separate.
+
 ## Stack
 
 Astro (static output), TypeScript, Tailwind CSS v4, Inter, and KAORI Violet. Development uses Docker Compose and a VS Code DevContainer. Production is planned as an independent, immutable static-image container behind the existing shared-edge Nginx/Certbot lifecycle.

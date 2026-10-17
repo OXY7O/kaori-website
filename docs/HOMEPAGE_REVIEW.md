@@ -9,7 +9,7 @@
 
 ## Page scope
 
-Single public informational Home Page only. It is not a live source of operational truth and does not require KAORI authentication. The Open Application CTA navigates to the separate existing KAORI application.
+Single public informational Home Page at `https://kaori.cloud` only. It is not a live source of operational truth and does not require KAORI authentication. All **Open Application** CTAs navigate to the separate existing KAORI application at `https://app.kaori.cloud` (KAORI app authority `OXY7O/KAORI#2210`). The website must not send those CTAs back to its own apex.
 
 ## Structure
 
@@ -37,7 +37,8 @@ Single public informational Home Page only. It is not a live source of operation
 - Mobile 375–430 light/dark
 - Keyboard navigation, theme toggle persistence, WCAG text contrast, focus visible, reduced-motion preference
 - No horizontal overflow or clipping, browser runtime and screenshot review
-- No destination to missing pages / broken CTA
+- Public website canonical/OG URL points to `https://kaori.cloud`; all Open Application links point to `https://app.kaori.cloud` and do not self-link
+- Domain-specific CTA destinations are verified in browser after an approved app and apex routing/certificate check; no destination to missing pages / broken CTA
 - Human acceptance after staging integration
 
 Developer source/build checks are distinct from UAT. This issue is blocked by the foundation issue #2 until it is accepted and integrated into kaori/staging.

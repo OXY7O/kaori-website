@@ -11,7 +11,7 @@ Website application paths (proposed, not deployed):
 - Container project: `kaori-website`; internal upstream HTTP port **8080**, with **no host ports**.
 - Edge DNS / Nginx / Certbot and host **80/443** remain owned by `/opt/shared-edge`, outside this repository.
 
-Never modify `/opt/kaori`, `/etc/kaori`, `/var/lib/kaori`, the KAORI application Compose project or the preexisting `kaori.cloud` site registration to deploy the website.
+Never modify `/opt/kaori`, `/etc/kaori`, `/var/lib/kaori` or the KAORI application Compose project when deploying the website. The approved public hostname split is `kaori.cloud` for this website and `app.kaori.cloud` for the application (app migration authority: `OXY7O/KAORI#2210`). If the legacy apex `kaori.cloud` edge site still points at the application during transition, treat its reassignment as a **separately reviewed shared-edge cutover**. Do not overwrite a live registration without operator approval, rollback, and domain/TLS evidence.
 
 The same versioned **application deployment protocol** as KAORI is used: exact accepted staging SHA â Full Admission â build once â immutable OCI image digest â dedicated host SSH trust boundary â health verification â UAT evidence â human acceptance â promotion of the same digest to production. A docker image build or Astro CI success alone is **not** website release acceptance.
 
@@ -38,7 +38,7 @@ Production image/Compose use an unprivileged server, health endpoint at `/health
 1. Review SSH identity and permissions for a **separate website deployment identity**. Follow KAORI's `kaori-deploy` trust practices; do not repurpose or overwrite its private key, registration or server runtime.
 2. Confirm allocated CPU/memory, Docker resource limits and available container/registry storage. The shared VPS may also host the self-hosted CI runner.
 3. Prepare the above app and state directories with restricted ownership; verify no naming/Compose project collision.
-4. Review the DNS hostname to use. Do not assume or overwrite `kaori.cloud`.
+4. Verify the approved hostname split: the public **website** is `kaori.cloud`; the operational **app** is `app.kaori.cloud`. Check that app-side DNS/TLS/Host routing continues to pass, then review and explicitly authorize reassignment of the apex edge registration to the website. Do not treat the currently working SSH-tunnel UAT deployment as proof that the public apex cutover is complete.
 5. Verify exact staging SHA, completed website Full Admission and immutable digest; ensure OCI labels match SHA and SemVer candidate.
 6. With GitHub Free/private, use repository-level Actions secrets/variables and an explicit manual UAT authorization record; protected GitHub Environments and environment-level secrets are not available. Pin the website target's SSH host key. Never use a direct runner-to-localhost deployment shortcut.
 7. A release candidate build should retain verified SBOM, vulnerability scan, provenance and signature evidence consistent with KAORI App policy. Those workflows are tracked in #4 and remain incomplete until implemented and executed.
@@ -75,6 +75,8 @@ Rollback is **not** a database restore because this is a stateless website. Pres
 
 ## Public-edge publication is separate
 
+**Approved routing:** `https://kaori.cloud` → KAORI Website (static landing page); `https://app.kaori.cloud` → KAORI Application (login/dashboard). Both must remain separate site IDs and upstreams. The existing app migration was handled under `OXY7O/KAORI#2210`; public apex website publication is still a distinct operational decision and must not be inferred from private UAT checks. Preserve `auto.kaori.cloud` and any unrelated edge sites.
+
 Follow **`OXY7O/KAORI/example/shared-edge/README.md`** and **`docs/deployment/SHARED_EDGE_OPERATIONS.md`** with the **already installed** host scripts. Do not copy/reimplement Nginx/Certbot here or mutate `/opt/shared-edge` until the website container and DNS identity are approved.
 
 Example _shape only_, run as an explicitly authorized shared-edge operator after the website container is healthy:
@@ -83,7 +85,7 @@ Example _shape only_, run as an explicitly authorized shared-edge operator after
 cd /opt/shared-edge/runtime
 bash ./publish-container.sh \
   --site-id kaori-website \
-  --domain '<approved-website-hostname>' \
+  --domain kaori.cloud \
   --container '<verified-website-web-container-id>' \
   --alias kaori-website-web \
   --port 8080 \
