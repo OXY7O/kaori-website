@@ -85,11 +85,22 @@ docker run --rm --user 0:0 \
   -e DOCKER_CONFIG=/root/.docker \
   -v "$HOME/.docker:/root/.docker:ro" \
   ghcr.io/sigstore/cosign/cosign:v3.1.3 sign --yes "$ref"
-docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker \
-  -v "$HOME/.docker:/root/.docker:ro" \
-  ghcr.io/sigstore/cosign/cosign:v3.1.3 verify \
-  --certificate-identity "$identity" \
-  --certificate-oidc-issuer https://token.actions.githubusercontent.com "$ref" > website-signature-verification.json
+# Registry OCI referrers may propagate after sign returns. Preserve every trust
+# requirement; retry only the mandatory cryptographic verification, never skip it.
+signature_verified=false
+for attempt in $(seq 1 8); do
+  if docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker \
+    -v "$HOME/.docker:/root/.docker:ro" \
+    ghcr.io/sigstore/cosign/cosign:v3.1.3 verify \
+    --certificate-identity "$identity" \
+    --certificate-oidc-issuer https://token.actions.githubusercontent.com "$ref" > website-signature-verification.json; then
+    signature_verified=true
+    break
+  fi
+  printf 'Signature not yet verifiable (attempt %s/8); preserving fail-closed policy\n' "$attempt" >&2
+  if (( attempt < 8 )); then sleep 15; fi
+done
+[[ "$signature_verified" == true ]] || fail 'mandatory signature verification exhausted bounded registry retries'
 test -s website-signature-verification.json
 for entry in 'website-sbom.spdx.json:spdxjson' 'website-provenance.json:slsaprovenance1'; do
   predicate="${entry%%:*}"
@@ -102,12 +113,21 @@ for entry in 'website-sbom.spdx.json:spdxjson' 'website-provenance.json:slsaprov
     --predicate "/workspace/$predicate" --type "$kind" "$ref"
 done
 for kind in spdxjson slsaprovenance1; do
-  docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker \
-    -v "$HOME/.docker:/root/.docker:ro" \
-    ghcr.io/sigstore/cosign/cosign:v3.1.3 verify-attestation \
-    --certificate-identity "$identity" \
-    --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-    --type "$kind" "$ref" > "verification-$kind.json"
+  attestation_verified=false
+  for attempt in $(seq 1 8); do
+    if docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker \
+      -v "$HOME/.docker:/root/.docker:ro" \
+      ghcr.io/sigstore/cosign/cosign:v3.1.3 verify-attestation \
+      --certificate-identity "$identity" \
+      --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+      --type "$kind" "$ref" > "verification-$kind.json"; then
+      attestation_verified=true
+      break
+    fi
+    printf 'Attestation %s not yet verifiable (attempt %s/8)\n' "$kind" "$attempt" >&2
+    if (( attempt < 8 )); then sleep 15; fi
+  done
+  [[ "$attestation_verified" == true ]] || fail "mandatory $kind attestation verification exhausted bounded registry retries"
   test -s "verification-$kind.json"
 done
 sbom_sha="sha256:$(sha256sum website-sbom.spdx.json | awk '{print $1}')"
