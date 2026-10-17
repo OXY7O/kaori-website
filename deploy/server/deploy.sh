@@ -15,8 +15,8 @@ state_dir="${KAORI_WEBSITE_STATE_DIR:-/var/lib/kaori-website/deploy-state}"
 [[ -d "$state_dir" && ! -L "$state_dir" && -w "$state_dir" ]] || fail 'website release state directory must be prepared and writable by deployment identity'
 docker info >/dev/null || fail 'Docker daemon unavailable'
 compose_args=(-f "$compose_file")
-if [[ "${KAORI_WEBSITE_UAT_LOCAL_ONLY:-}" == 1 ]]; then
-    override="$script_dir/compose.uat.yml"
+if [[ "${KAORI_WEBSITE_RELEASE_LOCAL_ONLY:-}" == 1 ]]; then
+    override="$script_dir/compose.release.yml"
     [[ -f "$override" && ! -L "$override" ]] || { echo 'BLOCK: missing trusted loopback override' >&2; exit 1; }
     compose_args+=(-f "$override")
 fi

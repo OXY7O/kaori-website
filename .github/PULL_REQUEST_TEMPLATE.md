@@ -20,14 +20,14 @@ Refs #
 
 ## Acceptance Criteria Coverage
 
-Which Issue criteria are implemented? Which remain pending UAT?
+Which Issue criteria are implemented? Which remain pending release acceptance?
 
 ## Verification Evidence
 
 - **Validated SHA:**
 - **Developer Check:**
 - **Staging Full Admission:**
-- **Browser light/dark/mobile UAT:**
+- **Browser light/dark/mobile verification:**
 - **Warnings/skips:**
 
 ## Security / Data / Operational Impact
@@ -38,7 +38,7 @@ Identify any dependency, permission, data, deployment or public-edge effects. Us
 
 - **OCI digest:**
 - **Staging deployment:**
-- **UAT acceptance:**
+- **Release acceptance:**
 - **Rollback digest:**
 
 ## Reviewer Checklist
@@ -46,5 +46,5 @@ Identify any dependency, permission, data, deployment or public-edge effects. Us
 - [ ] Source branch is Issue-linked; base is \`kaori/staging\`.
 - [ ] Existing KAORI product, design and delivery authority preserved.
 - [ ] Review comments resolved and exact-head Developer Check passed.
-- [ ] No deployment or release claims without full staging and UAT evidence.
+- [ ] No deployment or release claims without full staging, release verification and human acceptance evidence.
 - [ ] Promotion to \`main\` only comes from \`kaori/staging\`.

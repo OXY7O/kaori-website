@@ -116,8 +116,8 @@ jq -n --arg tag "$tag" --arg sha "$sha" --arg digest "$digest" \
   '{tag_name:$tag,target_commitish:$sha,name:("KAORI Website "+$tag),
     body:("Staging source SHA: "+$sha+"\nImmutable digest: "+$digest+
     "\nDeployment authority: "+$image+"\nSPDX SBOM SHA256: "+$sbom+
-    "\nTrivy security and signed SBOM/provenance: PASS\nUAT: PENDING; human acceptance required."),
+    "\nTrivy security and signed SBOM/provenance: PASS\nRelease verification: PENDING; human acceptance required."),
     draft:false,prerelease:true,make_latest:"false"}' |
   curl -fsS "${headers[@]}" -H 'Content-Type: application/json' \
     -X POST --data-binary @- "$api/releases" >/dev/null
-printf 'PASS: candidate %s built from %s and published at %s; UAT pending\n' "$tag" "$sha" "$ref"
+printf 'PASS: candidate %s built from %s and published at %s; release verification pending\n' "$tag" "$sha" "$ref"
