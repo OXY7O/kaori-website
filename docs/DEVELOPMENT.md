@@ -15,7 +15,7 @@ npm run build
 npm run check-format
 ```
 
-The approved editorial Home Page is implemented on issue #3's work branch; its browser/light-dark/mobile acceptance remains pending until staging/UAT.
+The approved editorial Home Page is implemented on issue #3's work branch; its browser/light-dark/mobile acceptance remains pending until staging/release verification.
 
 ## Docker CLI (dev)
 

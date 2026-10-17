@@ -19,7 +19,7 @@ Without a DevContainer, use Node.js 22 and npm 10, then run `npm ci && npm run d
 
 ## Governance
 
-Workflow: Issue → issue-scoped branch from `kaori/staging` → Draft PR → Developer Check → reviewed merge to `kaori/staging` → Full Admission → UAT/human acceptance → promotion PR from `kaori/staging` to `main` → release.
+Workflow: Issue → issue-scoped branch from `kaori/staging` → Draft PR → Developer Check → reviewed merge to `kaori/staging` → Full Admission → release verification/human acceptance → promotion PR from `kaori/staging` to `main` → release.
 
 Do not direct-commit product code to `main`. `main` holds the seed history until an accepted staging promotion. Do not promote arbitrary work branches. Issue #1 is the foundation umbrella; #2 is DevContainer/governance, #3 is Home UI, #4 is CI/CD and #5 is isolated deployment.
 
