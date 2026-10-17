@@ -1,100 +1,30 @@
 ---
-
+import Icon from "./Icon.astro";
 ---
 
-<div
-  class="hero-art"
-  aria-label="Illustration of an infrastructure facility in a violet alpine landscape, representing connected operations"
-  role="img"
->
-  <svg
-    class="landscape"
-    viewBox="0 0 780 525"
-    xmlns="http://www.w3.org/2000/svg"
-    aria-hidden="true"
-  >
-    <defs>
-      <linearGradient id="sky" x1="0" y1="0" x2="0.2" y2="1">
-        <stop offset="0" stop-color="#eae3ff"></stop><stop offset=".55" stop-color="#cec0fc"
-        ></stop><stop offset="1" stop-color="#f5f3ff"></stop>
-      </linearGradient>
-      <linearGradient id="far" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#c3b5ef"></stop><stop offset="1" stop-color="#8575c6"></stop>
-      </linearGradient>
-      <linearGradient id="near" x1="0" y1="0" x2="0.6" y2="1">
-        <stop offset="0" stop-color="#927ad3"></stop><stop offset="1" stop-color="#554480"></stop>
-      </linearGradient>
-      <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#39314f"></stop><stop offset="1" stop-color="#151325"></stop>
-      </linearGradient>
-      <linearGradient id="roof" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#65508e"></stop><stop offset="1" stop-color="#3b315b"></stop>
-      </linearGradient>
-      <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#b5a8ff"></stop><stop offset="1" stop-color="#5643b6"></stop>
-      </linearGradient>
-      <radialGradient id="light"
-        ><stop offset="0" stop-color="#a78bfa" stop-opacity=".65"></stop><stop
-          offset="1"
-          stop-color="#a78bfa"
-          stop-opacity="0"></stop></radialGradient
-      >
-    </defs>
-    <circle cx="508" cy="187" r="198" fill="url(#light)"></circle>
-    <path
-      d="M0 390 100 280 148 309 290 144 346 221 450 62 569 241 639 177 780 374v151H0Z"
-      fill="url(#far)"></path>
-    <path
-      d="m257 210 33-66 55 77-38-22-18 13-11-21Z M408 139l42-77 78 142-57-35-19 17-24-37Z M619 213l20-36 43 55-27-12-17 9Z"
-      fill="#f7f5ff"
-      opacity=".9"></path>
-    <path
-      d="M0 419 102 350 191 399 290 288 348 350 459 236 547 344 633 298 780 404v121H0Z"
-      fill="url(#near)"></path>
-    <path d="M0 440q170-45 300-7t260-4q115-25 220 5v91H0Z" fill="#3b3556"></path>
-    <g fill="#252239" opacity=".96">
-      <path
-        d="m62 426 23-95 23 95h-11l6 32H68l8-32ZM119 437l18-81 19 81h-9l5 23h-29l5-23ZM666 432l25-120 27 120h-13l8 36h-42l9-36ZM721 446l17-84 21 84h-10l5 22h-30l6-22Z"
-      ></path>
-    </g>
-    <ellipse cx="425" cy="481" rx="288" ry="33" fill="#22192d" opacity=".42"></ellipse>
-    <path d="m209 355 250-51 172 55-246 57Z" fill="url(#roof)" stroke="#9174da" stroke-width="2"
-    ></path>
-    <path d="m209 355 176 61v110l-176-58Z" fill="url(#wall)" stroke="#66538d" stroke-width="2"
-    ></path>
-    <path d="m385 416 246-57v109l-246 58Z" fill="#211d33" stroke="#7762af" stroke-width="2"></path>
-    <path d="m432 373 158-33 44 13-151 37Z" fill="#67558d"></path>
-    <g fill="url(#glass)" stroke="#a78bfa" stroke-width="1.5">
-      <path
-        d="m230 390 44 15v42l-44-14ZM291 410l48 17v39l-48-16ZM405 432l54-12v51l-54 13ZM476 416l61-14v52l-61 15ZM552 398l56-13v49l-56 13Z"
-      ></path>
-    </g>
-    <g stroke="#c9b9ff" stroke-width="1" opacity=".68">
-      <path d="m251 398v43m62-23v43m119-35v52m73-67v51m75-70v47"></path>
-      <path d="m230 411 44 15m17 3 48 17m66 6 54-12m17-5 61-14m15-4 56-13"></path>
-    </g>
-    <path d="m313 382 68-14 42 13-68 16Z" fill="#725baa"></path>
-    <path d="m313 382 42 15v71l-42-14Z" fill="#3c305d" stroke="#a78bfa" stroke-width="1"></path>
-    <path d="m355 397 68-16v74l-68 13Z" fill="#372950" stroke="#a78bfa" stroke-width="1"></path>
-    <rect x="371" y="407" width="32" height="32" rx="6" fill="#7152ce"></rect>
-    <path d="m382 414 11-2 5 6-11 2-5-6Zm0 0-3 13 8 4 0-11Zm5 17 11-6v-7l-11 2Z" fill="#e7dfff"
-    ></path>
-    <g fill="#bfaaff" opacity=".9"
-      ><circle cx="225" cy="465" r="3"></circle><circle cx="596" cy="479" r="3"></circle><circle
-        cx="650"
-        cy="466"
-        r="2"></circle></g
-    >
-    <path
-      d="m110 480q136-25 204 0m172 13q145-29 234-6"
-      fill="none"
-      stroke="#a78bfa"
-      stroke-width="2"
-      opacity=".45"></path>
-  </svg>
-  <div class="art-label label-visibility"><span class="label-glyph">◇</span> Visibility</div>
-  <div class="art-label label-operations"><span class="label-glyph">⌘</span> Operations</div>
-  <div class="art-label label-governance"><span class="label-glyph">⬡</span> Governance</div>
-  <div class="art-label label-intelligence"><span class="label-glyph">⌁</span> Intelligence</div>
-  <p class="art-disclaimer">Concept illustration · Not a live infrastructure view</p>
-</div>
+<figure class="hero-art">
+  <div class="hero-art-frame">
+    <img
+      class="hero-fabric"
+      src="/branding/kaori-operations-fabric.svg"
+      alt="Conceptual KAORI operations fabric connecting infrastructure systems to an evidence-driven core"
+      width="960"
+      height="320"
+      fetchpriority="high"
+      decoding="async"
+    />
+    <span class="hero-fabric-label hero-fabric-label-visibility">
+      <Icon name="eye" size={16} /> Visibility
+    </span>
+    <span class="hero-fabric-label hero-fabric-label-control">
+      <Icon name="sliders-horizontal" size={16} /> Control
+    </span>
+    <span class="hero-fabric-label hero-fabric-label-intelligence">
+      <Icon name="brain-circuit" size={16} /> Intelligence
+    </span>
+    <span class="hero-fabric-label hero-fabric-label-assurance">
+      <Icon name="shield-check" size={16} /> Assurance
+    </span>
+  </div>
+  <figcaption class="art-disclaimer">Concept illustration · Not a live infrastructure view</figcaption>
+</figure>
