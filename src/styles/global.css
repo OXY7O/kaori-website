@@ -1390,8 +1390,7 @@ svg {
   border: 1px solid rgba(196, 181, 253, 0.27);
   border-radius: 16px;
   background:
-    radial-gradient(circle at 78% 50%, rgba(124, 58, 237, 0.28), transparent 35%),
-    #1a112a;
+    radial-gradient(circle at 78% 50%, rgba(124, 58, 237, 0.28), transparent 35%), #1a112a;
 }
 .closing-inner h2 span {
   color: #c4b5fd;
