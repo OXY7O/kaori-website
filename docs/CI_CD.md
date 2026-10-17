@@ -10,7 +10,7 @@ Use the same **physical or organization runner pool** as KAORI, without replacin
 | ------------------------- | ----------------------------------- |
 | Developer Check / routing | `self-hosted,linux,x64,platform-ci` |
 | Staging Full Admission    | `self-hosted,linux,x64,kaori-ci`    |
-| Release control-plane | `self-hosted,linux,x64,platform-ci` |
+| Release control-plane     | `self-hosted,linux,x64,platform-ci` |
 
 **Important:** A runner registered exclusively for the `OXY7O/KAORI` repository will _not_ execute workflows from `OXY7O/kaori-website` merely because the labels match. The operator must grant the new repo access via an appropriately scoped **organization runner or runner group** (or an additional independent registration, if approved). Runner registration and groups are external operational authority and must be inspected before CI is counted as PASS. Do not deregister or repurpose KAORI's working runner in order to enable this repository.
 
@@ -46,7 +46,7 @@ The foundation, Home Page, CI/CD, container adapter and private ingress fixes we
 | `developer-check.yml`       | Issue-linked PR → `kaori/staging`                                | Path-aware Route Checks, targeted Astro/format/build, optional Docker/Trivy and registry preflight.                        |
 | `quality.yml`               | Staging/main push, promotion PR, manual admission when available | Full Admission (format, typecheck, npm audit, static build) **and Docker Runtime Admission**; no deployment.               |
 | `publish-staging-image.yml` | Explicit RC manual dispatch                                      | Exact admitted staging SHA, immutable image, Trivy HIGH/CRITICAL, SBOM/provenance, keyless signature and release evidence. |
-| `deploy-staging-host.yml`   | Explicit release deployment dispatch                                     | Pin SSH trust, validate signed RC/digest and approval reference; deploy only the standalone website.                       |
+| `deploy-staging-host.yml`   | Explicit release deployment dispatch                             | Pin SSH trust, validate signed RC/digest and approval reference; deploy only the standalone website.                       |
 
 **Retired release bootstrap automation:** The prior single-use activation, private-port diagnosis, and ingress repair workflows/scripts were removed under #20. Their execution evidence remains linked to issues #10 and #15. These temporary staging triggers are not a supported release mechanism and must not be reactivated.
 
