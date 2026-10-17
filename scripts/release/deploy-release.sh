@@ -88,9 +88,9 @@ export DOCKER_CONFIG="$docker_config"
 printf '%s' "$registry_pass" | docker login "$registry_host" --username "$registry_user" --password-stdin >/dev/null
 test -s "$remote_release/server/deploy.sh"
 # Site remains local to the VPS; authorized reviewer reaches it over SSH tunnel.
-export KAORI_WEBSITE_UAT_LOCAL_ONLY=1
+export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1
 bash "$remote_release/server/deploy.sh" "$image_ref" "$source_sha" "$release_tag"
 docker logout "$registry_host" >/dev/null 2>&1 || true
 REMOTE_DEPLOY
 } | ssh "${ssh_opts[@]}" "$target" 'bash -se'
-echo "UAT container deployed at accepted digest $digest; public edge and browser/human acceptance pending."
+echo "Release container deployed at accepted digest $digest; public edge and browser/human acceptance pending."

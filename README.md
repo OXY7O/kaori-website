@@ -4,7 +4,7 @@ Official public product website for **KAORI — Knowledge, Automation, Operation
 
 This repository is **not** the KAORI operational application. Product claims, UI identity and capability maturity inherit authority from [OXY7O/KAORI](https://github.com/OXY7O/KAORI), especially `docs/product/README.md` and `docs/design/KAORI_DESIGN_SYSTEM.md`. The website remains a static Astro site; no provider credentials, live operational data or runtime backend are included.
 
-**Public hostname contract:** landing page `https://kaori.cloud` · operational application `https://app.kaori.cloud`. This describes approved routing, not proof that the website's public DNS/TLS cutover has completed; private UAT remains separate.
+**Public hostname contract:** landing page `https://kaori.cloud` · operational application `https://app.kaori.cloud`. This defines approved routing, not proof of website DNS/TLS publication; private release verification remains separate.
 
 ## Stack
 
@@ -21,7 +21,7 @@ Without a DevContainer, use Node.js 22 and npm 10, then run `npm ci && npm run d
 
 ## Governance
 
-Workflow: Issue → issue-scoped branch from `kaori/staging` → Draft PR → Developer Check → reviewed merge to `kaori/staging` → Full Admission → UAT/human acceptance → promotion PR from `kaori/staging` to `main` → release.
+Workflow: Issue → issue-scoped branch from `kaori/staging` → Draft PR → Developer Check → reviewed merge to `kaori/staging` → Full Admission → release verification/human acceptance → promotion PR from `kaori/staging` to `main` → release.
 
 Do not direct-commit product code to `main`. `main` holds the seed history until an accepted staging promotion. Do not promote arbitrary work branches. Issue #1 is the foundation umbrella; #2 is DevContainer/governance, #3 is Home UI, #4 is CI/CD and #5 is isolated deployment.
 

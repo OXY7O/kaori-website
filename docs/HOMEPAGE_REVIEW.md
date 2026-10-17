@@ -9,7 +9,7 @@
 
 ## Page scope
 
-Single public informational Home Page at `https://kaori.cloud` only. It is not a live source of operational truth and does not require KAORI authentication. All **Open Application** CTAs navigate to the separate existing KAORI application at `https://app.kaori.cloud` (KAORI app authority `OXY7O/KAORI#2210`). The website must not send those CTAs back to its own apex.
+Single public informational Home Page at `https://kaori.cloud` only. It is not a live source of operational truth and does not require KAORI authentication. All **Open Application** CTAs navigate to the separate KAORI application at `https://app.kaori.cloud` (authority `OXY7O/KAORI#2210`), rather than back to the landing page.
 
 ## Structure
 
@@ -37,8 +37,8 @@ Single public informational Home Page at `https://kaori.cloud` only. It is not a
 - Mobile 375–430 light/dark
 - Keyboard navigation, theme toggle persistence, WCAG text contrast, focus visible, reduced-motion preference
 - No horizontal overflow or clipping, browser runtime and screenshot review
-- Public website canonical/OG URL points to `https://kaori.cloud`; all Open Application links point to `https://app.kaori.cloud` and do not self-link
-- Domain-specific CTA destinations are verified in browser after an approved app and apex routing/certificate check; no destination to missing pages / broken CTA
+- Public website canonical/OG URL points to `https://kaori.cloud`; Open Application links point to `https://app.kaori.cloud` and do not self-link
+- Verify CTA destinations after application hostname and apex DNS/TLS publication; no broken destination links
 - Human acceptance after staging integration
 
-Developer source/build checks are distinct from UAT. This issue is blocked by the foundation issue #2 until it is accepted and integrated into kaori/staging.
+Developer source/build checks are distinct from release verification. Its original foundation prerequisite #2 has been integrated into staging; final browser verification and human acceptance remain pending.
