@@ -41,20 +41,19 @@ The foundation, Home Page, CI/CD, container adapter and UAT/private loopback fix
 
 ## Canonical Actions inventory (issue #20)
 
-| Workflow | Trigger | Responsibility |
-| -------- | ------- | -------------- |
-| `developer-check.yml` | Issue-linked PR → `kaori/staging` | Path-aware Route Checks, targeted Astro/format/build, optional Docker/Trivy and registry preflight. |
-| `quality.yml` | Staging/main push, promotion PR, manual admission when available | Full Admission (format, typecheck, npm audit, static build) **and Docker Runtime Admission**; no deployment. |
-| `publish-staging-image.yml` | Explicit RC manual dispatch | Exact admitted staging SHA, immutable image, Trivy HIGH/CRITICAL, SBOM/provenance, keyless signature and release evidence. |
-| `deploy-staging-host.yml` | Explicit UAT manual dispatch | Pin SSH trust, validate signed RC/digest and approval reference; deploy only the standalone website. |
+| Workflow                    | Trigger                                                          | Responsibility                                                                                                             |
+| --------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `developer-check.yml`       | Issue-linked PR → `kaori/staging`                                | Path-aware Route Checks, targeted Astro/format/build, optional Docker/Trivy and registry preflight.                        |
+| `quality.yml`               | Staging/main push, promotion PR, manual admission when available | Full Admission (format, typecheck, npm audit, static build) **and Docker Runtime Admission**; no deployment.               |
+| `publish-staging-image.yml` | Explicit RC manual dispatch                                      | Exact admitted staging SHA, immutable image, Trivy HIGH/CRITICAL, SBOM/provenance, keyless signature and release evidence. |
+| `deploy-staging-host.yml`   | Explicit UAT manual dispatch                                     | Pin SSH trust, validate signed RC/digest and approval reference; deploy only the standalone website.                       |
 
 **Retired (historical UAT evidence only):** `uat-once.yml`, `uat-port-diagnostic.yml`, `uat-loopback-repair-once.yml`, and their single-use `scripts/uat/diagnose-host-port.sh` / `scripts/uat/repair-loopback.sh`. Their original runs and findings remain linked to #10/#15. These were issue-specific staging bootstrap triggers—not production release mechanisms—and must not be rearmed by editing marker commits.
 
-GitHub `workflow_dispatch` requires the workflow on the **default branch**. Because the current `main` is still an initial seed pending human release acceptance, the two canonical manual workflows can be reviewed on staging but cannot be dispatched normally yet. **Do not promote unaccepted website code to main just to enable the button.** Public website UAT publication requires a *separate reviewed and one-time issue-authorized staging execution adapter* until approved promotion makes manual dispatch available. It must be removed after use and preserve SHA, OCI, edge and human approval gates.
+GitHub `workflow_dispatch` requires the workflow on the **default branch**. Because the current `main` is still an initial seed pending human release acceptance, the two canonical manual workflows can be reviewed on staging but cannot be dispatched normally yet. **Do not promote unaccepted website code to main just to enable the button.** Public website UAT publication requires a _separate reviewed and one-time issue-authorized staging execution adapter_ until approved promotion makes manual dispatch available. It must be removed after use and preserve SHA, OCI, edge and human approval gates.
 
 ## Release boundary and edge acceptance
 
 `https://kaori.cloud` belongs to KAORI Website; `https://app.kaori.cloud` belongs to KAORI Application; `https://auto.kaori.cloud` is unrelated automation. Domain authority does **not** mean live DNS/TLS cutover has happened. The website's currently working `127.0.0.1:18080` SSH-tunnel UAT proves only private host readiness, not public website publication.
 
 Use only the existing KAORI shared-edge scripts and host-side DNS/TLS readiness/rollback runbook. Collect apex-vs-app routing, HTTPS certificate, Host/SNI negative checks, n8n unaffected, visual/accessibility and explicit human acceptance before promotion. Every public edge cutover is reviewed separately from the website container release.
-
