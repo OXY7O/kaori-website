@@ -19,11 +19,11 @@
 
 ## Website and Application
 
-| Surface | Address | Responsibility |
-| --- | --- | --- |
-| KAORI Website | [kaori.cloud](https://kaori.cloud) | Public informational website and product introduction |
-| KAORI Application | [app.kaori.cloud](https://app.kaori.cloud) | Authenticated infrastructure operations workspace |
-| Automation service | `auto.kaori.cloud` | Independent n8n service; not owned by this website |
+| Surface            | Address                                    | Responsibility                                        |
+| ------------------ | ------------------------------------------ | ----------------------------------------------------- |
+| KAORI Website      | [kaori.cloud](https://kaori.cloud)         | Public informational website and product introduction |
+| KAORI Application  | [app.kaori.cloud](https://app.kaori.cloud) | Authenticated infrastructure operations workspace     |
+| Automation service | `auto.kaori.cloud`                         | Independent n8n service; not owned by this website    |
 
 The website runs in the dedicated `kaori-website` Docker Compose project and uses the existing shared-edge Nginx/Certbot runtime. It does **not** own HTTPS ingress, the KAORI Application database, authentication, workers or n8n.
 
@@ -89,14 +89,14 @@ The published RC identity, rollback receipt and accepted browser evidence are re
 
 ## Documentation
 
-| Area | Reference |
-| --- | --- |
-| Development | [Development guide](docs/DEVELOPMENT.md) |
-| Architecture and design | [Architecture](docs/ARCHITECTURE.md) |
-| Homepage visual review | [Homepage review contract](docs/HOMEPAGE_REVIEW.md) |
-| Quality and CI/CD | [CI/CD gates](docs/CI_CD.md) |
-| Delivery governance | [Delivery flow](docs/DELIVERY.md) |
-| Server/edge release boundary | [Deployment and rollback](docs/DEPLOYMENT.md) |
+| Area                         | Reference                                           |
+| ---------------------------- | --------------------------------------------------- |
+| Development                  | [Development guide](docs/DEVELOPMENT.md)            |
+| Architecture and design      | [Architecture](docs/ARCHITECTURE.md)                |
+| Homepage visual review       | [Homepage review contract](docs/HOMEPAGE_REVIEW.md) |
+| Quality and CI/CD            | [CI/CD gates](docs/CI_CD.md)                        |
+| Delivery governance          | [Delivery flow](docs/DELIVERY.md)                   |
+| Server/edge release boundary | [Deployment and rollback](docs/DEPLOYMENT.md)       |
 
 ## Ownership and Security
 
