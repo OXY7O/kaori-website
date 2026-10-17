@@ -69,7 +69,7 @@ jobs:
             esac
             case "$path" in package.json|package-lock.json) dependencies=true ;; esac
             case "$path" in Dockerfile|compose.*|deploy/server/*|scripts/container_smoke.sh) container=true ;; esac
-            case "$path" in scripts/release/*|.github/workflows/uat-once.yml|.github/workflows/publish-staging-image.yml|.github/workflows/deploy-staging-host.yml) release_config=true ;; esac
+            case "$path" in scripts/release/*|.github/workflows/publish-staging-image.yml|.github/workflows/deploy-staging-host.yml) release_config=true ;; esac
           done < changed-files.txt
           echo "web=$web" >> "$GITHUB_OUTPUT"
           echo "dependencies=$dependencies" >> "$GITHUB_OUTPUT"
