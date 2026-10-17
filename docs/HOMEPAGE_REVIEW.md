@@ -42,3 +42,15 @@ Single public informational Home Page at `https://kaori.cloud` only. It is not a
 - Human acceptance after staging integration
 
 Developer source/build checks are distinct from release verification. Its original foundation prerequisite #2 has been integrated into staging; final browser verification and human acceptance remain pending.
+
+## Approved brand alignment implementation — issue #27
+
+The maintainer approved full-section website mockups and required parity with the existing KAORI Application iconography and login visual language. This work retains the approved **editorial public website**: dark-violet hero and closing handoff; neutral-first content cards; four capability domains; six illustrative integration examples; capability-first architecture and explicitly conceptual product preview.
+
+- Official logo: `public/branding/kaori-logo.svg` matches the application's canonical `app/static/images/kaori-logo.svg`.
+- Official operations-fabric artwork: `public/branding/kaori-operations-fabric.svg` copied **unchanged** from application `app/static/images/kaori-login-operations-fabric.svg`, source of truth in `OXY7O/KAORI`.
+- Iconography: semantic Lucide-style paths via `src/components/Icon.astro` with the same stroke vocabulary as the KAORI Application, never invented provider logo glyphs.
+- Capability/technology cards and diagrams are editorial explanations, **not live operational widgets**. Never fabricate inventory counts, SLIs, security posture or integration status.
+- All public application links target `https://app.kaori.cloud`; private application repository links are withheld from the public footer. Both light and dark modes retain the Violet/Inter family identity.
+
+**Release checks still required:** 1366/1440 desktop, 768/1024 tablet, 375/390/430 mobile, keyboard navigation/focus and 200% zoom, no clipping, explicit concept text, real browser CTA tests, all three domain health checks, distinct signed source SHA/digest and human review. Successful code checks do not by themselves prove Visual QA or final acceptance.
