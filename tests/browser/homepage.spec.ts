@@ -8,6 +8,31 @@ const screenshots = [
 ] as const;
 
 test.beforeEach(async ({ page }, testInfo) => {
+  // Install observers before navigation: getEntriesByType() does not report LCP/CLS.
+  await page.addInitScript(() => {
+    const vitals = { largestPaintMs: null as number | null, clsScore: 0 };
+    Object.assign(window, { __kaoriLabVitals: vitals });
+
+    if (PerformanceObserver.supportedEntryTypes.includes("largest-contentful-paint")) {
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          vitals.largestPaintMs = entry.startTime;
+        }
+      }).observe({ type: "largest-contentful-paint", buffered: true });
+    }
+
+    if (PerformanceObserver.supportedEntryTypes.includes("layout-shift")) {
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          const shift = entry as PerformanceEntry & {
+            value?: number;
+            hadRecentInput?: boolean;
+          };
+          if (!shift.hadRecentInput) vitals.clsScore += shift.value ?? 0;
+        }
+      }).observe({ type: "layout-shift", buffered: true });
+    }
+  });
   await page.goto("/");
   const theme = testInfo.project.metadata.theme;
   if ((await page.locator("html").getAttribute("data-theme")) !== theme) {
@@ -102,25 +127,45 @@ test("produce automated WCAG rule results without claiming manual coverage", asy
   ).toEqual([]);
 });
 
-test("collect lab-only layout shift and largest paint evidence", async ({ page }, testInfo) => {
-  const metrics = await page.evaluate(async () => {
-    const supported = PerformanceObserver.supportedEntryTypes;
-    const lcp = performance.getEntriesByType("largest-contentful-paint");
-    const cls = performance.getEntriesByType("layout-shift");
+test("collect browser-observed lab paint and layout shift budgets", async ({ page }, testInfo) => {
+  // The static loopback preview is a laboratory proxy, never CrUX/real-user p75.
+  await page.evaluate(() => document.fonts.ready);
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const data = (
+            window as Window & { __kaoriLabVitals?: { largestPaintMs: number | null } }
+          ).__kaoriLabVitals;
+          return data?.largestPaintMs ?? null;
+        }),
+      { timeout: 5_000 },
+    )
+    .not.toBeNull();
+
+  const metrics = await page.evaluate(() => {
+    const vitals = (
+      window as Window & {
+        __kaoriLabVitals?: { largestPaintMs: number | null; clsScore: number };
+      }
+    ).__kaoriLabVitals;
     const navigation = performance.getEntriesByType("navigation")[0] as
       | PerformanceNavigationTiming
       | undefined;
     return {
       measuredAt: new Date().toISOString(),
       source: location.pathname,
-      observerSupportsLcp: supported.includes("largest-contentful-paint"),
-      observerSupportsCls: supported.includes("layout-shift"),
-      largestPaintMs: lcp.length ? lcp[lcp.length - 1].startTime : null,
-      clsScore: cls.reduce(
-        (total, entry) => total + ((entry as PerformanceEntry & { value?: number }).value ?? 0),
-        0,
+      measurement: "local-loopback-chromium-lab-not-field-p75",
+      observerSupportsLcp: PerformanceObserver.supportedEntryTypes.includes(
+        "largest-contentful-paint",
       ),
+      observerSupportsCls: PerformanceObserver.supportedEntryTypes.includes("layout-shift"),
+      largestPaintMs: vitals?.largestPaintMs ?? null,
+      // Conservative cumulative shift total, not the web-vitals session-window field CLS.
+      clsScore: vitals?.clsScore ?? null,
       domContentLoadedMs: navigation?.domContentLoadedEventEnd ?? null,
+      labLcpBudgetMs: 2_500,
+      labClsConservativeBudget: 0.1,
       inpFieldP75: null,
     };
   });
@@ -128,7 +173,13 @@ test("collect lab-only layout shift and largest paint evidence", async ({ page }
     body: JSON.stringify(metrics, null, 2),
     contentType: "application/json",
   });
+  expect(metrics.observerSupportsLcp).toBe(true);
+  expect(metrics.observerSupportsCls).toBe(true);
   expect(metrics.domContentLoadedMs).not.toBeNull();
-  // INP needs real-user field observations at the 75th percentile, not a synthetic click.
+  expect(metrics.largestPaintMs).not.toBeNull();
+  expect(metrics.clsScore).not.toBeNull();
+  expect(metrics.largestPaintMs!).toBeLessThanOrEqual(metrics.labLcpBudgetMs);
+  expect(metrics.clsScore!).toBeLessThanOrEqual(metrics.labClsConservativeBudget);
+  // No field telemetry exists yet: do not synthesize INP or a Lighthouse score.
   expect(metrics.inpFieldP75).toBeNull();
 });
