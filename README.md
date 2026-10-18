@@ -1,69 +1,53 @@
 <p align="center">
-  <img src="public/branding/kaori-logo.svg" alt="KAORI official logo" width="112" />
+  <img src="public/branding/kaori-logo.svg" alt="KAORI" width="112" />
 </p>
 
 <h1 align="center">KAORI Website</h1>
-<p align="center"><strong>Knowledge · Automation · Operations · Resilience · Intelligence</strong></p>
-<p align="center">From infrastructure to insight. The public-facing home of KAORI.</p>
+<p align="center"><strong>Knowledge, Automation, Operations, Resilience & Intelligence</strong></p>
+<p align="center">Meet KAORI. Explore the platform, then open the app.</p>
 
 <p align="center">
-  <img alt="Astro" src="https://img.shields.io/badge/Astro-static-7C3AED" />
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-typed-3178C6" />
-  <img alt="Tailwind" src="https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4" />
-  <img alt="License" src="https://img.shields.io/badge/License-internal%20use-64748B" />
+  <img alt="Astro 7" src="https://img.shields.io/badge/Astro-7-7C3AED" />
+  <img alt="TypeScript 5" src="https://img.shields.io/badge/TypeScript-5-3178C6" />
+  <img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4" />
+  <a href="https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.10">
+    <img alt="Latest deployed release candidate v0.1.0-rc.10" src="https://img.shields.io/badge/Release-v0.1.0--rc.10-7C3AED" />
+  </a>
 </p>
 
-**KAORI Website** is the public, static product overview for KAORI's infrastructure operations platform. It explains capability domains, evidence-first operations and integration boundaries without exposing the authenticated application, live data, private infrastructure, provider tokens or internal metrics.
+**KAORI Website** is the public introduction to the KAORI platform at [kaori.cloud](https://kaori.cloud). It presents the platform experience, its core capabilities, and a clear path to the authenticated application at [app.kaori.cloud](https://app.kaori.cloud).
 
-> **Evidence first. Provider authority preserved.** KAORI normalizes, correlates, orchestrates and governs infrastructure operations. External systems remain authoritative.
+This repository contains the **website only**: a static Astro frontend with no application authentication, operational database, or live infrastructure provider connections. Product capabilities and roadmap details belong to the KAORI Application's approved product documentation, not to this repository.
 
-## Website and Application
+## Technology and project structure
 
-| Surface            | Address                                    | Responsibility                                        |
-| ------------------ | ------------------------------------------ | ----------------------------------------------------- |
-| KAORI Website      | [kaori.cloud](https://kaori.cloud)         | Public informational website and product introduction |
-| KAORI Application  | [app.kaori.cloud](https://app.kaori.cloud) | Authenticated infrastructure operations workspace     |
-| Automation service | `auto.kaori.cloud`                         | Independent n8n service; not owned by this website    |
+The website uses **Astro 7, TypeScript 5, Tailwind CSS 4, and Inter**, with the KAORI Violet design language. Static output is served from a dedicated unprivileged container through the existing shared-edge HTTPS entry point.
 
-The website runs in the dedicated `kaori-website` Docker Compose project and uses the existing shared-edge Nginx/Certbot runtime. It does **not** own HTTPS ingress, the KAORI Application database, authentication, workers or n8n.
+- `src/pages/` — public pages and content.
+- `src/components/` — header, footer, icons, and reusable page sections.
+- `src/layouts/` and `src/styles/` — page structure, responsive styling, and light/dark themes.
+- `public/branding/` — approved KAORI logo and illustration assets.
+- `docs/` — development, design, delivery, and deployment reference.
+- `deploy/server/` — standalone static website container configuration.
 
-## Product Architecture
+Brand assets and visual conventions follow the KAORI Application. Use the approved logo, Violet tokens, Inter typography, and Lucide-style icons rather than creating a separate website design system. See [homepage review guidelines](docs/HOMEPAGE_REVIEW.md).
 
-```text
-      External infrastructure tools (remain authoritative)
-      Kubernetes · S3-compatible storage · GitHub · Harbor
-                       Prometheus · Alertmanager
-                               |
-                               v
-                      KAORI capability domains
-                 Normalization · Evidence · Correlation
-                    Orchestration · Governance
-                               |
-                               v
-             Visibility · Workflows · Intelligence · Audit
-```
+## Get started
 
-Provider names are illustrative ecosystem examples, **not** claims that every provider integration is currently available. The preview and network artwork are illustrative and contain no live infrastructure or fabricated performance metrics.
+**Recommended:** open this repository in VS Code and select **Dev Containers: Reopen in Container**. The container installs dependencies from the committed lockfile.
 
-## Visual System
-
-The website shares the official KAORI SVG mark and the app's **Inter, KAORI Violet, Lucide-style outline iconography** and operations-fabric artwork, while retaining the approved editorial public-homepage composition. It supports light and dark modes, mobile navigation, keyboard focus and reduced motion.
-
-The authoritative product and UI contracts live in the private KAORI Application repository: `OXY7O/KAORI/docs/product/README.md`, `docs/design/KAORI_DESIGN_SYSTEM.md` and `docs/design/components/DARK_MODE.md`. Website-specific visual review lives in [`docs/HOMEPAGE_REVIEW.md`](docs/HOMEPAGE_REVIEW.md). Do not fork those design-system authorities into a second competing standard.
-
-## Quick Start
-
-Recommended workflow: **VS Code → Dev Containers: Reopen in Container**. The project installs locked npm dependencies inside the development container.
-
-For an existing Node 22 and npm 10 environment:
+Alternatively, with **Node.js 22** and **npm 10** installed:
 
 ```bash
 npm ci
 npm run dev
-# Open http://localhost:4321
 ```
 
-## Quality and Verification
+Open [http://localhost:4321](http://localhost:4321). For container setup and troubleshooting, see [development instructions](docs/DEVELOPMENT.md).
+
+## Quality checks
+
+Run the existing checks before submitting a PR:
 
 ```bash
 npm run check-format
@@ -71,33 +55,19 @@ npm run check
 npm run build
 ```
 
-GitHub Actions runs the issue-scoped Developer Check, exact-merge Full Admission, Docker Runtime Admission and release security verification. A successful static build does not replace actual browser desktop/tablet/mobile, light/dark, accessibility or human acceptance evidence.
+Changes follow an issue-linked branch and reviewed PR into `kaori/staging`. Developer Check and Full Admission provide source/build verification; signed release candidates, deployment verification, browser QA, and human acceptance remain separate gates. No direct changes to `main`.
 
-## Deployment and Release
-
-```text
-Issue → Work Branch → Draft/Ready PR → Developer Check
-→ kaori/staging → Full Admission + Docker Runtime Admission
-→ Signed immutable RC (Trivy, SBOM, provenance, OCI digest)
-→ Independent SSH host deployment → Public edge verification
-→ Browser UAT → Human acceptance → Promotion PR → main
-```
-
-Release candidates are pinned to exact source SHAs and immutable image digests. The public website runs in a standalone container, while `/opt/shared-edge` owns HTTPS/TLS, Host/SNI checks and Certbot renewals. A new container deployment may require the existing edge-public reattachment procedure; do not replicate or independently mutate shared-edge scripts.
-
-The published RC identity, rollback receipt and accepted browser evidence are recorded in the relevant GitHub Issue, GitHub Release and workflow run. No production/stable claim follows merely from publishing a prerelease.
+See [CI/CD](docs/CI_CD.md), [delivery workflow](docs/DELIVERY.md), and [deployment and rollback](docs/DEPLOYMENT.md) for procedures and evidence requirements. The release badge identifies the latest **signed, deployed release candidate**, not a stable release or completed Human Acceptance. Update it only after a newer candidate has verified release and deployment evidence, not when `package.json` changes.
 
 ## Documentation
 
-| Area                         | Reference                                           |
-| ---------------------------- | --------------------------------------------------- |
-| Development                  | [Development guide](docs/DEVELOPMENT.md)            |
-| Architecture and design      | [Architecture](docs/ARCHITECTURE.md)                |
-| Homepage visual review       | [Homepage review contract](docs/HOMEPAGE_REVIEW.md) |
-| Quality and CI/CD            | [CI/CD gates](docs/CI_CD.md)                        |
-| Delivery governance          | [Delivery flow](docs/DELIVERY.md)                   |
-| Server/edge release boundary | [Deployment and rollback](docs/DEPLOYMENT.md)       |
+- [Website architecture and responsibilities](docs/ARCHITECTURE.md)
+- [Development and DevContainer](docs/DEVELOPMENT.md)
+- [Homepage design review](docs/HOMEPAGE_REVIEW.md)
+- [CI/CD and quality gates](docs/CI_CD.md)
+- [Release and delivery governance](docs/DELIVERY.md)
+- [Deployment, verification, and rollback](docs/DEPLOYMENT.md)
 
-## Ownership and Security
+## Security and ownership
 
-KAORI is an **internal-use proprietary project**, not an open-source distribution. Never publish application credentials, infrastructure addresses, private dashboards, test accounts or audit payloads in this website or its release artifacts. Work is governed by a GitHub Issue and reviewable staging PR; **no direct code changes to `main`**.
+This is a private repository for authorized KAORI Website development. Do not commit credentials, private endpoints, internal infrastructure data, or screenshots containing operational information. Security and product policy remain governed by the approved KAORI standards.
