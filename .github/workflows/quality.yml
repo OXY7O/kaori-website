@@ -62,6 +62,18 @@ jobs:
     runs-on: [self-hosted, linux, x64, kaori-ci]
     timeout-minutes: 40
     steps:
+      - name: Recover runner-owned workspace after isolated browser test
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # Bound ownership repair to this job's checkout workspace, never runner directories.
+          uid="$(id -u)"
+          gid="$(id -g)"
+          [[ -n "$GITHUB_WORKSPACE" && -d "$GITHUB_WORKSPACE" ]] || exit 1
+          docker run --rm --network=none --user 0 \
+            --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/workspace" \
+            --entrypoint /usr/bin/chown mcr.microsoft.com/playwright:v1.56.1-noble \
+            -R "$uid:$gid" /workspace
       - name: Checkout exact source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -168,6 +180,15 @@ jobs:
             playwright-report/
           retention-days: 30
           if-no-files-found: warn
+      - name: Restore host runner ownership of browser workspace
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # GitHub runner's mounted temp directory is owned by the actual host runner UID.
+          owner="$(stat -c '%u:%g' "$RUNNER_TEMP")"
+          [[ "$owner" =~ ^[0-9]+:[0-9]+$ ]] || exit 1
+          chown -R "$owner" "$GITHUB_WORKSPACE"
 
   stable-publication:
     name: Publish Accepted Stable Release
