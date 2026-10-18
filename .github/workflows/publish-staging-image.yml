@@ -1,4 +1,5 @@
-name: KAORI Website Release Candidate
+name: Release Candidate
+run-name: "Release Candidate · ${{ inputs.candidate_tag }}"
 on:
   workflow_dispatch:
     inputs:
@@ -15,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    name: Exact Staging Release Candidate
+    name: Publish Release Candidate
     runs-on: [self-hosted, linux, x64, platform-ci]
     timeout-minutes: 120
     env:
@@ -33,10 +34,10 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Check staging authority and registry configuration
+      - name: Verify admitted source and registry configuration
         shell: bash
         run: bash scripts/release/publish-candidate.sh preflight
-      - name: Build, scan, sign and publish reviewed candidate
+      - name: Build, scan, sign and publish immutable candidate
         shell: bash
         run: bash scripts/release/publish-candidate.sh publish
       - name: Logout of registry

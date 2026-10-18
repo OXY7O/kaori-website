@@ -1,4 +1,5 @@
-name: KAORI Website CI
+name: Full Admission
+run-name: "Full Admission · ${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || github.ref_name }} · ${{ github.sha }}"
 
 on:
   push:
@@ -29,7 +30,7 @@ env:
 
 jobs:
   promotion-source:
-    name: Promotion Source Policy
+    name: Promotion Policy
     runs-on: [self-hosted, linux, x64, platform-ci]
     timeout-minutes: 5
     steps:
@@ -87,13 +88,13 @@ jobs:
           done < <(git ls-files '*.sh')
       - name: Format and style gate
         run: npm run check-format
-      - name: Type and Astro gate
+      - name: Validate Astro and TypeScript
         run: npm run check
       - name: High-severity dependency gate
         run: npm audit --audit-level=high
       - name: Production build
         run: npm run build
-      - name: Static artifact integrity
+      - name: Verify website artifact
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -101,7 +102,7 @@ jobs:
           test -s dist/branding/kaori-logo.svg
           grep -qi 'kaori' dist/index.html
           ! grep -REn 'https://(cdn\.jsdelivr\.net|fonts\.googleapis\.com|unpkg\.com)' dist/ || { echo 'Unexpected public CDN dependency' >&2; exit 1; }
-      - name: Record source verification
+      - name: Record admission evidence
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -109,7 +110,7 @@ jobs:
           printf 'Output: statically built website (deployment, browser verification, and human acceptance require separate evidence)\n' >> "$GITHUB_STEP_SUMMARY"
 
   container-admission:
-    name: Docker Runtime Admission
+    name: Container Admission
     needs: full-admission
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     runs-on: [self-hosted, linux, x64, kaori-ci]
@@ -120,7 +121,7 @@ jobs:
         with:
           ref: ${{ env.KAORI_WEBSITE_SOURCE_SHA }}
           persist-credentials: false
-      - name: Verify container runtime without publishing
+      - name: Verify container runtime without deployment
         shell: bash
         run: bash scripts/container_smoke.sh "$KAORI_WEBSITE_SOURCE_SHA"
 
