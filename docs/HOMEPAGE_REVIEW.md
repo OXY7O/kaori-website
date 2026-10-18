@@ -14,13 +14,13 @@ Single public informational Home Page at `https://kaori.cloud` only. It is not a
 ## Structure
 
 1. Public navigation with theme toggle
-2. Hero — From infrastructure to insight
+2. Hero — Meet KAORI. Operate with Clarity. (official KAORI acronym)
 3. Evidence-first / provider-authoritative operating principles
 4. Platform capability domains
-5. Technology ecosystem examples
-6. External authority → KAORI → teams architecture
+5. Domain-filterable integration ecosystem examples (illustrative, scalable)
+6. External authority → KAORI normalized context, workflows, evidence and governance → operational clarity
 7. Clearly-marked conceptual product experience
-8. CTA and footer
+8. Curiosity-led CTA and owner/contact footer
 
 ## Safety / accuracy
 
@@ -45,7 +45,7 @@ Developer source/build checks are distinct from release verification. Its origin
 
 ## Approved brand alignment implementation — issue #27
 
-The maintainer approved full-section website mockups and required parity with the existing KAORI Application iconography and login visual language. This work retains the approved **editorial public website**: dark-violet hero and closing handoff; neutral-first content cards; four capability domains; six illustrative integration examples; capability-first architecture and explicitly conceptual product preview.
+The maintainer approved full-section website mockups and required parity with the existing KAORI Application iconography and login visual language. This work retains the approved **editorial public website**: neutral-first surfaces with genuine light/dark parity, four capability domains, illustrative integration examples, capability-first architecture and explicitly conceptual product preview.
 
 - Official logo: `public/branding/kaori-logo.svg` matches the application's canonical `app/static/images/kaori-logo.svg`.
 - Official operations-fabric artwork: `public/branding/kaori-operations-fabric.svg` copied **unchanged** from application `app/static/images/kaori-login-operations-fabric.svg`, source of truth in `OXY7O/KAORI`.
@@ -54,3 +54,19 @@ The maintainer approved full-section website mockups and required parity with th
 - All public application links target `https://app.kaori.cloud`; private application repository links are withheld from the public footer. Both light and dark modes retain the Violet/Inter family identity.
 
 **Release checks still required:** 1366/1440 desktop, 768/1024 tablet, 375/390/430 mobile, keyboard navigation/focus and 200% zoom, no clipping, explicit concept text, real browser CTA tests, all three domain health checks, distinct signed source SHA/digest and human review. Successful code checks do not by themselves prove Visual QA or final acceptance.
+
+## Homepage RC follow-up: full-page audit remediation — #36
+
+Maintainer screenshot review approved a targeted visual refinement, not a wholesale platform redesign. Authority remains KAORI product direction and Violet design system. All new homepage copy describes **capabilities and architecture**, without claiming a given provider or future capability is GA.
+
+- **Hero:** canonical brand identity, `Meet KAORI. Operate with Clarity.`, and the official acronym **Knowledge, Automation, Operations, Resilience & Intelligence**. Replace the framed login artwork with a cohesive accessible diagram of the four operating pillars. The concept disclaimer remains visible.
+- **Light/dark:** root `data-theme` selected by the existing initial mode bootstrap and toggle must visibly drive header, Hero, principle strip, capability section, filtered integration catalog, architecture cards, illustrative workspace, CTA, footer and text. Avoid dark fixed surfaces in light mode; ensure contrast in both modes.
+- **Principles:** retain the compact four-column editorial strip, increase readable font sizes and differentiate Source authority from Governed by design icons.
+- **Capabilities:** preserve domain-first grouping; smaller decorative orb and improved typography without implying cards are interactive.
+- **Integrations:** dynamic examples list separated from provider capability authority, with accessible domain filters, matching results count and scalable progressive disclosure. Do not imply illustrated providers are live/connected; adding additional examples must not require redesign.
+- **Architecture:** external systems authoritative; KAORI normalizes, orchestrates, correlates, commits evidence, governs; output is shared context and clarity. Diagram must not describe KAORI as passive middleware.
+- **Experience:** accessible illustration rather than fake data screenshot; committed evidence, relationships and governed workflows; no invented performance or counts.
+- **CTA:** curiosity-led `Discover how KAORI works.` paired with clear link to authorized app and architecture.
+- **Footer:** maintainer-provided owner Lethisa Putri and `lethisaputri@gmail.com` with functional `mailto:` contact; do not invent social profiles. Keep existing OXY7 ORBITAL attribution.
+
+**Mandatory real-browser gate before human acceptance:** check loaded CSS and initial theme/persistence (light/dark) across all sections, 1366/1440 desktop, 768/1024 tablet, 375/390/430 mobile, 200% zoom, no horizontal overflow, accessible category filtering/keyboard/ARIA pressed, reduced-motion and contrast. Browser PASS requires actual evidence beyond Astro build or HTTPS readiness. A successful signed RC/host deploy allows review but does not close #3 automatically.

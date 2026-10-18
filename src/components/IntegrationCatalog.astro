@@ -1,0 +1,118 @@
+---
+import Icon from "./Icon.astro";
+
+interface Integration {
+  name: string;
+  icon: string;
+  category: string;
+  domain: string;
+}
+interface Props {
+  integrations: Integration[];
+}
+const { integrations } = Astro.props;
+const categories = ["All", ...new Set(integrations.map((item) => item.domain))];
+---
+
+<div class="integration-catalog" data-integration-catalog>
+  <div class="integration-toolbar">
+    <div
+      class="integration-filters"
+      role="group"
+      aria-label="Filter integration examples by domain"
+    >
+      {
+        categories.map((category) => (
+          <button
+            type="button"
+            class="integration-filter"
+            data-integration-filter={category}
+            aria-pressed={category === "All" ? "true" : "false"}
+          >
+            {category}
+          </button>
+        ))
+      }
+    </div>
+    <p class="integration-count" data-integration-count aria-live="polite">
+      {integrations.length} integration examples
+    </p>
+  </div>
+  <div class="technology-grid" id="integration-example-list">
+    {
+      integrations.map((item) => (
+        <article class="technology-card" data-integration-item data-domain={item.domain}>
+          <span class="technology-symbol" aria-hidden="true">
+            <Icon name={item.icon} size={23} />
+          </span>
+          <div class="technology-details">
+            <strong>{item.name}</strong>
+            <span class="technology-domain">{item.domain}</span>
+            <p>{item.category}</p>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+  <p class="integration-empty" data-integration-empty hidden>No examples in this category.</p>
+  <div class="integration-controls">
+    <button
+      type="button"
+      class="integration-more"
+      data-integration-more
+      hidden
+      aria-controls="integration-example-list"
+    >
+      Show more examples <Icon name="arrow-right" size={17} />
+    </button>
+  </div>
+  <p class="section-caption">
+    Illustrative technology categories and provider examples—not a live supported-integrations
+    registry. Availability and readiness follow KAORI's approved integration contracts.
+  </p>
+</div>
+
+<script>
+  for (const catalog of document.querySelectorAll<HTMLElement>("[data-integration-catalog]")) {
+    const buttons = Array.from(
+      catalog.querySelectorAll<HTMLButtonElement>("[data-integration-filter]"),
+    );
+    const cards = Array.from(catalog.querySelectorAll<HTMLElement>("[data-integration-item]"));
+    const count = catalog.querySelector<HTMLElement>("[data-integration-count]");
+    const empty = catalog.querySelector<HTMLElement>("[data-integration-empty]");
+    const more = catalog.querySelector<HTMLButtonElement>("[data-integration-more]");
+    const pageSize = 6;
+    let active = "All";
+    let expanded = false;
+
+    function render() {
+      const matches = cards.filter((card) => active === "All" || card.dataset.domain === active);
+      const shown = expanded ? matches : matches.slice(0, pageSize);
+      cards.forEach((card) => {
+        card.hidden = !shown.includes(card);
+      });
+      buttons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.integrationFilter === active));
+      });
+      if (count) count.textContent = `${shown.length} of ${matches.length} examples`;
+      if (empty) empty.hidden = matches.length > 0;
+      if (more) {
+        more.hidden = matches.length <= pageSize;
+        more.textContent = expanded ? "Show fewer examples" : "Show more examples";
+      }
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        active = button.dataset.integrationFilter ?? "All";
+        expanded = false;
+        render();
+      });
+    });
+    more?.addEventListener("click", () => {
+      expanded = !expanded;
+      render();
+    });
+    render();
+  }
+</script>
