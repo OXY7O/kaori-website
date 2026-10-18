@@ -2098,3 +2098,64 @@ svg {
     border-radius: 12px;
   }
 }
+
+/* Issue #46 — browser-reviewed typography and light-mode contrast refinements. */
+.section-heading-row .ecosystem-principle p:not(.eyebrow) {
+  color: #f5ecff;
+  max-width: none;
+  margin: 9px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.section-heading-row .ecosystem-principle strong {
+  color: #ffffff;
+}
+.hero-description {
+  max-width: 585px;
+  line-height: 1.65;
+}
+.experience-section .section-intro > p:not(.eyebrow):not(.small-note),
+.architecture-section .section-intro > p:not(.eyebrow):not(.small-note) {
+  max-width: 570px;
+  line-height: 1.64;
+}
+.integration-outlook {
+  max-width: none;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.footer-identity {
+  max-width: 480px;
+}
+.footer-identity .footer-note {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.footer-identity .footer-note strong {
+  color: var(--violet);
+  font-weight: 800;
+}
+.footer-identity .footer-attribution {
+  font-size: 12px;
+}
+@media (min-width: 1100px) {
+  .hero-description .copy-line,
+  .architecture-section .copy-line,
+  .experience-section .copy-line {
+    display: block;
+  }
+  .integration-outlook {
+    white-space: nowrap;
+  }
+  .footer-identity .footer-acronym {
+    white-space: nowrap;
+  }
+}
+@media (max-width: 1099px) {
+  .integration-outlook {
+    white-space: normal;
+  }
+  .footer-identity .footer-acronym {
+    white-space: normal;
+  }
+}
