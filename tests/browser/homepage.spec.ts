@@ -32,7 +32,7 @@ test("capture reviewed candidate evidence for all major sections", async ({ page
 test("navigate and preserve theme through the real control", async ({ page }) => {
   const journey = page.locator("#how-it-works");
   await expect(journey).toBeVisible();
-  const jump = page.locator("a[href='#how-it-works']").first();
+  const jump = page.locator("a[href='#how-it-works']:visible").first();
   await jump.click();
   await expect(page).toHaveURL(/#how-it-works$/);
 
