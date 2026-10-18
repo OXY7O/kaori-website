@@ -29,3 +29,7 @@ Authority: [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/d
 The section and practical-scenario supporting descriptions use a semantic `blockquote` with a restrained Violet quote mark, left rule and key-phrase emphasis. Quote ornament is CSS-only; the text remains readable by assistive technology, and the CSS uses existing `--violet` and content tokens in both themes. Step cards contain concise, factual copy designed to avoid extra lines in the four-column desktop layout without fixed heights, forced line breaks or truncation. Line wrapping naturally adapts on narrower viewports and 200% zoom.
 
 This is illustrative product storytelling, not a commitment that every provider/workflow integration is currently available. Acceptance requires actual desktop/tablet/mobile light/dark browser visual review under #3, not merely a successful build.
+
+## One-line desktop editorial quotes (#65)
+
+For the desktop How KAORI Works quote, use the concise statement “Evidence connects sources to governed decisions.” For the alert scenario, use “Signals reveal symptoms; context and evidence guide action.” Keep both as full semantic sentences with Violet accents via existing `strong` styling, preserve supporting text, and allow natural wrapping on mobile or at high zoom. Do not force `white-space: nowrap`, truncate copy, or replace existing shared typography components. Verify actual light/dark desktop rendering during human UAT under #3; a source-text change or static build does not prove one-line rendering at every viewport.
