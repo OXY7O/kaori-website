@@ -47,3 +47,14 @@ The approved domains are `https://kaori.cloud` (website) and `https://app.kaori.
 - One-time publication adapter is removed through a reviewed cleanup workstream. Cleanup admission is independent; it must **not** publish a second RC.
 - Human Visual Acceptance is still pending: desktop and mobile copy wrapping, Violet contrast in light/dark mode, editorial quote appearance, keyboard, zoom/reflow and cross-browser accessibility. Browser automation follows [#58](https://github.com/OXY7O/kaori-website/issues/58); automatic checks are not proof of screenshot/visual acceptance.
 - Rollback: prior signed immutable [RC.8](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.8).
+
+## Public RC.10 single-line editorial copy UAT handoff (2026-10-18)
+
+- Authority: [one-line copy #65](https://github.com/OXY7O/kaori-website/issues/65), [signed RC release #67](https://github.com/OXY7O/kaori-website/issues/67), homepage visual acceptance [#3](https://github.com/OXY7O/kaori-website/issues/3).
+- Release staging source: `84fdd7f75c01de6ee49f6b5805424740e4518268`, [v0.1.0-rc.10](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.10).
+- Immutable image digest: `sha256:8205ec3f66ed5c0eabc880f3fc49eb002da962b9c21242458c4ebc86a87dc930`, from successful signed Trivy/SPDX SBOM/provenance publisher.
+- [Full Admission and Docker Runtime Admission on exact RC source SHA](https://github.com/OXY7O/kaori-website/actions/runs/39115027095): PASS.
+- [Signed publisher and pinned SSH deployment/public-edge verification](https://github.com/OXY7O/kaori-website/actions/runs/39115027321): PASS. Initial verifier timed out pending exact-SHA Full Admission and failed closed; verifier retry after admission passed published RC.10. First deploy attempt failed candidate health and automatically restored signed RC.9 with release receipt unchanged. Single controlled same-digest deploy retry succeeded and verified existing public edge plus application/automation domain readiness. No security gate was bypassed.
+- The consumed one-time publication workflow was removed by reviewed cleanup PR; canonical automation preserved. Cleanup admission must be verified separately and does not trigger another image release.
+- **Pending:** independent desktop 1440px and theme-based screenshot review of both one-line statements, reflow/zoom on smaller viewports and human acceptance under #3. No Lighthouse, axe, or browser one-line measurement is claimed from static CI/HTTP checks.
+- Rollback authority: previously signed immutable [RC.9](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.9). No promotion to `main` yet.
