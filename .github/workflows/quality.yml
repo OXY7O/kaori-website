@@ -131,6 +131,9 @@ jobs:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     runs-on: [self-hosted, linux, x64, kaori-ci]
     timeout-minutes: 35
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+      options: --init --ipc=host --user 1001
     permissions:
       contents: read
     steps:
@@ -146,8 +149,11 @@ jobs:
           cache: npm
       - name: Restore locked browser dependencies
         run: npm ci --no-audit --no-fund
-      - name: Install pinned Chromium build
-        run: npx playwright install chromium
+      - name: Verify pinned Playwright browser version
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(npx playwright --version)" = "Version 1.56.1"
       - name: Build exact browser candidate
         run: npm run build
       - name: Run browser interaction, accessibility and visual evidence tests
