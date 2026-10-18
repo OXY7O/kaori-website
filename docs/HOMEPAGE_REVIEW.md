@@ -90,7 +90,7 @@ Maintainer's six screenshot findings require a **targeted** change, preserving t
 
 1. **Hero:** supporting text must form two intentional lines on normal desktop widths (1366/1440), retaining explicit committed-evidence and external-authority intent; tablet/mobile should reflow naturally.
 2. **Integration outlook:** concise and credible sentence with Violet dot, one line on large desktops, normal wrap on narrower viewports.
-3. **Violet statement card:** screenshot confirms **FAIL** in light mode: dark supporting copy blends into violet background. The root cause is the general `.section-heading-row p:not(.eyebrow)` rule outranking `.ecosystem-principle p`; apply an explicit high-contrast text override to the *nested* panel paragraph, without global `!important` or new theme taxonomy.
+3. **Violet statement card:** screenshot confirms **FAIL** in light mode: dark supporting copy blends into violet background. The root cause is the general `.section-heading-row p:not(.eyebrow)` rule outranking `.ecosystem-principle p`; apply an explicit high-contrast text override to the _nested_ panel paragraph, without global `!important` or new theme taxonomy.
 4. **Architecture:** two-line desktop copy preserving domain context, governed workflows, committed evidence and external authoritative boundaries.
 5. **Product experience:** two desktop lines expressing evidence and governed-workflow concepts without claiming live data; preview still identifies itself as illustrative.
 6. **Footer:** two concise rows — official five-term acronym and OXY7 ORBITAL attribution — with measured bold Violet accents, not entire paragraph in Violet.
