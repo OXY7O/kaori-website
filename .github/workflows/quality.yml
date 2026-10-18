@@ -133,7 +133,7 @@ jobs:
     timeout-minutes: 35
     container:
       image: mcr.microsoft.com/playwright:v1.56.1-noble
-      options: --init --ipc=host --user 1001
+      options: --init --ipc=host
     permissions:
       contents: read
     steps:
