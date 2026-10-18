@@ -1,0 +1,131 @@
+name: KAORI Website One-Time RC.10 Publication and Public Verification
+
+on:
+  push:
+    branches:
+      - kaori/staging
+    paths:
+      - .github/workflows/publication-67-once.yml
+
+permissions:
+  contents: write
+  actions: read
+  id-token: write
+
+concurrency:
+  group: kaori-website-once-publication-issue-67
+  cancel-in-progress: false
+
+env:
+  RC_TAG: v0.1.0-rc.10
+  ACCEPTED_SHA: ${{ github.sha }}
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  verify-admission:
+    name: Verify Exact Staging Full Admission
+    if: ${{ contains(github.event.head_commit.message, '[KAORI_WEBSITE_PUBLICATION_67]') }}
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact staging source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require same-SHA completed Full Admission
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$GITHUB_REPOSITORY" == OXY7O/kaori-website ]] || exit 1
+          [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || exit 1
+          [[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || exit 1
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          # Bounded runner-safe admission wait: rerun this job only after exact-SHA admission PASS.
+          for attempt in $(seq 1 3); do
+            current="$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
+            [[ "$current" == "$ACCEPTED_SHA" ]] || { echo 'BLOCK: staging changed' >&2; exit 1; }
+            runs="$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
+            match="$(jq -c --arg sha "$ACCEPTED_SHA" '[.workflow_runs[] | select(.head_sha == $sha)] | sort_by(.run_number) | last // empty' <<< "$runs")"
+            if [[ -n "$match" ]]; then
+              status="$(jq -r '.status' <<< "$match")"
+              conclusion="$(jq -r '.conclusion' <<< "$match")"
+              if [[ "$status" == completed ]]; then
+                [[ "$conclusion" == success ]] || { echo "BLOCK: Full Admission $conclusion" >&2; exit 1; }
+                echo "PASS: $(jq -r '.html_url' <<< "$match")"
+                exit 0
+              fi
+            fi
+            sleep 10
+          done
+          echo 'BLOCK: no completed exact-SHA Full Admission' >&2
+          exit 1
+
+  publish:
+    name: Build, Scan, Sign and Publish RC.10
+    needs: verify-admission
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 120
+    env:
+      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
+    steps:
+      - name: Checkout exact admitted source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Preflight immutable candidate authority
+        shell: bash
+        run: bash scripts/release/publish-candidate.sh preflight
+      - name: Publish canonical signed candidate with SBOM and provenance
+        shell: bash
+        run: bash scripts/release/publish-candidate.sh publish
+      - name: Logout from registry
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "$REGISTRY_HOST" ]]; then docker logout "$REGISTRY_HOST" || true; fi
+
+  deploy-private:
+    name: Deploy Signed RC.10 and Verify Existing Public Edge
+    needs: publish
+    runs-on: [self-hosted, linux, x64, kaori-ci]
+    timeout-minutes: 50
+    env:
+      APPROVAL_REF: https://github.com/OXY7O/kaori-website/issues/67
+      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
+      WEBSITE_HOST: ${{ vars.KAORI_WEBSITE_HOST }}
+      WEBSITE_SSH_PORT: ${{ vars.KAORI_WEBSITE_HOST_PORT }}
+      WEBSITE_SSH_USER: ${{ vars.KAORI_WEBSITE_HOST_USER }}
+      WEBSITE_DEPLOY_ROOT: ${{ vars.KAORI_WEBSITE_HOST_DEPLOY_ROOT }}
+      WEBSITE_SSH_KEY: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY }}
+      WEBSITE_SSH_PASSPHRASE: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PASSPHRASE }}
+      WEBSITE_KNOWN_HOSTS: ${{ secrets.KAORI_WEBSITE_HOST_KNOWN_HOSTS }}
+      KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "1"
+    steps:
+      - name: Checkout exact admitted source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify RC evidence, registry, SSH and approval authority
+        shell: bash
+        run: bash scripts/release/deploy-release.sh preflight
+      - name: Deploy immutable website digest via pinned SSH
+        shell: bash
+        run: bash scripts/release/deploy-release.sh deploy
+      - name: Preserve independent public-edge acceptance
+        shell: bash
+        run: |
+          printf 'Website release source: %s\n' "$ACCEPTED_SHA" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Website release tag: %s\n' "$RC_TAG" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Signed RC deployed with guarded reattachment to existing kaori.cloud registration; public HTTPS, app and n8n checks executed by approved deploy adapter. Browser visual QA and human acceptance remain pending.\n' >> "$GITHUB_STEP_SUMMARY"
