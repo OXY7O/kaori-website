@@ -134,9 +134,8 @@ test("collect browser-observed lab paint and layout shift budgets", async ({ pag
     .poll(
       () =>
         page.evaluate(() => {
-          const data = (
-            window as Window & { __kaoriLabVitals?: { largestPaintMs: number | null } }
-          ).__kaoriLabVitals;
+          const data = (window as Window & { __kaoriLabVitals?: { largestPaintMs: number | null } })
+            .__kaoriLabVitals;
           return data?.largestPaintMs ?? null;
         }),
       { timeout: 5_000 },

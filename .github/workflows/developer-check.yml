@@ -110,12 +110,6 @@ jobs:
       - name: Validate website formatting
         if: ${{ needs.route.outputs.web == 'true' }}
         run: npm run check-format
-      - name: Diagnose formatting failure without changing the gate
-        if: ${{ failure() && needs.route.outputs.web == 'true' }}
-        shell: bash
-        run: |
-          npm exec -- prettier --write docs/BROWSER_QA.md tests/browser/homepage.spec.ts
-          git diff -- docs/BROWSER_QA.md tests/browser/homepage.spec.ts
       - name: Validate committed shell script syntax
         if: ${{ needs.route.outputs.web == 'true' }}
         run: |
