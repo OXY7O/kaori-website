@@ -1602,8 +1602,7 @@ svg {
 .hero-section,
 :root[data-theme="dark"] .hero-section {
   background:
-    radial-gradient(ellipse at 76% 48%, var(--violet-soft), transparent 55%),
-    var(--web-hero-bg);
+    radial-gradient(ellipse at 76% 48%, var(--violet-soft), transparent 55%), var(--web-hero-bg);
   color: var(--web-hero-text);
   border-bottom: 1px solid var(--outline);
 }
@@ -1973,8 +1972,7 @@ svg {
 }
 .closing-inner {
   background:
-    radial-gradient(ellipse at 82% 50%, var(--violet-soft), transparent 70%),
-    var(--web-cta-bg);
+    radial-gradient(ellipse at 82% 50%, var(--violet-soft), transparent 70%), var(--web-cta-bg);
   border-color: var(--web-cta-border);
 }
 .closing-inner h2 span {
