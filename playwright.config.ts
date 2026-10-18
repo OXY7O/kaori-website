@@ -24,9 +24,9 @@ const projects = viewports.flatMap((viewport) =>
 export default defineConfig({
   testDir: "./tests/browser",
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  forbidOnly: true,
+  retries: 1,
+  workers: 2,
   timeout: 30_000,
   reporter: [
     ["list"],

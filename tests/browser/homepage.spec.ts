@@ -10,7 +10,7 @@ const screenshots = [
 test.beforeEach(async ({ page }, testInfo) => {
   await page.goto("/");
   const theme = testInfo.project.metadata.theme;
-  if (await page.locator("html").getAttribute("data-theme") !== theme) {
+  if ((await page.locator("html").getAttribute("data-theme")) !== theme) {
     await page.getByRole("button", { name: /switch to (light|dark) mode/i }).click();
   }
   await expect(page.locator("html")).toHaveAttribute("data-theme", String(theme));
@@ -93,7 +93,7 @@ test("produce automated WCAG rule results without claiming manual coverage", asy
     .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
     .analyze();
   await testInfo.attach("axe-results.json", {
-    body: Buffer.from(JSON.stringify(findings, null, 2)),
+    body: JSON.stringify(findings, null, 2),
     contentType: "application/json",
   });
   expect(
@@ -117,8 +117,7 @@ test("collect lab-only layout shift and largest paint evidence", async ({ page }
       observerSupportsCls: supported.includes("layout-shift"),
       largestPaintMs: lcp.length ? lcp[lcp.length - 1].startTime : null,
       clsScore: cls.reduce(
-        (total, entry) =>
-          total + ((entry as PerformanceEntry & { value?: number }).value ?? 0),
+        (total, entry) => total + ((entry as PerformanceEntry & { value?: number }).value ?? 0),
         0,
       ),
       domContentLoadedMs: navigation?.domContentLoadedEventEnd ?? null,
@@ -126,7 +125,7 @@ test("collect lab-only layout shift and largest paint evidence", async ({ page }
     };
   });
   await testInfo.attach("lab-performance.json", {
-    body: Buffer.from(JSON.stringify(metrics, null, 2)),
+    body: JSON.stringify(metrics, null, 2),
     contentType: "application/json",
   });
   expect(metrics.domContentLoadedMs).not.toBeNull();
