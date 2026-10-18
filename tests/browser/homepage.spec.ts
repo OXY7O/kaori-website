@@ -42,6 +42,8 @@ test.beforeEach(async ({ page }, testInfo) => {
 });
 
 test("capture reviewed candidate evidence for all major sections", async ({ page }, testInfo) => {
+  const description = page.locator("#experience .section-intro > p:not(.eyebrow):not(.small-note)");
+  await expect(description).toHaveText(/evidence\.\s+Explore governed workflows/);
   await page.evaluate(() => document.fonts.ready);
   const screenshot = await page.screenshot({ fullPage: true, animations: "disabled" });
   await testInfo.attach("homepage-full.png", { body: screenshot, contentType: "image/png" });
