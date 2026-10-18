@@ -58,10 +58,10 @@ test("capture reviewed candidate evidence for all major sections", async ({ page
 
 test("preserve mobile copy, artwork bounds and consistent application CTA", async ({ page }) => {
   await expect(page.locator(".hero-description")).toHaveText(
-    /evidence\\.\\s+It governs workflows/,
+    /evidence\.\s+It governs workflows/,
   );
   await expect(page.locator("#architecture .section-intro > p:not(.eyebrow)")).toHaveText(
-    /evidence\\.\\s+External systems remain authoritative/,
+    /evidence\.\s+External systems remain authoritative/,
   );
   await expect(page.locator("#experience .section-intro .button-primary")).toHaveText(
     /Open Application/,
