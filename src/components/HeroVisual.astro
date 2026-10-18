@@ -2,31 +2,50 @@
 import Icon from "./Icon.astro";
 ---
 
-<figure class="hero-art">
-  <div class="hero-art-frame">
-    <img
-      class="hero-fabric"
-      src="/branding/kaori-operations-fabric.svg"
-      alt="Conceptual KAORI operations fabric connecting infrastructure systems to an evidence-driven core"
-      width="960"
-      height="320"
-      fetchpriority="high"
-      decoding="async"
-    />
-    <span class="hero-fabric-label hero-fabric-label-visibility">
-      <Icon name="eye" size={16} /> Visibility
-    </span>
-    <span class="hero-fabric-label hero-fabric-label-control">
-      <Icon name="sliders-horizontal" size={16} /> Control
-    </span>
-    <span class="hero-fabric-label hero-fabric-label-intelligence">
-      <Icon name="brain-circuit" size={16} /> Intelligence
-    </span>
-    <span class="hero-fabric-label hero-fabric-label-assurance">
-      <Icon name="shield-check" size={16} /> Assurance
-    </span>
+<figure class="hero-art" aria-labelledby="hero-art-caption">
+  <div class="hero-network">
+    <svg
+      class="hero-network-paths"
+      viewBox="0 0 720 440"
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path class="network-path" d="M156 113 C252 113 252 205 360 220" />
+      <path class="network-path" d="M564 113 C468 113 468 205 360 220" />
+      <path class="network-path" d="M156 328 C252 328 252 235 360 220" />
+      <path class="network-path" d="M564 328 C468 328 468 235 360 220" />
+      <circle class="network-anchor" cx="156" cy="113" r="5" />
+      <circle class="network-anchor" cx="564" cy="113" r="5" />
+      <circle class="network-anchor" cx="156" cy="328" r="5" />
+      <circle class="network-anchor" cx="564" cy="328" r="5" />
+      <circle class="network-anchor network-anchor-core" cx="360" cy="220" r="7" />
+    </svg>
+    <div class="hero-network-core">
+      <div class="hero-network-emblem">
+        <img src="/branding/kaori-logo.svg" alt="" width="64" height="64" />
+      </div>
+      <strong>KAORI</strong>
+      <span>Connected operational context</span>
+    </div>
+    <div class="hero-network-node hero-network-node-visibility">
+      <span class="hero-node-icon"><Icon name="eye" size={22} /></span>
+      <span><strong>Visibility</strong><small>Infrastructure context</small></span>
+    </div>
+    <div class="hero-network-node hero-network-node-control">
+      <span class="hero-node-icon"><Icon name="sliders-horizontal" size={22} /></span>
+      <span><strong>Control</strong><small>Governed workflows</small></span>
+    </div>
+    <div class="hero-network-node hero-network-node-intelligence">
+      <span class="hero-node-icon"><Icon name="brain-circuit" size={22} /></span>
+      <span><strong>Intelligence</strong><small>Connected evidence</small></span>
+    </div>
+    <div class="hero-network-node hero-network-node-assurance">
+      <span class="hero-node-icon"><Icon name="shield-check" size={22} /></span>
+      <span><strong>Assurance</strong><small>Traceable operations</small></span>
+    </div>
   </div>
-  <figcaption class="art-disclaimer">
+  <figcaption class="art-disclaimer" id="hero-art-caption">
     Concept illustration · Not a live infrastructure view
   </figcaption>
 </figure>
