@@ -96,6 +96,7 @@ Maintainer's six screenshot findings require a **targeted** change, preserving t
 6. **Footer:** two concise rows — official five-term acronym and OXY7 ORBITAL attribution — with measured bold Violet accents, not entire paragraph in Violet.
 
 **Recheck visually after signed deployment:** desktop 1366/1440 light/dark line counts and readability, keyboard/focus and text zoom, tablet 768/1024, mobile 375/390/430, all CTA targets, no overflow. Existing app and automation edge availability and the signed image identity must stay intact. Human acceptance #3 remains required.
+
 ## Mobile homepage visual polish — #91 (2026-10-19)
 
 New maintainer screenshots from public `kaori.cloud` showed an orphan acronym separator, Hero copy `evidence.It`, visually clipped mobile capability artwork and narrow descriptions, plus disproportionately spaced mobile sections. This bounded visual remediation preserves the approved Option 3 editorial structure, KAORI Violet tokens, official brand assets, provider-authoritative claims, and the existing conceptual Product Experience; it does not claim live application screenshots.
