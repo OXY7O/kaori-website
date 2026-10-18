@@ -83,3 +83,16 @@ Follow-up to the live RC.5 browser review. **This approval concerns the exact pi
 - Remove only the redundant `Get in touch` mailto-with-subject button; retain Lethisa Putri's actual contact email and working `Contact us` link.
 
 Before acceptance: confirm the artwork actually loads from the **signed deployed digest** in Firefox/Chromium and light/dark, with no caption leakage or stretching; category/filter behavior, readable Violet panel, footer contact on mobile/desktop, and the existing app/edge readiness. Static build and HTTPS health do not prove a visual PASS.
+
+## RC.6 post-deployment visual review — six copy and contrast fixes (#46)
+
+Maintainer's six screenshot findings require a **targeted** change, preserving the accepted visual system and approved hero WebP. Do not infer browser Visual QA PASS from a successful code build.
+
+1. **Hero:** supporting text must form two intentional lines on normal desktop widths (1366/1440), retaining explicit committed-evidence and external-authority intent; tablet/mobile should reflow naturally.
+2. **Integration outlook:** concise and credible sentence with Violet dot, one line on large desktops, normal wrap on narrower viewports.
+3. **Violet statement card:** screenshot confirms **FAIL** in light mode: dark supporting copy blends into violet background. The root cause is the general `.section-heading-row p:not(.eyebrow)` rule outranking `.ecosystem-principle p`; apply an explicit high-contrast text override to the _nested_ panel paragraph, without global `!important` or new theme taxonomy.
+4. **Architecture:** two-line desktop copy preserving domain context, governed workflows, committed evidence and external authoritative boundaries.
+5. **Product experience:** two desktop lines expressing evidence and governed-workflow concepts without claiming live data; preview still identifies itself as illustrative.
+6. **Footer:** two concise rows — official five-term acronym and OXY7 ORBITAL attribution — with measured bold Violet accents, not entire paragraph in Violet.
+
+**Recheck visually after signed deployment:** desktop 1366/1440 light/dark line counts and readability, keyboard/focus and text zoom, tablet 768/1024, mobile 375/390/430, all CTA targets, no overflow. Existing app and automation edge availability and the signed image identity must stay intact. Human acceptance #3 remains required.
