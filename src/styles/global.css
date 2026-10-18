@@ -1980,12 +1980,6 @@ svg {
     font-size: 15px;
     line-height: 1.68;
   }
-  /* Keep the five-term acronym on a stable two-line mobile measure,
-     including while the fallback face changes to Inter. */
-  .hero-micro .acronym-terms {
-    flex: 0 1 285px;
-    max-width: calc(100% - 15px);
-  }
   .hero-actions {
     margin-top: 26px;
   }
@@ -2074,6 +2068,14 @@ svg {
 }
 .hero-micro .acronym-terms {
   flex: 1;
+}
+@media (max-width: 540px) {
+  /* Source order is intentional: override the general flex:1 rule so the
+     five terms occupy a stable two-line measure before and after font swap. */
+  .hero-micro .acronym-terms {
+    flex: 0 1 260px;
+    max-width: min(260px, 100%);
+  }
 }
 .footer-identity .footer-acronym.acronym-terms {
   display: flex;
