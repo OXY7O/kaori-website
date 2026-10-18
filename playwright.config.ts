@@ -42,7 +42,7 @@ export default defineConfig({
   },
   projects,
   webServer: {
-    command: "npm run preview -- --port 14321",
+    command: "npx astro preview --host 127.0.0.1 --port 14321",
     url: "http://127.0.0.1:14321/",
     timeout: 30_000,
     reuseExistingServer: false,
