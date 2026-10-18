@@ -66,12 +66,12 @@ Use only the existing KAORI shared-edge scripts and host-side DNS/TLS readiness/
 
 The current GitHub Actions sidebar is defined by the following **four existing workflow files**. Display names are intentionally independent of filenames and job IDs; changing their labels must not change `needs`, trigger conditions, security permissions or validated release contracts.
 
-| Workflow file | Workflow display name | Job display labels |
-| --- | --- | --- |
-| `.github/workflows/developer-check.yml` | **Developer Check** | Route Checks, Website Validation, Container Validation, Release Configuration |
-| `.github/workflows/quality.yml` | **Full Admission** | Promotion Policy, Full Admission, Container Admission, Publish Accepted Stable Release |
-| `.github/workflows/publish-staging-image.yml` | **Release Candidate** | Publish Release Candidate |
-| `.github/workflows/deploy-staging-host.yml` | **Release Deployment** | Deploy Release Candidate |
+| Workflow file                                 | Workflow display name  | Job display labels                                                                     |
+| --------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------- |
+| `.github/workflows/developer-check.yml`       | **Developer Check**    | Route Checks, Website Validation, Container Validation, Release Configuration          |
+| `.github/workflows/quality.yml`               | **Full Admission**     | Promotion Policy, Full Admission, Container Admission, Publish Accepted Stable Release |
+| `.github/workflows/publish-staging-image.yml` | **Release Candidate**  | Publish Release Candidate                                                              |
+| `.github/workflows/deploy-staging-host.yml`   | **Release Deployment** | Deploy Release Candidate                                                               |
 
 Pull-request runs include their PR/branch label; manual release runs show the selected candidate tag. The stable-publication job remains restricted to its accepted issue #72 marker and exact-main admission; no ordinary push creates a new stable release.
 
