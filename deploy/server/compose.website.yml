@@ -1,0 +1,36 @@
+name: kaori-website
+
+services:
+  web:
+    image: ${KAORI_WEBSITE_IMAGE:?KAORI_WEBSITE_IMAGE must be an immutable digest reference}
+    restart: unless-stopped
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    expose:
+      - "8080"
+    mem_limit: 128m
+    cpus: 0.50
+    pids_limit: 100
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O /dev/null http://127.0.0.1:8080/healthz
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - website-internal
+
+networks:
+  website-internal:
+    internal: true

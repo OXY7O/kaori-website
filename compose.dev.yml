@@ -1,0 +1,20 @@
+name: kaori-website-dev
+
+services:
+  workspace:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    init: true
+    command: sleep infinity
+    working_dir: /workspace/kaori-website
+    volumes:
+      - .:/workspace/kaori-website
+      - website_node_modules:/workspace/kaori-website/node_modules
+    ports:
+      - "127.0.0.1:4321:4321"
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  website_node_modules:

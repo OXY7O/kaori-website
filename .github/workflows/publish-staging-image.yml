@@ -1,0 +1,46 @@
+name: KAORI Website Release Candidate
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_tag:
+        description: Intentional SemVer RC tag, for example v0.1.0-rc.1
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+  id-token: write
+concurrency:
+  group: kaori-website-rc
+  cancel-in-progress: false
+jobs:
+  publish:
+    name: Exact Staging Release Candidate
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 120
+    env:
+      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
+      RC_TAG: ${{ inputs.candidate_tag }}
+      ACCEPTED_SHA: ${{ github.sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check staging authority and registry configuration
+        shell: bash
+        run: bash scripts/release/publish-candidate.sh preflight
+      - name: Build, scan, sign and publish reviewed candidate
+        shell: bash
+        run: bash scripts/release/publish-candidate.sh publish
+      - name: Logout of registry
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "$REGISTRY_HOST" ]]; then docker logout "$REGISTRY_HOST" || true; fi
