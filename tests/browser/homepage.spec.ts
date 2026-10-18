@@ -57,9 +57,7 @@ test("capture reviewed candidate evidence for all major sections", async ({ page
 });
 
 test("preserve mobile copy, artwork bounds and consistent application CTA", async ({ page }) => {
-  await expect(page.locator(".hero-description")).toHaveText(
-    /evidence\.\s+It governs workflows/,
-  );
+  await expect(page.locator(".hero-description")).toHaveText(/evidence\.\s+It governs workflows/);
   await expect(page.locator("#architecture .section-intro > p:not(.eyebrow)")).toHaveText(
     /evidence\.\s+External systems remain authoritative/,
   );
@@ -88,9 +86,7 @@ test("preserve mobile copy, artwork bounds and consistent application CTA", asyn
     expect(art!.x).toBeGreaterThanOrEqual(outer!.x);
     expect(art!.x + art!.width).toBeLessThanOrEqual(outer!.x + outer!.width + 1);
     expect(heading!.y).toBeGreaterThanOrEqual(art!.y + art!.height - 1);
-    expect(description!.x + description!.width).toBeLessThanOrEqual(
-      outer!.x + outer!.width + 1,
-    );
+    expect(description!.x + description!.width).toBeLessThanOrEqual(outer!.x + outer!.width + 1);
 
     const fontSize = await card.locator("p").evaluate((element) =>
       Number.parseFloat(getComputedStyle(element).fontSize),
