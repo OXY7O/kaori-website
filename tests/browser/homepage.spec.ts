@@ -116,7 +116,11 @@ test("collect lab-only layout shift and largest paint evidence", async ({ page }
       observerSupportsLcp: supported.includes("largest-contentful-paint"),
       observerSupportsCls: supported.includes("layout-shift"),
       largestPaintMs: lcp.length ? lcp[lcp.length - 1].startTime : null,
-      clsScore: cls.reduce((total, entry) => total + (entry as PerformanceEntry & { value?: number }).value! || 0, 0),
+      clsScore: cls.reduce(
+        (total, entry) =>
+          total + ((entry as PerformanceEntry & { value?: number }).value ?? 0),
+        0,
+      ),
       domContentLoadedMs: navigation?.domContentLoadedEventEnd ?? null,
       inpFieldP75: null,
     };
