@@ -96,3 +96,14 @@ Maintainer's six screenshot findings require a **targeted** change, preserving t
 6. **Footer:** two concise rows — official five-term acronym and OXY7 ORBITAL attribution — with measured bold Violet accents, not entire paragraph in Violet.
 
 **Recheck visually after signed deployment:** desktop 1366/1440 light/dark line counts and readability, keyboard/focus and text zoom, tablet 768/1024, mobile 375/390/430, all CTA targets, no overflow. Existing app and automation edge availability and the signed image identity must stay intact. Human acceptance #3 remains required.
+## Mobile homepage visual polish — #91 (2026-10-19)
+
+New maintainer screenshots from public `kaori.cloud` showed an orphan acronym separator, Hero copy `evidence.It`, visually clipped mobile capability artwork and narrow descriptions, plus disproportionately spaced mobile sections. This bounded visual remediation preserves the approved Option 3 editorial structure, KAORI Violet tokens, official brand assets, provider-authoritative claims, and the existing conceptual Product Experience; it does not claim live application screenshots.
+
+- Explicitly separate Hero and architecture sentence spans on sub-1100px layouts, following the admitted Product Experience whitespace regression pattern (#53 / PR #89).
+- At <=540px present each capability card as a mobile grid: canonical icon/tag and fully contained orbit artwork in the header row, with the title and readable description across full card width below. Do not hide clipping with page-level overflow, modify domain content or add fake status indicators.
+- Use a shared wrap-safe acronym presentation for the Hero and footer so individual terms and their separator stay together. Preserve official five-term acronym and approved selective Violet emphasis.
+- Keep product CTA naming and destination consistent (`Open Application` → `https://app.kaori.cloud`), improve small-screen typography, spacing and supporting-note readability without introducing a second design system.
+- Extend the existing Playwright 12-project viewport/light-dark suite with actual rendered sentence-spacing, acronym-term, application destination and mobile card bounds/font-size checks. These tests complement—not replace—real screenshot, keyboard, screen-reader and 200% zoom acceptance.
+
+**Required admission and release evidence:** source/formatter/Astro/build Developer Check on exact PR SHA; reviewed merge into `kaori/staging`; same-SHA Full Admission, Container and Browser Quality Evidence; inspect six viewport widths in both themes, iOS Safari and zoom manually where available; issue-authorized new immutable signed candidate, scan/SBOM/provenance and guarded public deployment; maintainer Human Acceptance of the deployed visual baseline before `main`. A CI PASS does not prove public runtime promotion or visually accepted layout. Existing #53 sanitized real-product media remains separately gated on approval.
