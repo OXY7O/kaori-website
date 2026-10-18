@@ -36,3 +36,14 @@ The approved domains are `https://kaori.cloud` (website) and `https://app.kaori.
 - The one-time publication adapter was removed from staging following successful execution; canonical quality and runtime workflows remain authoritative. Cleanup admission must be recorded separately; it does not create or redeploy another RC image.
 - **Pending:** independent research-browser retrieval was unavailable; real desktop/mobile light/dark screenshots, keyboard/accessibility, metadata crawler preview and performance measurements require separate evidence and maintainer Human Acceptance under #3/#58. Do not promote staging to main.
 - Rollback authority: prior signed immutable [RC.7](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.7).
+
+## Public RC.9 Violet editorial copy UAT handoff (2026-10-18)
+
+- Authority: [copy refinement #60](https://github.com/OXY7O/kaori-website/issues/60), [signed release #62](https://github.com/OXY7O/kaori-website/issues/62), parent homepage Human Acceptance [#3](https://github.com/OXY7O/kaori-website/issues/3).
+- Exact release source SHA: `b7d98e4cbda6c221a0d67a34db6bc0414ceecd21`.
+- Signed immutable prerelease: [v0.1.0-rc.9](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.9), image digest `sha256:ab3bc078fa57f2b9e63476b431d54438198490328cff27a510d123ccf23d10d1`.
+- [Same-SHA Full Admission / Docker Runtime Admission](https://github.com/OXY7O/kaori-website/actions/runs/39113263241): PASS.
+- [Release signing, Trivy scan, provenance, SBOM and pinned SSH/public edge verification](https://github.com/OXY7O/kaori-website/actions/runs/39113263313): PASS after bounded retries. The first release verifier timed out waiting for Full Admission and failed closed; its retry published the immutable candidate. The first deployment attempt rejected an unhealthy candidate, **automatically recovered the previous RC.8 digest with its release receipt unchanged**, and failed closed. The single controlled failed-job retry successfully deployed the **same signed RC.9 digest** and validated existing public edge/application/n8n readiness. No release checks were bypassed.
+- One-time publication adapter is removed through a reviewed cleanup workstream. Cleanup admission is independent; it must **not** publish a second RC.
+- Human Visual Acceptance is still pending: desktop and mobile copy wrapping, Violet contrast in light/dark mode, editorial quote appearance, keyboard, zoom/reflow and cross-browser accessibility. Browser automation follows [#58](https://github.com/OXY7O/kaori-website/issues/58); automatic checks are not proof of screenshot/visual acceptance.
+- Rollback: prior signed immutable [RC.8](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.8).
