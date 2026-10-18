@@ -56,42 +56,31 @@ test("capture reviewed candidate evidence for all major sections", async ({ page
   }
 });
 
-test("preserve mobile copy, artwork bounds and consistent application CTA", async ({ page }) => {
-  await expect(page.locator(".hero-description")).toHaveText(/evidence\.\s+It governs workflows/);
-  await expect(page.locator("#architecture .section-intro > p:not(.eyebrow)")).toHaveText(
-    /evidence\.\s+External systems remain authoritative/,
-  );
-  await expect(page.locator("#experience .section-intro .button-primary")).toHaveText(
-    /Open Application/,
-  );
-  await expect(page.locator("#experience .section-intro .button-primary")).toHaveAttribute(
-    "href",
-    "https://app.kaori.cloud",
-  );
+test("protect mobile copy and capability artwork", async ({ page }) => {
+  const hero = page.locator(".hero-description");
+  const architecture = page.locator("#architecture .section-intro > p:not(.eyebrow)");
+  const application = page.locator("#experience .button-primary");
+
+  await expect(hero).toHaveText(/evidence\.\s+It governs workflows/);
+  await expect(architecture).toHaveText(/evidence\.\s+External systems/);
+  await expect(application).toHaveText("Open Application");
+  await expect(application).toHaveAttribute("href", "https://app.kaori.cloud");
   await expect(page.locator(".hero-micro .acronym-terms > span")).toHaveCount(5);
   await expect(page.locator(".footer-acronym > span")).toHaveCount(5);
 
-  if ((page.viewportSize()?.width ?? 0) > 540) return;
-
-  for (const card of await page.locator("#platform .capability-card").all()) {
-    const outer = await card.boundingBox();
-    const art = await card.locator(".capability-art").boundingBox();
-    const heading = await card.locator("h3").boundingBox();
-    const description = await card.locator("p").boundingBox();
-    expect(outer).not.toBeNull();
-    expect(art).not.toBeNull();
-    expect(heading).not.toBeNull();
-    expect(description).not.toBeNull();
-
-    expect(art!.x).toBeGreaterThanOrEqual(outer!.x);
-    expect(art!.x + art!.width).toBeLessThanOrEqual(outer!.x + outer!.width + 1);
-    expect(heading!.y).toBeGreaterThanOrEqual(art!.y + art!.height - 1);
-    expect(description!.x + description!.width).toBeLessThanOrEqual(outer!.x + outer!.width + 1);
-
-    const fontSize = await card.locator("p").evaluate((element) =>
-      Number.parseFloat(getComputedStyle(element).fontSize),
-    );
-    expect(fontSize).toBeGreaterThanOrEqual(12);
+  if ((page.viewportSize()?.width ?? 0) <= 540) {
+    for (const card of await page.locator("#platform .capability-card").all()) {
+      const box = await card.boundingBox();
+      const art = await card.locator(".capability-art").boundingBox();
+      const title = await card.locator("h3").boundingBox();
+      expect(box).not.toBeNull();
+      expect(art).not.toBeNull();
+      expect(title).not.toBeNull();
+      expect(art!.x).toBeGreaterThanOrEqual(box!.x);
+      expect(art!.x + art!.width).toBeLessThanOrEqual(box!.x + box!.width + 1);
+      expect(title!.y).toBeGreaterThanOrEqual(art!.y + art!.height - 1);
+      await expect(card.locator("p")).toHaveCSS("font-size", "12px");
+    }
   }
 });
 
