@@ -1658,134 +1658,17 @@ svg {
   min-width: 0;
   color: var(--web-node-text);
 }
-.hero-network {
-  position: relative;
-  isolation: isolate;
+.hero-approved-art {
+  display: block;
   width: 100%;
-  aspect-ratio: 720 / 440;
-  min-height: 350px;
-  background: radial-gradient(ellipse at 50% 50%, var(--violet-soft), transparent 57%);
-}
-.hero-network-paths {
-  position: absolute;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-.network-path {
-  stroke: var(--web-network-line);
-  stroke-width: 2;
-  fill: none;
-  opacity: 0.7;
-}
-.network-anchor {
-  fill: var(--violet);
-}
-.network-anchor-core {
-  fill: var(--web-hero-accent);
-}
-.hero-network-core,
-.hero-network-node {
-  position: absolute;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--web-node-border);
-  background: var(--web-node-surface);
-  box-shadow: 0 16px 35px var(--web-node-shadow);
-}
-.hero-network-core {
-  top: 50%;
-  left: 50%;
-  width: 33%;
-  max-width: 205px;
-  min-height: 162px;
-  padding: 18px 12px;
-  transform: translate(-50%, -50%);
-  flex-direction: column;
-  gap: 7px;
-  border-radius: 24px;
-  text-align: center;
-}
-.hero-network-emblem {
-  display: grid;
-  place-items: center;
-  width: 70px;
-  height: 70px;
-  background: var(--violet-soft);
+  height: auto;
+  aspect-ratio: 800 / 519;
+  object-fit: contain;
   border-radius: 18px;
+  box-shadow: 0 22px 60px rgba(42, 15, 88, 0.16);
 }
-.hero-network-emblem img {
-  width: 56px;
-  height: 56px;
-}
-.hero-network-core strong {
-  font-size: 16px;
-  letter-spacing: 0.08em;
-}
-.hero-network-core > span {
-  color: var(--content-secondary);
-  max-width: 155px;
-  font-size: 10px;
-  line-height: 1.45;
-}
-.hero-network-node {
-  width: 28%;
-  max-width: 174px;
-  min-height: 69px;
-  padding: 10px;
-  gap: 9px;
-  border-radius: 13px;
-  transform: translate(-50%, -50%);
-}
-.hero-node-icon {
-  display: grid;
-  place-items: center;
-  flex: 0 0 33px;
-  width: 33px;
-  height: 33px;
-  color: var(--violet);
-  border-radius: 9px;
-  background: var(--violet-soft);
-}
-.hero-network-node > span:last-child {
-  display: grid;
-  min-width: 0;
-  gap: 3px;
-}
-.hero-network-node strong {
-  font-size: clamp(10px, 1vw, 12px);
-  line-height: 1.2;
-}
-.hero-network-node small {
-  font-size: 9px;
-  line-height: 1.35;
-  color: var(--content-muted);
-}
-.hero-network-node-visibility {
-  top: 26%;
-  left: 22%;
-}
-.hero-network-node-control {
-  top: 26%;
-  left: 78%;
-}
-.hero-network-node-intelligence {
-  top: 74%;
-  left: 22%;
-}
-.hero-network-node-assurance {
-  top: 74%;
-  left: 78%;
-}
-.hero-art .art-disclaimer {
-  color: var(--content-muted);
-  font-size: 11px;
-  text-align: right;
-  margin-top: 0;
-  line-height: 1.6;
+:root[data-theme="dark"] .hero-approved-art {
+  box-shadow: 0 14px 65px rgba(109, 40, 217, 0.13);
 }
 .value-section {
   background: var(--web-principles-bg);
@@ -2069,51 +1952,6 @@ svg {
   .hero-copy {
     padding-top: 55px;
   }
-  .hero-network {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 11px;
-    align-items: stretch;
-    min-height: 0;
-    aspect-ratio: auto;
-    padding-block: 22px 14px;
-  }
-  .hero-network-paths {
-    display: none;
-  }
-  .hero-network-core,
-  .hero-network-node {
-    position: static;
-    transform: none;
-    width: 100%;
-    max-width: none;
-    min-height: 0;
-  }
-  .hero-network-core {
-    grid-column: 1 / -1;
-    padding: 20px;
-  }
-  .hero-network-node {
-    justify-content: flex-start;
-    gap: 6px;
-    padding: 11px 8px;
-  }
-  .hero-network-node small {
-    display: none;
-  }
-  .hero-network-node strong {
-    font-size: 11px;
-  }
-  .hero-node-icon {
-    width: 30px;
-    height: 30px;
-    flex-basis: 30px;
-  }
-  .hero-art .art-disclaimer {
-    margin-top: 4px;
-    text-align: left;
-    font-size: 11px;
-  }
   .value-grid {
     padding-block: 18px;
   }
@@ -2154,5 +1992,109 @@ svg {
   }
   .footer-bottom {
     gap: 12px;
+  }
+}
+
+/* KAORI Website #41 — focused public-facing ecosystem hierarchy. */
+.ecosystem-principle {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  flex: 0 1 385px;
+  min-width: min(100%, 270px);
+  padding: 21px 24px;
+  color: #f9f7ff;
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+  border: 1px solid rgba(196, 181, 253, 0.42);
+  border-radius: 16px;
+  box-shadow: 0 14px 35px rgba(109, 40, 217, 0.14);
+}
+.ecosystem-principle-icon {
+  display: grid;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #f5eeff;
+}
+.ecosystem-principle-label {
+  display: block;
+  color: #e3d2ff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1.55;
+}
+.ecosystem-principle strong {
+  display: block;
+  margin-top: 6px;
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 1.35;
+}
+.ecosystem-principle p {
+  margin: 9px 0 0;
+  color: #eee6ff;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.integration-outlook {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 830px;
+  margin: 23px 0 0;
+  color: var(--content-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.integration-outlook-dot {
+  flex: 0 0 7px;
+  width: 7px;
+  height: 7px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--violet);
+  box-shadow: 0 0 0 4px var(--violet-soft);
+}
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+@media (max-width: 800px) {
+  .ecosystem-principle {
+    flex-basis: auto;
+    max-width: 100%;
+    width: min(100%, 475px);
+  }
+  .hero-approved-art {
+    margin: 0 auto;
+  }
+}
+@media (max-width: 540px) {
+  .ecosystem-principle {
+    padding: 18px;
+  }
+  .ecosystem-principle strong {
+    font-size: 15px;
+  }
+  .hero-art {
+    max-width: 100%;
+    min-height: 0;
+    margin: 0;
+  }
+  .hero-approved-art {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
   }
 }
