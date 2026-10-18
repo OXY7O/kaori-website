@@ -25,3 +25,14 @@ CI runner labels and branch authority are documented in [`CI_CD.md`](CI_CD.md). 
 See [CI/CD workflow inventory](CI_CD.md#canonical-release-workflows). Single-use release activation and private ingress repair workflows were retired after their operational evidence was collected. Do not reintroduce their hardcoded RC.1 staging triggers. With GitHub Free/private and `main` still unpromoted, a new approved staging-only execution adapter requires a separate issue and review until normal manual dispatch is available; release security, Full Admission, release verification and human acceptance stay intact.
 
 The approved domains are `https://kaori.cloud` (website) and `https://app.kaori.cloud` (application). Publishing website DNS/TLS requires the separate shared-edge runbook and operational review; no website workflow may overwrite application/public edge authority implicitly.
+
+## Public RC.8 benchmark UAT handoff (2026-10-18)
+
+- Authority: [storytelling #51](https://github.com/OXY7O/kaori-website/issues/51), [discovery #52](https://github.com/OXY7O/kaori-website/issues/52), [publication #56](https://github.com/OXY7O/kaori-website/issues/56), homepage acceptance [#3](https://github.com/OXY7O/kaori-website/issues/3).
+- Exact staging release source: `dc5b76014971388054870dfffd671e09e73b450d`.
+- Immutable prerelease: [v0.1.0-rc.8](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.8), digest `sha256:c0bf750fa0ef3627dbe9750e7b996c68fc7bcaa5b043fc4bd8ed34081a8ebef5`.
+- [Same-SHA Full Admission / Docker Runtime Admission](https://github.com/OXY7O/kaori-website/actions/runs/39110431248): PASS.
+- [Signed candidate build, scan, provenance and VPS/public-edge deployment](https://github.com/OXY7O/kaori-website/actions/runs/39110431291): PASS after fail-closed bounded admission wait and same-SHA retry. Existing `kaori.cloud`, `app.kaori.cloud`, `auto.kaori.cloud` health assertions are checked by the approved deployment script.
+- The one-time publication adapter was removed from staging following successful execution; canonical quality and runtime workflows remain authoritative. Cleanup admission must be recorded separately; it does not create or redeploy another RC image.
+- **Pending:** independent research-browser retrieval was unavailable; real desktop/mobile light/dark screenshots, keyboard/accessibility, metadata crawler preview and performance measurements require separate evidence and maintainer Human Acceptance under #3/#58. Do not promote staging to main.
+- Rollback authority: prior signed immutable [RC.7](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.7).
