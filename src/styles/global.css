@@ -2255,8 +2255,7 @@ svg {
   border: 1px solid var(--outline);
   border-radius: 18px;
   background:
-    radial-gradient(ellipse at 85% 10%, var(--violet-soft), transparent 70%),
-    var(--surface-muted);
+    radial-gradient(ellipse at 85% 10%, var(--violet-soft), transparent 70%), var(--surface-muted);
 }
 .journey-scenario h3 {
   margin: 13px 0 18px;
