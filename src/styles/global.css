@@ -1485,28 +1485,50 @@ svg {
     font-size: clamp(31px, 8vw, 42px);
   }
   .capability-card {
-    min-height: 225px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 92px;
+    column-gap: 12px;
+    align-items: start;
+    min-height: 0;
     padding: 23px;
   }
-  .capability-card > h3,
-  .capability-card > p,
   .capability-card .capability-top {
-    max-width: 62%;
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    max-width: none;
   }
-  .capability-card p {
-    font-size: 11px;
+  .capability-card > h3,
+  .capability-card > p {
+    grid-column: 1 / -1;
+    max-width: none;
+  }
+  .capability-card > h3 {
+    margin-top: 14px;
+  }
+  .capability-card > p {
+    font-size: 12px;
+    line-height: 1.7;
   }
   .capability-art {
-    right: -4%;
-    width: 40%;
+    position: relative;
+    top: auto;
+    right: auto;
+    grid-column: 2;
+    grid-row: 1;
+    width: 92px;
+    height: 92px;
+  }
+  .capability-art-orbit {
+    width: 86px;
   }
   .capability-art-core {
-    width: 64px;
-    height: 64px;
+    width: 53px;
+    height: 53px;
   }
   .capability-art-node {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
   }
   .technology-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1947,10 +1969,42 @@ svg {
 }
 @media (max-width: 540px) {
   .hero-copy h1 {
-    font-size: clamp(36px, 10vw, 48px);
+    font-size: clamp(35px, 9.3vw, 46px);
   }
   .hero-copy {
-    padding-top: 55px;
+    padding-top: 50px;
+  }
+  .hero-description,
+  .section-intro > p:not(.eyebrow):not(.small-note),
+  .section-heading-row p:not(.eyebrow) {
+    font-size: 15px;
+    line-height: 1.68;
+  }
+  .hero-actions {
+    margin-top: 26px;
+  }
+  .section {
+    padding-block: 52px;
+  }
+  .capability-card {
+    min-height: 0;
+  }
+  .capability-art {
+    transform: none;
+  }
+  .experience-layout .button {
+    margin-top: 20px;
+  }
+  .experience-section .small-note {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .footer-identity > p {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .footer-identity .footer-note {
+    font-size: 13px;
   }
   .value-grid {
     padding-block: 18px;
@@ -1993,6 +2047,32 @@ svg {
   .footer-bottom {
     gap: 12px;
   }
+}
+
+/* KAORI Website #91 — shared wrap-safe display of the approved KAORI acronym. */
+.acronym-terms {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px 8px;
+  min-width: 0;
+}
+.acronym-terms > span {
+  white-space: nowrap;
+}
+.acronym-terms > span:not(:first-child)::before {
+  content: "·";
+  margin-right: 8px;
+}
+.hero-micro .micro-indicator {
+  flex: 0 0 7px;
+}
+.hero-micro .acronym-terms {
+  flex: 1;
+}
+.footer-identity .footer-acronym.acronym-terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 8px;
 }
 
 /* KAORI Website #41 — focused public-facing ecosystem hierarchy. */
