@@ -1,32 +1,16 @@
 ---
-import Icon from "./Icon.astro";
+
 ---
 
 <figure class="hero-art">
-  <div class="hero-art-frame">
-    <img
-      class="hero-fabric"
-      src="/branding/kaori-operations-fabric.svg"
-      alt="Conceptual KAORI operations fabric connecting infrastructure systems to an evidence-driven core"
-      width="960"
-      height="320"
-      fetchpriority="high"
-      decoding="async"
-    />
-    <span class="hero-fabric-label hero-fabric-label-visibility">
-      <Icon name="eye" size={16} /> Visibility
-    </span>
-    <span class="hero-fabric-label hero-fabric-label-control">
-      <Icon name="sliders-horizontal" size={16} /> Control
-    </span>
-    <span class="hero-fabric-label hero-fabric-label-intelligence">
-      <Icon name="brain-circuit" size={16} /> Intelligence
-    </span>
-    <span class="hero-fabric-label hero-fabric-label-assurance">
-      <Icon name="shield-check" size={16} /> Assurance
-    </span>
-  </div>
-  <figcaption class="art-disclaimer">
-    Concept illustration · Not a live infrastructure view
-  </figcaption>
+  <img
+    class="hero-approved-art"
+    src="/branding/kaori-connected-operations-hub.webp"
+    alt="KAORI at the center of connected operational context, linking Visibility, Control, Intelligence and Assurance."
+    width="800"
+    height="519"
+    loading="eager"
+    fetchpriority="high"
+    decoding="async"
+  />
 </figure>

@@ -10,8 +10,8 @@
   <img alt="Astro 7" src="https://img.shields.io/badge/Astro-7-7C3AED" />
   <img alt="TypeScript 5" src="https://img.shields.io/badge/TypeScript-5-3178C6" />
   <img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4" />
-  <a href="https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.4">
-    <img alt="Latest verified release v0.1.0-rc.4" src="https://img.shields.io/badge/Release-v0.1.0--rc.4-7C3AED" />
+  <a href="https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.10">
+    <img alt="Latest deployed release candidate v0.1.0-rc.10" src="https://img.shields.io/badge/Release-v0.1.0--rc.10-7C3AED" />
   </a>
 </p>
 
@@ -57,7 +57,7 @@ npm run build
 
 Changes follow an issue-linked branch and reviewed PR into `kaori/staging`. Developer Check and Full Admission provide source/build verification; signed release candidates, deployment verification, browser QA, and human acceptance remain separate gates. No direct changes to `main`.
 
-See [CI/CD](docs/CI_CD.md), [delivery workflow](docs/DELIVERY.md), and [deployment and rollback](docs/DEPLOYMENT.md) for procedures and evidence requirements. The release badge identifies the latest **verified GitHub Release**; update it when a newer release has been accepted, not when `package.json` changes.
+See [CI/CD](docs/CI_CD.md), [delivery workflow](docs/DELIVERY.md), and [deployment and rollback](docs/DEPLOYMENT.md) for procedures and evidence requirements. The release badge identifies the latest **signed, deployed release candidate**, not a stable release or completed Human Acceptance. Update it only after a newer candidate has verified release and deployment evidence, not when `package.json` changes.
 
 ## Documentation
 

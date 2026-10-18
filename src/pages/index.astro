@@ -1,28 +1,30 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import HeroVisual from "../components/HeroVisual.astro";
+import IntegrationCatalog from "../components/IntegrationCatalog.astro";
+import HowKaoriWorks from "../components/HowKaoriWorks.astro";
 import Icon from "../components/Icon.astro";
 
 const values = [
   {
     icon: "database",
     title: "Evidence-driven",
-    body: "From operational data to trustworthy context.",
+    body: "Turn committed evidence into reliable context.",
   },
   {
-    icon: "shield-check",
-    title: "Provider authoritative",
-    body: "Keep your infrastructure systems in control.",
+    icon: "layers",
+    title: "Source authority",
+    body: "Existing systems remain the source of truth.",
   },
   {
     icon: "network",
     title: "Unified operations",
-    body: "Connect visibility, workflows, and governance.",
+    body: "Connect context across domains and workflows.",
   },
   {
     icon: "shield-check",
     title: "Governed by design",
-    body: "Maintain traceability across operational changes.",
+    body: "Make operational decisions accountable.",
   },
 ];
 
@@ -54,38 +56,65 @@ const capabilities = [
 ];
 
 const technologies = [
-  { name: "Kubernetes", icon: "box", category: "Runtime orchestration" },
-  { name: "S3-compatible", icon: "database", category: "Object storage" },
-  { name: "Prometheus", icon: "activity", category: "Metrics" },
-  { name: "Alertmanager", icon: "bell-ring", category: "Alerting" },
-  { name: "GitHub", icon: "git-branch", category: "Source control" },
-  { name: "Harbor", icon: "layers", category: "Artifact registry" },
+  {
+    name: "Kubernetes",
+    icon: "box",
+    category: "Compute and workload orchestration",
+    domain: "Runtime",
+  },
+  {
+    name: "S3-compatible",
+    icon: "database",
+    category: "Object storage systems",
+    domain: "Storage",
+  },
+  {
+    name: "Prometheus",
+    icon: "activity",
+    category: "Metric signals and monitoring",
+    domain: "Observability",
+  },
+  {
+    name: "Alertmanager",
+    icon: "bell-ring",
+    category: "Alert routing context",
+    domain: "Observability",
+  },
+  {
+    name: "GitHub",
+    icon: "git-branch",
+    category: "Source-controlled definitions",
+    domain: "Source Control",
+  },
+  { name: "Harbor", icon: "layers", category: "Container artifact registry", domain: "Registry" },
 ];
 const summary =
   "KAORI provides unified infrastructure visibility, operational workflows, analytics, reporting, and governance while keeping integrated infrastructure systems authoritative.";
 ---
 
-<BaseLayout title="KAORI — From infrastructure to insight" description={summary}>
+<BaseLayout title="KAORI — Operate with Clarity" description={summary}>
   <section class="hero-section">
     <div class="hero-atmosphere" aria-hidden="true"></div>
     <div class="container hero-grid">
       <div class="hero-copy">
         <p class="eyebrow"><span class="eyebrow-line"></span> Infrastructure Operations Platform</p>
-        <h1>From infrastructure <span>to insight.</span></h1>
+        <h1>Meet KAORI.<br /><span>Operate with Clarity.</span></h1>
         <p class="hero-description">
-          Unified infrastructure visibility, governed operations, and evidence-driven intelligence.
-          Keep your existing systems authoritative while connecting the context that matters.
+          <span class="copy-line"
+            >KAORI connects infrastructure context and committed evidence.</span
+          >
+          <span class="copy-line">It governs workflows while your systems stay authoritative.</span>
         </p>
         <div class="hero-actions">
           <a class="button button-primary" href="https://app.kaori.cloud"
             >Open Application <Icon name="arrow-up-right" size={18} /></a
           >
-          <a class="button button-secondary" href="#platform"
-            >Explore Platform <Icon name="arrow-right" size={17} /></a
+          <a class="button button-secondary" href="#how-it-works"
+            >How KAORI Works <Icon name="arrow-right" size={17} /></a
           >
         </div>
         <p class="hero-micro">
-          <span class="micro-indicator"></span> Visibility · Control · Intelligence · Assurance
+          <span class="micro-indicator"></span> Knowledge · Automation · Operations · Resilience · Intelligence
         </p>
       </div>
       <HeroVisual />
@@ -159,6 +188,8 @@ const summary =
     </div>
   </section>
 
+  <HowKaoriWorks />
+
   <section class="section integrations-section" id="integrations">
     <div class="container">
       <div class="section-heading-row">
@@ -170,27 +201,18 @@ const summary =
             committed evidence, and governance across integrations.
           </p>
         </div>
-        <span class="quiet-tag"
-          ><Icon name="globe" size={16} /> Capability-first, provider-second</span
-        >
+        <div class="ecosystem-principle" aria-label="KAORI integration design principle">
+          <span class="ecosystem-principle-icon" aria-hidden="true">
+            <Icon name="network" size={24} />
+          </span>
+          <div>
+            <span class="ecosystem-principle-label">BUILT AROUND YOUR OPERATIONS</span>
+            <strong>Capabilities lead. Tools connect.</strong>
+            <p>KAORI adds shared context while your trusted systems stay authoritative.</p>
+          </div>
+        </div>
       </div>
-      <div class="technology-grid">
-        {
-          technologies.map((tech) => (
-            <div class="technology-card">
-              <span class="technology-symbol" aria-hidden="true">
-                <Icon name={tech.icon} size={25} />
-              </span>
-              <strong>{tech.name}</strong>
-              <span>{tech.category}</span>
-            </div>
-          ))
-        }
-      </div>
-      <p class="section-caption">
-        Illustrative technology categories and provider examples. Specific feature readiness is
-        governed by KAORI's capability and integration contracts.
-      </p>
+      <IntegrationCatalog integrations={technologies} />
     </div>
   </section>
 
@@ -200,8 +222,8 @@ const summary =
         <p class="eyebrow">Platform architecture</p>
         <h2>Normalize. Orchestrate.<br /><span>Correlate. Govern.</span></h2>
         <p>
-          KAORI sits between your infrastructure tools and operational teams—preserving external
-          source authority while adding shared evidence and cross-domain context.
+          <span class="copy-line">KAORI links context, governed workflows, and evidence.</span>
+          <span class="copy-line">External systems remain authoritative.</span>
         </p>
         <a class="text-link" href="#experience"
           >See the product experience <Icon name="arrow-right" size={17} /></a
@@ -209,30 +231,31 @@ const summary =
       </div>
       <div
         class="architecture-diagram"
-        aria-label="Infrastructure providers supply source evidence to KAORI, which presents governed context to operational teams"
+        aria-label="External authorities provide source context; KAORI normalizes, correlates, orchestrates, commits evidence and governs workflows to provide operational clarity"
       >
         <div class="diagram-column source">
           <span class="diagram-eyebrow">External authority</span>
           <Icon name="server" size={27} />
-          <strong>Integrated systems</strong>
-          <span>Compute · Storage · Observability</span>
+          <strong>External systems</strong>
+          <span>Compute · Storage · Observability · Source control</span>
           <span>External sources remain authoritative</span>
         </div>
         <span class="diagram-arrow" aria-hidden="true">→</span>
         <div class="diagram-column center">
           <img src="/branding/kaori-logo.svg" alt="" width="38" height="38" />
           <strong>KAORI</strong>
-          <span>Normalize</span><span>Correlate</span><span>Committed evidence</span><span
-            >Govern</span
-          >
-          >
+          <span>Normalize context</span>
+          <span>Orchestrate workflows</span>
+          <span>Correlate signals</span>
+          <span>Commit evidence</span>
+          <span>Govern operations</span>
         </div>
         <span class="diagram-arrow" aria-hidden="true">→</span>
         <div class="diagram-column consumer">
           <span class="diagram-eyebrow">Operational context</span>
           <Icon name="network" size={27} />
-          <strong>Operational outcomes</strong>
-          <span>Visibility · Intelligence · Auditability</span>
+          <strong>Operational clarity</strong>
+          <span>Shared visibility · Intelligence · Accountability</span>
         </div>
       </div>
     </div>
@@ -242,10 +265,10 @@ const summary =
     <div class="container experience-layout">
       <div class="section-intro">
         <p class="eyebrow">Product experience</p>
-        <h2>See the platform<br /><span>in action.</span></h2>
+        <h2>See KAORI<br /><span>in action.</span></h2>
         <p>
-          KAORI connects visibility, evidence and governed workflows in one operational workspace.
-          This interface illustrates the experience, not live operational data.
+          <span class="copy-line">See KAORI connect context and committed evidence.</span>
+          <span class="copy-line">Explore governed workflows in a conceptual workspace.</span>
         </p>
         <a
           class="button button-primary"
@@ -277,8 +300,8 @@ const summary =
             <span class="preview-search"></span><span class="preview-avatar"></span>
           </div>
           <p class="preview-kicker">INFRASTRUCTURE OPERATIONS</p>
-          <h3>Unified Context</h3>
-          <p class="preview-description">Evidence, relationships, and operational workflows</p>
+          <h3>Connected operations</h3>
+          <p class="preview-description">Context, committed evidence, and governed workflows</p>
           <div class="preview-stat-grid">
             <div>
               <Icon name="database" size={21} /><strong>Inventory</strong><span
@@ -299,7 +322,7 @@ const summary =
           <div class="preview-flow">
             <div class="flow-node"><span></span><strong>Source systems</strong></div>
             <div class="flow-connector"></div>
-            <div class="flow-node active"><span></span><strong>KAORI evidence</strong></div>
+            <div class="flow-node active"><span></span><strong>Committed evidence</strong></div>
             <div class="flow-connector"></div>
             <div class="flow-node"><span></span><strong>Operational insight</strong></div>
           </div>
@@ -313,18 +336,19 @@ const summary =
     <div class="container closing-inner">
       <div>
         <p class="eyebrow">Explore KAORI</p><h2>
-          Ready to explore<br /><span>KAORI?</span>
+          Discover how<br /><span>KAORI works.</span>
         </h2>
         <p class="closing-description">
-          Move from infrastructure signals to governed operational clarity.
+          Explore how infrastructure sources become shared context, committed evidence, and governed
+          action.
         </p>
       </div>
       <div class="closing-actions">
         <a class="button button-primary" href="https://app.kaori.cloud"
           >Open Application <Icon name="arrow-up-right" size={18} /></a
         >
-        <a class="button button-outline-light" href="#architecture"
-          >Review Architecture <Icon name="arrow-right" size={17} /></a
+        <a class="button button-outline-light" href="#how-it-works"
+          >How KAORI Works <Icon name="arrow-right" size={17} /></a
         >
       </div>
     </div>

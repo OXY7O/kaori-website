@@ -174,3 +174,53 @@ The issue #30 security recovery completed under [PR #31](https://github.com/OXY7
 - RC.2 remains the previous committed website digest and rollback authority. The issue #21 protected edge backup remains operator-owned; do not restore old conflicting `kaori-legacy.env` simultaneously with `kaori-website.env`.
 - Under #20, the **consumed** single-use RC.4 publication workflow has been removed from staging via reviewed follow-up. Canonical manual publisher/deployer remain unchanged.
 - **Human Visual QA is pending:** verify the actual deployed responsive/light/dark homepage, keyboard/accessibility, CTA and privacy-safe marketing copy with the maintainer under #3/#27. No `main` promotion or stable release is authorized by the public HTTP checks alone.
+
+## Issue #38 — one-time RC.5 publication after full-page visual revision
+
+Reviewed homepage change [PR #37](https://github.com/OXY7O/kaori-website/pull/37) integrated into `kaori/staging`. Issue #38 authorizes a **single** new signed prerelease `v0.1.0-rc.5`, with the historical RC.4 digest `sha256:c511b3ab2b603c0c2106ce31bb6cd293da998166cd0bf1f6627acfed88e4dc13` retained for recovery.
+
+`.github/workflows/publication-38-once.yml` is a temporary, issue-authorized staging activation because canonical manual release workflows cannot yet be dispatched from the unpromoted seed `main`. It requires an explicit `[KAORI_WEBSITE_PUBLICATION_38]` staging merge marker, checks that the staging HEAD and completed successful Full Admission match its exact merge SHA, then invokes **unchanged canonical** `scripts/release/publish-candidate.sh` and `scripts/release/deploy-release.sh`. Its short bounded admission wait is deliberately fail-closed to avoid monopolizing a shared runner; if the exact-SHA staging admission is still running, do **not** bypass the check—rerun the blocked verification job only after Full Admission and Docker Runtime Admission succeed.
+
+The existing `KAORI_WEBSITE_ATTACH_EXISTING_EDGE=1` read-only site registration preflight precedes container replacement. After digest-pinned SSH deployment it attaches the healthy website to the already-authorized public edge and checks HTTPS readiness for all three existing services without editing their Nginx, DNS, Certbot or application configurations. Mandatory Trivy HIGH/CRITICAL, Cosign signature, SPDX SBOM and SLSA provenance remain fail-closed. **Release/deploy and browser Visual QA are not yet passed by adding this workflow.**
+
+After signed RC.5 deployment and HTTPS checks PASS, retire this temporary workflow under #38 with a reviewed follow-up PR. Full-page light/dark, mobile/tablet, contrast, focus, filters and footer contact browser testing plus explicit Human Acceptance remain separate under #3/#36; do not promote `main` before acceptance.
+
+## RC.5 verified public release — 2026-10-18
+
+The homepage/light-dark UI and brand refinement was integrated under [PR #37](https://github.com/OXY7O/kaori-website/pull/37). [PR #39](https://github.com/OXY7O/kaori-website/pull/39) admitted and published signed **[v0.1.0-rc.5](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.5)** from staging SHA `703970f04ce27e1736e766736c49228c2a0a531e`, OCI `docker.io/lethisaputri/kaori-website@sha256:d759d81fd081ede381eca7bdb2d44abfc8abe61a067df5f1090ccf6d40ecf943`.
+
+- [Exact-SHA Full Admission + Docker Runtime Admission #39095233374](https://github.com/OXY7O/kaori-website/actions/runs/39095233374) **PASS**.
+- [One-time signed publication and verified SSH deployment #39095233281, attempt 2](https://github.com/OXY7O/kaori-website/actions/runs/39095233281) **PASS**: Trivy HIGH/CRITICAL, mandatory Cosign signature, signed SPDX SBOM/SLSA provenance, immutable digest and accepted GitHub Release.
+- The first short admission-wait job failed safely while same-SHA Full Admission was unfinished. After Full Admission and Docker Runtime Admission both passed, rerunning **only** the failed verification job unblocked publication. The required source/signature gates were never bypassed.
+- Host receipt for RC.5 committed after healthy non-root container and private `127.0.0.1:18080` HTTP PASS. Approved existing site registration preflight and network reattachment completed. Public `https://kaori.cloud/healthz` and the independent `app.kaori.cloud` / `auto.kaori.cloud` HTTPS readiness all **PASS**, with no new DNS, Nginx, TLS or application mutation.
+- Previous signed `v0.1.0-rc.4` remains rollback authority at `sha256:c511b3ab2b603c0c2106ce31bb6cd293da998166cd0bf1f6627acfed88e4dc13`. The one-time `publication-38-once.yml` workflow has been removed under reviewed issue #38 cleanup, without rebuilding or redeploying RC.5.
+- **Not automatically approved:** full-browser visual/contrast/theme parity at light and dark, responsive device screenshots, accessibility, integration filter interactions and `mailto:` owner contact, plus explicit Human Acceptance #3/#36. Keep `main` promotion and stable release on HOLD until reviewed acceptance.
+
+## RC.6 verified public release — 2026-10-18
+
+The maintainer-approved Hero artwork and ecosystem copy were integrated in [PR #42](https://github.com/OXY7O/kaori-website/pull/42). The latest published and deployed website is signed [v0.1.0-rc.6](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.6), exact staging source `b8ccb60f0c208b7f8de268f459eacbb309e6f24a`, OCI digest `docker.io/lethisaputri/kaori-website@sha256:f43635107bd541c173a059ddebbb70d36d2677494c2084ebb821d6dde4a699cc`.
+
+- [Exact-SHA Full Admission + Docker Runtime Admission #39098822528](https://github.com/OXY7O/kaori-website/actions/runs/39098822528) **PASS**.
+- [Signed publication and verified public SSH deployment #39098822357, attempt 2](https://github.com/OXY7O/kaori-website/actions/runs/39098822357) **PASS**. Mandatory Trivy HIGH/CRITICAL, Cosign verification, SPDX SBOM, SLSA provenance, immutable digest and GitHub prerelease evidence succeeded. Initial admission wait exited fail-closed while admission was pending; verification succeeded only after the same SHA was fully admitted.
+- Host released the exact immutable digest into the independent non-root website container with `127.0.0.1:18080` health **PASS**. Existing registration preflight and `edge-public` reattachment **PASS**; `https://kaori.cloud/healthz`, `https://app.kaori.cloud/health/ready`, and `https://auto.kaori.cloud/healthz` HTTPS readiness **PASS**. No DNS, Nginx, Certbot or application mutations were made.
+- Previous signed `v0.1.0-rc.5` remains immutable rollback authority (`sha256:d759d81fd081ede381eca7bdb2d44abfc8abe61a067df5f1090ccf6d40ecf943`). The used one-time `publication-43-once.yml` workflow is retired through the reviewed cleanup workstream without rebuilding or redeploying RC.6; cleanup commits are not part of the deployed source.
+- **Human Visual QA remains pending:** inspect the approved image on the actual website, full light/dark, responsive desktop/tablet/mobile, integration filters, footer email, keyboard and accessibility. An HTTP-health PASS is not browser or human acceptance. Promotion to `main` and a stable release remain **HOLD**.
+
+## Issue #48 — bounded one-time signed RC.7 publication
+
+The maintainer-reviewed six-point typography and contrast fix [PR #47](https://github.com/OXY7O/kaori-website/pull/47) is source authority #46. Its new immutable candidate `v0.1.0-rc.7` is authorized under issue #48 only after exact staged SHA Full Admission and Docker Runtime Admission pass; the RC.6 signed digest `sha256:f43635107bd541c173a059ddebbb70d36d2677494c2084ebb821d6dde4a699cc` stays the rollback authority.
+
+`.github/workflows/publication-48-once.yml` is an issue-limited bootstrap because the website canonical manual release workflows are still unavailable from unpromoted `main`. It runs only for a staging merge marker `[KAORI_WEBSITE_PUBLICATION_48]` and fails closed unless GitHub's exact-SHA Full Admission is completed successfully. A bounded 3-attempt admission wait prevents shared-runner contention; rerun the blocked verification job only after same-SHA admission passes. No new release script or weakened gate: canonical signed image, Trivy HIGH/CRITICAL, Cosign, SPDX SBOM, SLSA provenance, pinned SSH, existing-edge preflight and three-domain HTTPS readiness remain required.
+
+Remove the one-time workflow via a reviewed cleanup PR after publication, without rebuilding/redeploying the immutable digest. Browser light/dark, two-line copy, one-line integration message, Violet statement contrast, responsive footer and human acceptance remain **PENDING**, independent of HTTPS health. Promotion to `main` remains HOLD.
+
+## RC.7 signed public deployment and rollback evidence — 2026-10-18
+
+Maintainer's six screenshot fixes [PR #47](https://github.com/OXY7O/kaori-website/pull/47) and one-time release authority [PR #49](https://github.com/OXY7O/kaori-website/pull/49) were merged into `kaori/staging`. Exact release SHA `1c23699206eb176affd99c7ff6603918ec0a9aed` produced signed [v0.1.0-rc.7](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.7) at immutable image `docker.io/lethisaputri/kaori-website@sha256:aa1de44231fda4cfb485704cae493b0569da3534e3bd3193bad00fa360cf60ea`.
+
+- [Exact-SHA Full Admission and Docker Runtime Admission #39105396294](https://github.com/OXY7O/kaori-website/actions/runs/39105396294) **PASS**.
+- [Signed release and SSH public-edge deployment #39105396334 attempt 2](https://github.com/OXY7O/kaori-website/actions/runs/39105396334) **PASS**: Trivy HIGH/CRITICAL, Cosign signature verification, signed SPDX SBOM/provenance, immutable release digest, pinned SSH host verification.
+- Initial admission check rejected the release while same-SHA admission was incomplete; only its failed verification job was rerun **after** all admission lanes passed. No gate was bypassed.
+- The deployed isolated non-root website image, health at `127.0.0.1:18080`, existing `edge-public` reattachment, public `kaori.cloud` readiness and independent `app.kaori.cloud` / `auto.kaori.cloud` HTTPS readiness all **PASS**. No shared Nginx, DNS, Certbot or KAORI Application mutation.
+- Previous signed [RC.6](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.6), digest `sha256:f43635107bd541c173a059ddebbb70d36d2677494c2084ebb821d6dde4a699cc`, remains the rollback candidate. The temporary `publication-48-once.yml` was removed under #48 without rebuilding or redeploying RC.7.
+- User browser review is still required for **two-line** Hero/Architecture/Product Experience, **single-line** integration message, both modes' Violet card contrast, footer typography, mobile wrap/accessibility and real visual acceptance. Do not promote `main` on CI/health alone.
