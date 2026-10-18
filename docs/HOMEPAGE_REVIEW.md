@@ -70,3 +70,16 @@ Maintainer screenshot review approved a targeted visual refinement, not a wholes
 - **Footer:** maintainer-provided owner Lethisa Putri and `lethisaputri@gmail.com` with functional `mailto:` contact; do not invent social profiles. Keep existing OXY7 ORBITAL attribution.
 
 **Mandatory real-browser gate before human acceptance:** check loaded CSS and initial theme/persistence (light/dark) across all sections, 1366/1440 desktop, 768/1024 tablet, 375/390/430 mobile, 200% zoom, no horizontal overflow, accessible category filtering/keyboard/ARIA pressed, reduced-motion and contrast. Browser PASS requires actual evidence beyond Astro build or HTTPS readiness. A successful signed RC/host deploy allows review but does not close #3 automatically.
+
+## Maintainer-approved focused artwork and ecosystem refinement — #41
+
+Follow-up to the live RC.5 browser review. **This approval concerns the exact picture and copy direction, not a final UAT acceptance or main promotion.**
+
+- The Hero's right-hand visual uses the maintainer-approved generated KAORI Connected Operations Hub illustration rather than the previous CSS-built diagram. The approved image was **cropped only to remove the now-unwanted lower caption**, then resized and compressed as `public/branding/kaori-connected-operations-hub.webp` (800 × 519, 12,444 bytes). Binary Git blob `217f093c6c04c2201a4f01a26e8e6bb7edce68a8`, SHA-256 `5efdb04159f06d4572b5181c774e67bf9b8420f405512a105d1ee951c032846a`. No new drawing was generated. Non-decorative alt text names KAORI, Visibility, Control, Intelligence, and Assurance.
+- The standalone visible `Concept illustration · Not a live infrastructure view` caption is intentionally removed. Do not claim the diagram represents live infrastructure activity elsewhere in text.
+- Replace the detached `Capability-first · Provider-second` token with a branded Violet statement, `Capabilities lead. Tools connect.`, explaining source authority without naming providers as necessarily GA-integrated.
+- Hide `X of Y examples` marketing counters while keeping semantic `aria-live` announcements for category filtering; retain accessible filters and progressive disclosure.
+- Introduce a concise Violet-dot ecosystem statement instead of the technical, apologetic availability disclaimer. The public copy must not imply all provider examples are connected or GA-supported; integration readiness remains governed in KAORI.
+- Remove only the redundant `Get in touch` mailto-with-subject button; retain Lethisa Putri's actual contact email and working `Contact us` link.
+
+Before acceptance: confirm the artwork actually loads from the **signed deployed digest** in Firefox/Chromium and light/dark, with no caption leakage or stretching; category/filter behavior, readable Violet panel, footer contact on mobile/desktop, and the existing app/edge readiness. Static build and HTTPS health do not prove a visual PASS.
