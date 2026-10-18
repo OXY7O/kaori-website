@@ -10,7 +10,15 @@ const screenshots = [
 test.beforeEach(async ({ page }, testInfo) => {
   // Install observers before navigation: getEntriesByType() does not report LCP/CLS.
   await page.addInitScript(() => {
-    const vitals = { largestPaintMs: null as number | null, clsScore: 0 };
+    const vitals = {
+      largestPaintMs: null as number | null,
+      clsScore: 0,
+      layoutShiftEvents: [] as Array<{
+        value: number;
+        timeMs: number;
+        sources: Array<{ element: string | null; beforeY: number | null; afterY: number | null }>;
+      }>,
+    };
     Object.assign(window, { __kaoriLabVitals: vitals });
 
     if (PerformanceObserver.supportedEntryTypes.includes("largest-contentful-paint")) {
@@ -27,8 +35,29 @@ test.beforeEach(async ({ page }, testInfo) => {
           const shift = entry as PerformanceEntry & {
             value?: number;
             hadRecentInput?: boolean;
+            sources?: Array<{
+              node?: Node | null;
+              previousRect?: DOMRectReadOnly;
+              currentRect?: DOMRectReadOnly;
+            }>;
           };
-          if (!shift.hadRecentInput) vitals.clsScore += shift.value ?? 0;
+          if (!shift.hadRecentInput) {
+            vitals.clsScore += shift.value ?? 0;
+            vitals.layoutShiftEvents.push({
+              value: shift.value ?? 0,
+              timeMs: shift.startTime,
+              sources: (shift.sources ?? []).map((source) => ({
+                element:
+                  source.node instanceof Element
+                    ? `${source.node.tagName.toLowerCase()}.${String(source.node.className)
+                        .trim()
+                        .replace(/\s+/g, ".")}`
+                    : null,
+                beforeY: source.previousRect?.y ?? null,
+                afterY: source.currentRect?.y ?? null,
+              })),
+            });
+          }
         }
       }).observe({ type: "layout-shift", buffered: true });
     }
@@ -175,7 +204,11 @@ test("collect browser-observed lab paint and layout shift budgets", async ({ pag
   const metrics = await page.evaluate(() => {
     const vitals = (
       window as Window & {
-        __kaoriLabVitals?: { largestPaintMs: number | null; clsScore: number };
+        __kaoriLabVitals?: {
+          largestPaintMs: number | null;
+          clsScore: number;
+          layoutShiftEvents: unknown[];
+        };
       }
     ).__kaoriLabVitals;
     const navigation = performance.getEntriesByType("navigation")[0] as
@@ -192,6 +225,7 @@ test("collect browser-observed lab paint and layout shift budgets", async ({ pag
       largestPaintMs: vitals?.largestPaintMs ?? null,
       // Conservative cumulative shift total, not the web-vitals session-window field CLS.
       clsScore: vitals?.clsScore ?? null,
+      layoutShiftEvents: vitals?.layoutShiftEvents ?? [],
       domContentLoadedMs: navigation?.domContentLoadedEventEnd ?? null,
       labLcpBudgetMs: 2_500,
       labClsConservativeBudget: 0.1,
