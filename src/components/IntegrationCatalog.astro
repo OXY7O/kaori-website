@@ -34,7 +34,7 @@ const categories = ["All", ...new Set(integrations.map((item) => item.domain))];
       {integrations.length} integration examples
     </p>
   </div>
-  <div class="technology-grid">
+  <div class="technology-grid" id="integration-example-list">
     {
       integrations.map((item) => (
         <article class="technology-card" data-integration-item data-domain={item.domain}>
