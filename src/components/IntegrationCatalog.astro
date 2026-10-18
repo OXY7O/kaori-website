@@ -16,7 +16,11 @@ const categories = ["All", ...new Set(integrations.map((item) => item.domain))];
 
 <div class="integration-catalog" data-integration-catalog>
   <div class="integration-toolbar">
-    <div class="integration-filters" role="group" aria-label="Filter integration examples by domain">
+    <div
+      class="integration-filters"
+      role="group"
+      aria-label="Filter integration examples by domain"
+    >
       {
         categories.map((category) => (
           <button
@@ -63,14 +67,16 @@ const categories = ["All", ...new Set(integrations.map((item) => item.domain))];
     </button>
   </div>
   <p class="section-caption">
-    Illustrative technology categories and provider examples—not a live supported-integrations registry.
-    Availability and readiness follow KAORI's approved integration contracts.
+    Illustrative technology categories and provider examples—not a live supported-integrations
+    registry. Availability and readiness follow KAORI's approved integration contracts.
   </p>
 </div>
 
 <script>
   for (const catalog of document.querySelectorAll<HTMLElement>("[data-integration-catalog]")) {
-    const buttons = Array.from(catalog.querySelectorAll<HTMLButtonElement>("[data-integration-filter]"));
+    const buttons = Array.from(
+      catalog.querySelectorAll<HTMLButtonElement>("[data-integration-filter]"),
+    );
     const cards = Array.from(catalog.querySelectorAll<HTMLElement>("[data-integration-item]"));
     const count = catalog.querySelector<HTMLElement>("[data-integration-count]");
     const empty = catalog.querySelector<HTMLElement>("[data-integration-empty]");
@@ -82,7 +88,9 @@ const categories = ["All", ...new Set(integrations.map((item) => item.domain))];
     function render() {
       const matches = cards.filter((card) => active === "All" || card.dataset.domain === active);
       const shown = expanded ? matches : matches.slice(0, pageSize);
-      cards.forEach((card) => { card.hidden = !shown.includes(card); });
+      cards.forEach((card) => {
+        card.hidden = !shown.includes(card);
+      });
       buttons.forEach((button) => {
         button.setAttribute("aria-pressed", String(button.dataset.integrationFilter === active));
       });
