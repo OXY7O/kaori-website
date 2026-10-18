@@ -68,8 +68,8 @@ const categories = ["All", ...new Set(integrations.map((item) => item.domain))];
   </div>
   <p class="integration-outlook">
     <span class="integration-outlook-dot" aria-hidden="true"></span>
-    Explore the technologies behind connected infrastructure operations—where context moves across
-    domains, and every system retains its authority.
+    Explore the technologies behind connected infrastructure operations—where context moves across domains,
+    and every system retains its authority.
   </p>
 </div>
 
@@ -95,7 +95,9 @@ const categories = ["All", ...new Set(integrations.map((item) => item.domain))];
       buttons.forEach((button) => {
         button.setAttribute("aria-pressed", String(button.dataset.integrationFilter === active));
       });
-      if (count) count.textContent = active === "All" ? "Showing all technology categories" : `Showing ${active} technologies`;
+      if (count)
+        count.textContent =
+          active === "All" ? "Showing all technology categories" : `Showing ${active} technologies`;
       if (empty) empty.hidden = matches.length > 0;
       if (more) {
         more.hidden = matches.length <= pageSize;
