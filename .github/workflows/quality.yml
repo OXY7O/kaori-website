@@ -158,6 +158,20 @@ jobs:
         run: npm run build
       - name: Run browser interaction, accessibility and visual evidence tests
         run: npm run test:browser
+      - name: Restore runner workspace ownership after container tests
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # The container writes as root. The host runner owns the checked-out .git directory.
+          # Restore ownership of generated outputs so the next actions/checkout can clean them.
+          owner="$(stat -c '%u:%g' "$GITHUB_WORKSPACE/.git")"
+          [[ "$owner" =~ ^[0-9]+:[0-9]+$ ]] || { echo 'Invalid checkout owner' >&2; exit 1; }
+          for dir in .astro dist test-results playwright-report node_modules; do
+            if [[ -e "$GITHUB_WORKSPACE/$dir" ]]; then
+              chown -R "$owner" "$GITHUB_WORKSPACE/$dir"
+            fi
+          done
       - name: Attach immutable job evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
