@@ -166,7 +166,7 @@ The new issue-authorized one-time publication activation targets **`v0.1.0-rc.4`
 
 ## RC.4 public website operational evidence — 2026-10-18
 
-The issue #30 security recovery completed under [PR #31](https://github.com/OXY7O/kaori-website/pull/31). The prior RC.3 attempt is historical *rejected* evidence; **the latest accepted and deployed candidate is [v0.1.0-rc.4](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.4)** from staging source `70860f7813505b875953b533e912dc7f3c1d7899`, at immutable `docker.io/lethisaputri/kaori-website@sha256:c511b3ab2b603c0c2106ce31bb6cd293da998166cd0bf1f6627acfed88e4dc13`.
+The issue #30 security recovery completed under [PR #31](https://github.com/OXY7O/kaori-website/pull/31). The prior RC.3 attempt is historical _rejected_ evidence; **the latest accepted and deployed candidate is [v0.1.0-rc.4](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.4)** from staging source `70860f7813505b875953b533e912dc7f3c1d7899`, at immutable `docker.io/lethisaputri/kaori-website@sha256:c511b3ab2b603c0c2106ce31bb6cd293da998166cd0bf1f6627acfed88e4dc13`.
 
 - [Exact-SHA admission run #38998956011, attempt 2](https://github.com/OXY7O/kaori-website/actions/runs/38998956011): Promotion Source Policy, Full Admission, Docker Runtime Admission **PASS**.
 - [Release and deploy run #38998956033, attempt 2](https://github.com/OXY7O/kaori-website/actions/runs/38998956033): immutable Trivy HIGH/CRITICAL, Cosign mandatory signature verification, signed SPDX SBOM/provenance, attestations, immutable release, pinned-SSH deployment, non-root server and host-loopback readiness **PASS**.
