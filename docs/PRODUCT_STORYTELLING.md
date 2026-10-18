@@ -23,3 +23,9 @@ Authority: [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/d
 - Staging Full Admission and container runtime are separate from public deployment.
 - Public UAT: light/dark across 390/768/1440px and 200% zoom, keyboard/tab/focus, filter behavior, headings, anchors and screen-reader meaning.
 - Record browser evidence and human acceptance under #3. A successful HTTP status or automated CI does not establish visual approval.
+
+## RC.8 visual feedback: editorial descriptions (#60)
+
+The section and practical-scenario supporting descriptions use a semantic `blockquote` with a restrained Violet quote mark, left rule and key-phrase emphasis. Quote ornament is CSS-only; the text remains readable by assistive technology, and the CSS uses existing `--violet` and content tokens in both themes. Step cards contain concise, factual copy designed to avoid extra lines in the four-column desktop layout without fixed heights, forced line breaks or truncation. Line wrapping naturally adapts on narrower viewports and 200% zoom.
+
+This is illustrative product storytelling, not a commitment that every provider/workflow integration is currently available. Acceptance requires actual desktop/tablet/mobile light/dark browser visual review under #3, not merely a successful build.

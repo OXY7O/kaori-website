@@ -2182,11 +2182,38 @@ svg {
 .journey-scenario h3 span {
   color: var(--violet);
 }
-.journey-heading > p {
+.journey-quote {
+  position: relative;
   margin: 0 0 5px;
+  padding: 2px 0 2px 28px;
+  border-left: 2px solid var(--violet);
+}
+.journey-quote::before {
+  position: absolute;
+  top: -12px;
+  left: 5px;
+  content: "“";
+  color: var(--violet);
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1;
+}
+.journey-quote-main {
+  margin: 0;
+  color: var(--content-primary);
+  font-size: clamp(15px, 1.25vw, 17px);
+  font-weight: 500;
+  line-height: 1.6;
+}
+.journey-quote-main strong {
+  color: var(--violet);
+  font-weight: 750;
+}
+.journey-quote-support {
+  margin: 9px 0 0;
   color: var(--content-secondary);
-  font-size: 15px;
-  line-height: 1.8;
+  font-size: 13px;
+  line-height: 1.6;
 }
 .journey-steps {
   display: grid;
@@ -2243,7 +2270,7 @@ svg {
   margin: 0;
   color: var(--content-secondary);
   font-size: 13px;
-  line-height: 1.75;
+  line-height: 1.65;
 }
 .journey-scenario {
   display: grid;
@@ -2263,12 +2290,9 @@ svg {
   line-height: 1.25;
   letter-spacing: -0.04em;
 }
-.journey-scenario-copy > p:not(.eyebrow) {
+.journey-scenario-copy .journey-quote {
   max-width: 580px;
-  margin: 0 0 22px;
-  color: var(--content-secondary);
-  font-size: 14px;
-  line-height: 1.8;
+  margin-bottom: 22px;
 }
 .journey-scenario-flow {
   display: flex;
