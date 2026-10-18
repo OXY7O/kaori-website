@@ -34,3 +34,7 @@ Development ports bind to loopback only. Do not copy secrets from the KAORI appl
 ## Validation boundaries
 
 Developer checks are targeted to the work branch. Full Admission, browser Visual QA, staging deployment and human acceptance are separate evidence-producing stages; source inspection alone is not a PASS.
+
+## Browser quality candidate (#58)
+
+Browser execution uses pinned Playwright/axe dependencies and `npm run test:browser` after `npm run build`. The CI Full Admission workflow records screenshots, axe results, traces, and lab-only performance evidence; see `docs/BROWSER_QA.md`. This does not replace human acceptance or field INP/Core Web Vitals. The DevContainer needs an explicitly installed Chromium browser; browser dependencies are **not** included in the runtime website Docker image.

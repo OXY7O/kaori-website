@@ -125,6 +125,44 @@ jobs:
         shell: bash
         run: bash scripts/container_smoke.sh "$KAORI_WEBSITE_SOURCE_SHA"
 
+  browser-evidence:
+    name: Browser Quality Evidence
+    needs: [promotion-source, full-admission]
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    runs-on: [self-hosted, linux, x64, kaori-ci]
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact admitted source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.KAORI_WEBSITE_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Set up pinned Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v4.4.0
+        with:
+          node-version: "22.23.2"
+          cache: npm
+      - name: Restore locked browser dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Install pinned Chromium build
+        run: npx playwright install chromium
+      - name: Build exact browser candidate
+        run: npm run build
+      - name: Run browser interaction, accessibility and visual evidence tests
+        run: npm run test:browser
+      - name: Attach immutable job evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: website-browser-evidence-${{ github.sha }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 30
+          if-no-files-found: warn
+
   stable-publication:
     name: Publish Accepted Stable Release
     needs: [promotion-source, full-admission, container-admission]
