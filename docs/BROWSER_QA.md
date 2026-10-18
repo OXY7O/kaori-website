@@ -31,3 +31,9 @@ The browser lab report records navigation and paint/layout signals with `inpFiel
 - [ ] Failed screenshots/axe rules emit actionable artifacts; no auto-accept.
 - [ ] Human light/dark and desktop/mobile evidence review completed.
 - [ ] Independent Lighthouse lab budgets and field p75 Core Web Vitals evidence are added before closing #58.
+
+## Browser runtime isolation remediation — #58
+
+[Staging run #39126351997](https://github.com/OXY7O/kaori-website/actions/runs/39126351997) executed all 72 tests but each failed before page navigation because the self-hosted runner lacks required Linux Chromium libraries. The exact-SHA failure artifact was retained. The existing `browser-evidence` job now uses Microsoft's version-matched `mcr.microsoft.com/playwright:v1.56.1-noble` image on the **existing self-hosted kaori-ci runner**, with `--init --ipc=host --user 1001` as documented by Playwright. The image includes browser binaries and Linux libraries; `npm ci` continues installing the locked `@playwright/test@1.56.1` and `@axe-core/playwright` packages. The job checks its CLI version before the test matrix.
+
+This is isolated to the Browser Quality Evidence job; the application's production image, canonical workflow trigger, other admission jobs, CI runner OS, and deployment are not changed. Do not install `sudo playwright install-deps` or mutate the shared CI host from a test job. The container tag is version-pinned but not an immutable OCI digest; evaluate a registry-verified SHA digest once the exact signed container provenance is available. Container startup and screenshot compatibility must be confirmed in real GitHub Actions before claiming PASS. Automated axe checks are not a replacement for manual accessibility acceptance or Lighthouse/field Core Web Vitals.
