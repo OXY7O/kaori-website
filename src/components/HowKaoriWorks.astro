@@ -7,7 +7,7 @@ const steps = [
     icon: "server",
     title: "Connect sources",
     detail:
-      "Start with inventory, signals, and definitions from systems that remain authoritative.",
+      "Use inventory and signals from authoritative systems.",
     tag: "Sources",
   },
   {
@@ -15,7 +15,7 @@ const steps = [
     icon: "network",
     title: "Build context",
     detail:
-      "Normalize identities and relate assets, environments, and signals across operational domains.",
+      "Connect assets and signals across domains.",
     tag: "Context",
   },
   {
@@ -23,7 +23,7 @@ const steps = [
     icon: "file-text",
     title: "Preserve evidence",
     detail:
-      "Use committed snapshots and traceable records to separate observed facts from assumptions.",
+      "Committed evidence separates facts from assumptions.",
     tag: "Evidence",
   },
   {
@@ -31,7 +31,7 @@ const steps = [
     icon: "shield-check",
     title: "Govern the action",
     detail:
-      "Apply permissions, validation, and an accountable workflow before operational changes.",
+      "Validate and authorize each operational action.",
     tag: "Governance",
   },
 ];
@@ -46,10 +46,12 @@ const steps = [
           From infrastructure signals<br /><span>to operational clarity.</span>
         </h2>
       </div>
-      <p>
-        A connected operational journey: from external systems and cross-domain context to committed
-        evidence and governed decisions. Without replacing your existing tools.
-      </p>
+      <blockquote class="journey-quote">
+        <p class="journey-quote-main">
+          From trusted sources to <strong>committed evidence</strong> and <strong>governed decisions</strong>.
+        </p>
+        <p class="journey-quote-support">Your existing systems remain authoritative.</p>
+      </blockquote>
     </div>
     <ol class="journey-steps" aria-label="Four stages of the KAORI operating approach">
       {
@@ -72,11 +74,14 @@ const steps = [
       <div class="journey-scenario-copy">
         <p class="eyebrow">A practical example</p>
         <h3>When an alert arrives,<br /><span>the signal is only the beginning.</span></h3>
-        <p>
-          An alert can identify a symptom. Related asset inventory, ownership, and historical
-          evidence provide context for deciding what to investigate. Authorized workflows keep
-          subsequent operational action accountable.
-        </p>
+        <blockquote class="journey-quote">
+          <p class="journey-quote-main">
+            Signals reveal symptoms. <strong>Context and evidence</strong> shape the next decision.
+          </p>
+          <p class="journey-quote-support">
+            Authorized workflows keep follow-up accountable.
+          </p>
+        </blockquote>
         <a class="text-link" href="#experience">
           Explore the product experience <Icon name="arrow-right" size={17} />
         </a>
