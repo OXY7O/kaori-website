@@ -123,3 +123,29 @@ jobs:
       - name: Verify container runtime without publishing
         shell: bash
         run: bash scripts/container_smoke.sh "$KAORI_WEBSITE_SOURCE_SHA"
+
+  stable-publication:
+    name: Publish Accepted Stable Release
+    needs: [promotion-source, full-admission, container-admission]
+    if: >-
+      ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[KAORI_WEBSITE_STABLE_RELEASE_72]') }}
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      STABLE_TAG: v0.1.0
+      ACCEPTED_RC_TAG: v0.1.0-rc.10
+      ACCEPTED_RC_SHA: 84fdd7f75c01de6ee49f6b5805424740e4518268
+      ACCEPTED_DIGEST: sha256:8205ec3f66ed5c0eabc880f3fc49eb002da962b9c21242458c4ebc86a87dc930
+    steps:
+      - name: Checkout exact admitted main commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify candidate and publish immutable stable release
+        shell: bash
+        run: bash scripts/release/promote-stable.sh
