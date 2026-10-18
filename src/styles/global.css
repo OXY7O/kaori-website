@@ -1980,6 +1980,12 @@ svg {
     font-size: 15px;
     line-height: 1.68;
   }
+  /* Keep the five-term acronym on a stable two-line mobile measure,
+     including while the fallback face changes to Inter. */
+  .hero-micro .acronym-terms {
+    flex: 0 1 285px;
+    max-width: calc(100% - 15px);
+  }
   .hero-actions {
     margin-top: 26px;
   }
