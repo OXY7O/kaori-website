@@ -113,6 +113,64 @@ test("protect mobile copy and capability artwork", async ({ page }) => {
   }
 });
 
+test("keep mobile acronym rows and filter overflow stable", async ({ page }) => {
+  if ((page.viewportSize()?.width ?? 0) > 540) return;
+
+  for (const selector of [".hero-micro .acronym-terms", ".footer-acronym"]) {
+    const terms = page.locator(`${selector} > span`);
+    await expect(terms).toHaveCount(5);
+    const positions = await terms.evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const bounds = node.getBoundingClientRect();
+        return { top: bounds.top, right: bounds.right };
+      }),
+    );
+    expect(positions[0].top).toBeCloseTo(positions[1].top, 0);
+    expect(positions[1].top).toBeCloseTo(positions[2].top, 0);
+    expect(positions[3].top).toBeGreaterThan(positions[0].top + 4);
+    expect(positions[3].top).toBeCloseTo(positions[4].top, 0);
+    const leadingSeparator = await terms.nth(3).evaluate(
+      (term) => getComputedStyle(term, "::before").content,
+    );
+    expect(leadingSeparator).toBe("none");
+    const viewportRight = await page.evaluate(() => document.documentElement.clientWidth);
+    expect(Math.max(...positions.map((position) => position.right))).toBeLessThanOrEqual(
+      viewportRight + 1,
+    );
+  }
+
+  const filters = page.locator(".integration-filters");
+  const layout = await filters.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      wrap: style.flexWrap,
+      overflowX: style.overflowX,
+      width: element.clientWidth,
+      contentWidth: element.scrollWidth,
+    };
+  });
+  expect(layout.wrap).toBe("nowrap");
+  expect(layout.overflowX).toBe("auto");
+  expect(layout.contentWidth).toBeGreaterThan(layout.width);
+
+  const registry = page.getByRole("button", { name: "Registry", exact: true });
+  await registry.click();
+  await expect(registry).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("[data-integration-item]:visible")).toHaveCount(1);
+  await expect(page.locator("[data-integration-item]:visible")).toContainText("Harbor");
+
+  const experienceCta = page.locator("#experience .section-intro > .button");
+  const copyWidth = await page.locator("#experience .section-intro").evaluate(
+    (element) => element.getBoundingClientRect().width,
+  );
+  const ctaWidth = await experienceCta.evaluate((element) => element.getBoundingClientRect().width);
+  expect(ctaWidth).toBeGreaterThanOrEqual(copyWidth - 1);
+  await expect(experienceCta).toHaveAttribute("href", "https://app.kaori.cloud");
+  await expect(page.locator("#experience .small-note")).toContainText(
+    "authentication and permissions",
+  );
+});
+
 test("navigate and preserve theme through the real control", async ({ page }) => {
   const journey = page.locator("#how-it-works");
   await expect(journey).toBeVisible();
