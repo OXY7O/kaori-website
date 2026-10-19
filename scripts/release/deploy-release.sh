@@ -7,6 +7,7 @@ fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 [[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || fail 'staged source SHA mismatch'
 [[ "$RC_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'invalid prerelease tag'
 [[ "$APPROVAL_REF" =~ ^https://github.com/OXY7O/kaori-website/(issues|pull)/[0-9]+ ]] || fail 'explicit GitHub authorization reference is required'
+[[ "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" =~ ^[01]$ ]] || fail 'public edge deployment option must be 0 or 1'
 [[ -n "${REGISTRY_HOST:-}" && "$REGISTRY_IMAGE" == "$REGISTRY_HOST/"* ]] || fail 'website registry variables missing or inconsistent'
 [[ "$REGISTRY_IMAGE" == */kaori-website ]] || fail 'website image namespace is not dedicated; deployment blocked'
 [[ -n "${REGISTRY_USER:-}" && -n "${REGISTRY_PASSWORD:-}" ]] || fail 'registry credentials missing'
@@ -92,6 +93,21 @@ if [[ "$attach_existing_edge" == 1 ]]; then
   test -s "$remote_release/server/reattach-existing-site.sh"
   # Verify the operator's existing domain registration before replacing the live web container.
   bash "$remote_release/server/reattach-existing-site.sh" preflight
+else
+  # A private release must never silently replace a publicly attached website.
+  # The prior out-of-Compose edge-public membership disappears on container recreation.
+  existing_web="$(docker ps --filter label=com.docker.compose.project=kaori-website \
+    --filter label=com.docker.compose.service=web --format '{{.ID}}')"
+  if [[ -n "$existing_web" ]]; then
+    while IFS= read -r existing_id; do
+      [[ -n "$existing_id" ]] || continue
+      published="$(docker inspect --format '{{if index .NetworkSettings.Networks "edge-public"}}true{{else}}false{{end}}' "$existing_id")"
+      if [[ "$published" == true ]]; then
+        echo 'BLOCK: current website is publicly attached; select the explicitly approved public edge option to replace it safely' >&2
+        exit 1
+      fi
+    done <<< "$existing_web"
+  fi
 fi
 # Website stays loopback-only unless the approved existing public edge is explicitly reattached.
 export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1
