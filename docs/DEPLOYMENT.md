@@ -225,14 +225,29 @@ Maintainer's six screenshot fixes [PR #47](https://github.com/OXY7O/kaori-websit
 - Previous signed [RC.6](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.6), digest `sha256:f43635107bd541c173a059ddebbb70d36d2677494c2084ebb821d6dde4a699cc`, remains the rollback candidate. The temporary `publication-48-once.yml` was removed under #48 without rebuilding or redeploying RC.7.
 - User browser review is still required for **two-line** Hero/Architecture/Product Experience, **single-line** integration message, both modes' Violet card contrast, footer typography, mobile wrap/accessibility and real visual acceptance. Do not promote `main` on CI/health alone.
 
-## Issue #99 — prevent detaching the public website during canonical manual release
+## Issue #99 — public edge safety for canonical manual release
 
-The canonical `Release Deployment` workflow now distinguishes an **isolated private UAT release** (the default) from a separately approved replacement of the **already registered** public `kaori.cloud` website. Do not interpret a private host-loopback health check as public publication.
+`Release Deployment` now has an explicit boolean `publish_existing_edge` option,
+defaulting to `false`. The default is an isolated, loopback-only UAT release.
+It must not replace a website container already connected to `edge-public`.
+The existing pinned-SSH deployment adapter checks for that condition before
+recreating a container and blocks the action.
 
-- The manual workflow input `publish_existing_edge` defaults to `false`. In that mode, the release adapter checks the currently running website container **before** replacement and fails closed if it is already attached to `edge-public`. This avoids reproducing the public HTTP 502 outage by silently detaching the currently published container.
-- To replace the existing publicly accessible website, the maintainer must explicitly approve the exact signed candidate SHA/digest and the *public publication operation*, and dispatch the same canonical workflow with `publish_existing_edge=true`. The pinned-SSH adapter first runs `reattach-existing-site.sh preflight` to validate the **existing** `kaori-website.env` site registration and approved Docker network, then performs the normal digest-only isolated deployment and runs `reattach-existing-site.sh attach` for the new healthy container. The existing attach helper verifies the public website `/healthz` plus application and automation HTTPS readiness and fails the workflow if any check fails.
-- The adapter never creates a site registration, changes DNS/Nginx/Certbot, alters the shared edge's existing 80/443 ownership, or restarts the KAORI Application/n8n. If site registration cannot be read by the deployment identity, **STOP** and follow the existing standalone shared-edge operator procedure rather than weakening file permissions, skipping preflight or bypassing the gate.
-- The workflow summary reports separate outcomes: public edge three-domain HTTPS readiness **PASS only after the approved attached mode succeeds**, or **PRIVATE ONLY** when no public publication is requested. Full TLS/redirect/Host/SNI/Certbot renewal, actual browser visual checks and explicit maintainer Human Acceptance remain separate required release gates.
-- If publicly approved attach fails *after* an otherwise healthy immutable deployment, the public publication gate is **FAIL** and requires the authorized shared-edge operator's existing reconciliation/recovery procedure and its own evidence; do not automatically roll back KAORI Application services or claim public UAT PASS.
+For an authorized public replacement, the maintainer must approve the exact
+signed candidate and the public publication step, then select
+`publish_existing_edge=true`. The adapter reuses the approved
+`reattach-existing-site.sh preflight` before replacing the website container
+and `reattach-existing-site.sh attach` afterward. The existing script validates
+the registered `kaori.cloud` site and the public website, application and
+automation HTTPS readiness. Public deployment cannot claim success if these
+checks fail.
 
-The previous `v0.1.1-rc.1` and `v0.1.1-rc.2` immutable images were built from earlier source SHAs and **do not gain this workflow safeguard retroactively**. Issue #98 records the actual post-RC.1 operator recovery; #99 is the reviewed prevention authority for future releases. No new source SHA may be published to production until its own Full Admission and signed candidate checks complete.
+No DNS, Nginx, Certbot, site registration, KAORI Application or n8n mutation
+is added. If the site registration is unreadable or any public check fails,
+stop and follow the standalone shared-edge runbook. The workflow summary
+distinguishes isolated deployment from public edge readiness. Full TLS,
+redirect, Host/SNI, browser UAT and human acceptance remain separate gates.
+
+The signed `v0.1.1-rc.1` and `v0.1.1-rc.2` digests are immutable.
+These safeguards only apply to releases from subsequently admitted source.
+See incident #98 and prevention #99 for operator evidence and review.
