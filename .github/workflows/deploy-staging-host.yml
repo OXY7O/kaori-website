@@ -11,6 +11,11 @@ on:
         description: Link to explicit maintainer release deployment authorization
         type: string
         required: true
+      publish_existing_edge:
+        description: Reattach approved public edge and require live HTTPS health (explicit maintainer authorization)
+        type: boolean
+        required: true
+        default: false
 permissions:
   contents: read
   actions: read
@@ -26,6 +31,7 @@ jobs:
       ACCEPTED_SHA: ${{ github.sha }}
       RC_TAG: ${{ inputs.candidate_tag }}
       APPROVAL_REF: ${{ inputs.approval_reference }}
+      KAORI_WEBSITE_ATTACH_EXISTING_EDGE: ${{ inputs.publish_existing_edge && '1' || '0' }}
       GH_TOKEN: ${{ github.token }}
       REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
       REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
@@ -56,4 +62,9 @@ jobs:
         run: |
           printf 'Website release deployment requested for %s at source %s\n' "$RC_TAG" "$ACCEPTED_SHA" >> "$GITHUB_STEP_SUMMARY"
           printf 'Approval reference: %s\n' "$APPROVAL_REF" >> "$GITHUB_STEP_SUMMARY"
-          printf 'PUBLIC EDGE / TLS / BROWSER QA / HUMAN ACCEPTANCE: PENDING\n' >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$KAORI_WEBSITE_ATTACH_EXISTING_EDGE" == 1 ]]; then
+            printf 'EXISTING PUBLIC EDGE REATTACHMENT / THREE-DOMAIN HTTPS READINESS: PASS\n' >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf 'ISOLATED PRIVATE DEPLOYMENT ONLY; PUBLIC EDGE / TLS: NOT VERIFIED\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          printf 'FULL TLS / HOST-SNI / BROWSER QA / HUMAN ACCEPTANCE: PENDING\n' >> "$GITHUB_STEP_SUMMARY"
