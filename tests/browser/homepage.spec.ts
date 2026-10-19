@@ -151,12 +151,15 @@ test("keep mobile acronym rows and filter overflow stable", async ({ page }) => 
 
   const cta = page.locator("#experience .section-intro > .button");
   await expect(cta).toHaveAttribute("href", "https://app.kaori.cloud");
-  const isFullWidth = await cta.evaluate((element) => {
+  const widths = await cta.evaluate((element) => {
     const container = element.parentElement;
-    if (!container) return false;
-    return element.clientWidth >= container.clientWidth - 1;
+    return {
+      button: element.getBoundingClientRect().width,
+      content: container?.getBoundingClientRect().width ?? 0,
+      computed: getComputedStyle(element).width,
+    };
   });
-  expect(isFullWidth).toBe(true);
+  expect(widths.button, JSON.stringify(widths)).toBeGreaterThanOrEqual(widths.content - 1);
   await expect(page.locator("#experience .small-note")).toContainText(
     "authentication and permissions",
   );

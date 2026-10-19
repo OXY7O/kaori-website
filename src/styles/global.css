@@ -2537,8 +2537,15 @@ svg {
     gap: 10px;
     line-height: 1.6;
   }
+  .experience-section .section-intro {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
   .experience-section .section-intro > .button {
     display: flex;
+    flex: 0 0 auto;
+    align-self: stretch;
     width: 100%;
     min-height: 52px;
     justify-content: space-between;
