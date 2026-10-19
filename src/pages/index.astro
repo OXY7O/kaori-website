@@ -102,7 +102,7 @@ const summary =
         <p class="hero-description">
           <span class="copy-line"
             >KAORI connects infrastructure context and committed evidence.</span
-          >
+          >{" "}
           <span class="copy-line">It governs workflows while your systems stay authoritative.</span>
         </p>
         <div class="hero-actions">
@@ -114,7 +114,14 @@ const summary =
           >
         </div>
         <p class="hero-micro">
-          <span class="micro-indicator"></span> Knowledge · Automation · Operations · Resilience · Intelligence
+          <span class="micro-indicator"></span>
+          <span class="acronym-terms">
+            <span>Knowledge</span>
+            <span>Automation</span>
+            <span>Operations</span>
+            <span>Resilience</span>
+            <span>Intelligence</span>
+          </span>
         </p>
       </div>
       <HeroVisual />
@@ -197,8 +204,8 @@ const summary =
           <p class="eyebrow">Technology ecosystem</p>
           <h2>Keep the tools you trust.<br /><span>Connect the context.</span></h2>
           <p>
-            External systems remain authoritative. KAORI provides normalization, correlation,
-            committed evidence, and governance across integrations.
+            Your systems remain authoritative. KAORI connects context, committed evidence, and
+            governed workflows across domains.
           </p>
         </div>
         <div class="ecosystem-principle" aria-label="KAORI integration design principle">
@@ -222,7 +229,7 @@ const summary =
         <p class="eyebrow">Platform architecture</p>
         <h2>Normalize. Orchestrate.<br /><span>Correlate. Govern.</span></h2>
         <p>
-          <span class="copy-line">KAORI links context, governed workflows, and evidence.</span>
+          <span class="copy-line">KAORI links context, governed workflows, and evidence.</span>{" "}
           <span class="copy-line">External systems remain authoritative.</span>
         </p>
         <a class="text-link" href="#experience"
@@ -270,14 +277,12 @@ const summary =
           <span class="copy-line">See KAORI connect context and committed evidence.</span>{" "}
           <span class="copy-line">Explore governed workflows in a conceptual workspace.</span>
         </p>
-        <a
-          class="button button-primary"
-          href="https://app.kaori.cloud"
-          rel="noopener noreferrer"
-          target="_blank">Open KAORI Application <Icon name="arrow-up-right" size={17} /></a
+        <a class="button button-primary" href="https://app.kaori.cloud"
+          >Open Application <Icon name="arrow-up-right" size={17} /></a
         >
         <p class="small-note">
-          Application access is subject to existing authentication and permissions.
+          <Icon name="lock" size={16} />
+          <span>Application access is subject to existing authentication and permissions.</span>
         </p>
       </div>
       <div

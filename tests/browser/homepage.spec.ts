@@ -10,7 +10,15 @@ const screenshots = [
 test.beforeEach(async ({ page }, testInfo) => {
   // Install observers before navigation: getEntriesByType() does not report LCP/CLS.
   await page.addInitScript(() => {
-    const vitals = { largestPaintMs: null as number | null, clsScore: 0 };
+    const vitals = {
+      largestPaintMs: null as number | null,
+      clsScore: 0,
+      layoutShiftEvents: [] as Array<{
+        value: number;
+        timeMs: number;
+        sources: Array<{ element: string | null; beforeY: number | null; afterY: number | null }>;
+      }>,
+    };
     Object.assign(window, { __kaoriLabVitals: vitals });
 
     if (PerformanceObserver.supportedEntryTypes.includes("largest-contentful-paint")) {
@@ -27,8 +35,29 @@ test.beforeEach(async ({ page }, testInfo) => {
           const shift = entry as PerformanceEntry & {
             value?: number;
             hadRecentInput?: boolean;
+            sources?: Array<{
+              node?: Node | null;
+              previousRect?: DOMRectReadOnly;
+              currentRect?: DOMRectReadOnly;
+            }>;
           };
-          if (!shift.hadRecentInput) vitals.clsScore += shift.value ?? 0;
+          if (!shift.hadRecentInput) {
+            vitals.clsScore += shift.value ?? 0;
+            vitals.layoutShiftEvents.push({
+              value: shift.value ?? 0,
+              timeMs: shift.startTime,
+              sources: (shift.sources ?? []).map((source) => ({
+                element:
+                  source.node instanceof Element
+                    ? `${source.node.tagName.toLowerCase()}.${String(source.node.className)
+                        .trim()
+                        .replace(/\s+/g, ".")}`
+                    : null,
+                beforeY: source.previousRect?.y ?? null,
+                afterY: source.currentRect?.y ?? null,
+              })),
+            });
+          }
         }
       }).observe({ type: "layout-shift", buffered: true });
     }
@@ -54,6 +83,116 @@ test("capture reviewed candidate evidence for all major sections", async ({ page
     const image = await section.screenshot({ animations: "disabled" });
     await testInfo.attach(`${name}.png`, { body: image, contentType: "image/png" });
   }
+});
+
+test("protect mobile copy and capability artwork", async ({ page }) => {
+  const hero = page.locator(".hero-description");
+  const architecture = page.locator("#architecture .section-intro > p:not(.eyebrow)");
+  const application = page.locator("#experience .button-primary");
+
+  await expect(hero).toHaveText(/evidence\.\s+It governs workflows/);
+  await expect(architecture).toHaveText(/evidence\.\s+External systems/);
+  await expect(application).toHaveText("Open Application");
+  await expect(application).toHaveAttribute("href", "https://app.kaori.cloud");
+  await expect(page.locator(".hero-micro .acronym-terms > span")).toHaveCount(5);
+  await expect(page.locator(".footer-acronym > span")).toHaveCount(5);
+
+  if ((page.viewportSize()?.width ?? 0) <= 540) {
+    for (const card of await page.locator("#platform .capability-card").all()) {
+      const box = await card.boundingBox();
+      const art = await card.locator(".capability-art").boundingBox();
+      const title = await card.locator("h3").boundingBox();
+      expect(box).not.toBeNull();
+      expect(art).not.toBeNull();
+      expect(title).not.toBeNull();
+      expect(art!.x).toBeGreaterThanOrEqual(box!.x);
+      expect(art!.x + art!.width).toBeLessThanOrEqual(box!.x + box!.width + 1);
+      expect(title!.y).toBeGreaterThanOrEqual(art!.y + art!.height - 1);
+      await expect(card.locator("p")).toHaveCSS("font-size", "12px");
+    }
+  }
+});
+
+test("align Product Experience auth note icon with text at every viewport", async ({ page }) => {
+  const note = page.locator("#experience .small-note");
+  await expect(note).toContainText(
+    "Application access is subject to existing authentication and permissions.",
+  );
+  await expect(note).toHaveCSS("display", "flex");
+
+  const geometry = await note.evaluate((element) => {
+    const icon = element.querySelector("svg");
+    const text = element.querySelector("span");
+    if (!icon || !text) return null;
+    const iconBox = icon.getBoundingClientRect();
+    const textBox = text.getBoundingClientRect();
+    const parentBox = element.getBoundingClientRect();
+    return {
+      iconLeft: iconBox.x,
+      iconRight: iconBox.right,
+      iconTop: iconBox.top,
+      textLeft: textBox.x,
+      textTop: textBox.top,
+      textRight: textBox.right,
+      parentRight: parentBox.right,
+    };
+  });
+  expect(geometry).not.toBeNull();
+  expect(geometry!.textLeft).toBeGreaterThanOrEqual(geometry!.iconRight + 6);
+  expect(Math.abs(geometry!.iconTop - geometry!.textTop)).toBeLessThanOrEqual(6);
+  expect(geometry!.textRight).toBeLessThanOrEqual(geometry!.parentRight + 1);
+});
+
+test("keep mobile acronym rows and filter overflow stable", async ({ page }) => {
+  if ((page.viewportSize()?.width ?? 0) > 540) return;
+
+  for (const selector of [".hero-micro .acronym-terms", ".footer-acronym"]) {
+    const terms = page.locator(`${selector} > span`);
+    await expect(terms).toHaveCount(5);
+    const tops = await terms.evaluateAll((nodes) =>
+      nodes.map((node) => Math.round(node.getBoundingClientRect().top)),
+    );
+    expect(tops[0]).toBe(tops[1]);
+    expect(tops[1]).toBe(tops[2]);
+    expect(tops[3]).toBeGreaterThan(tops[0] + 4);
+    expect(tops[3]).toBe(tops[4]);
+    const separator = await terms.nth(3).evaluate((node) => {
+      const style = getComputedStyle(node, "::before");
+      return style.content;
+    });
+    expect(separator).toBe("none");
+  }
+
+  const filters = page.locator(".integration-filters");
+  await expect(filters).toHaveCSS("flex-wrap", "nowrap");
+  await expect(filters).toHaveCSS("overflow-x", "auto");
+  const dimensions = await filters.evaluate((element) => ({
+    viewport: element.clientWidth,
+    scroll: element.scrollWidth,
+  }));
+  expect(dimensions.scroll).toBeGreaterThan(dimensions.viewport);
+
+  const registry = page.getByRole("button", { name: "Registry", exact: true });
+  await registry.click();
+  await expect(registry).toHaveAttribute("aria-pressed", "true");
+  const visible = page.locator("[data-integration-item]:visible");
+  await expect(visible).toHaveCount(1);
+  await expect(visible).toContainText("Harbor");
+
+  const cta = page.locator("#experience .section-intro > .button");
+  await expect(cta).toHaveAttribute("href", "https://app.kaori.cloud");
+  const widths = await cta.evaluate((element) => {
+    const container = element.parentElement;
+    return {
+      button: element.getBoundingClientRect().width,
+      content: container?.getBoundingClientRect().width ?? 0,
+      computed: getComputedStyle(element).width,
+    };
+  });
+  expect(widths.button, JSON.stringify(widths)).toBeGreaterThanOrEqual(widths.content - 1);
+  await expect(page.locator("#experience .small-note")).toContainText(
+    "authentication and permissions",
+  );
 });
 
 test("navigate and preserve theme through the real control", async ({ page }) => {
@@ -147,7 +286,11 @@ test("collect browser-observed lab paint and layout shift budgets", async ({ pag
   const metrics = await page.evaluate(() => {
     const vitals = (
       window as Window & {
-        __kaoriLabVitals?: { largestPaintMs: number | null; clsScore: number };
+        __kaoriLabVitals?: {
+          largestPaintMs: number | null;
+          clsScore: number;
+          layoutShiftEvents: unknown[];
+        };
       }
     ).__kaoriLabVitals;
     const navigation = performance.getEntriesByType("navigation")[0] as
@@ -164,6 +307,7 @@ test("collect browser-observed lab paint and layout shift budgets", async ({ pag
       largestPaintMs: vitals?.largestPaintMs ?? null,
       // Conservative cumulative shift total, not the web-vitals session-window field CLS.
       clsScore: vitals?.clsScore ?? null,
+      layoutShiftEvents: vitals?.layoutShiftEvents ?? [],
       domContentLoadedMs: navigation?.domContentLoadedEventEnd ?? null,
       labLcpBudgetMs: 2_500,
       labClsConservativeBudget: 0.1,

@@ -224,3 +224,30 @@ Maintainer's six screenshot fixes [PR #47](https://github.com/OXY7O/kaori-websit
 - The deployed isolated non-root website image, health at `127.0.0.1:18080`, existing `edge-public` reattachment, public `kaori.cloud` readiness and independent `app.kaori.cloud` / `auto.kaori.cloud` HTTPS readiness all **PASS**. No shared Nginx, DNS, Certbot or KAORI Application mutation.
 - Previous signed [RC.6](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0-rc.6), digest `sha256:f43635107bd541c173a059ddebbb70d36d2677494c2084ebb821d6dde4a699cc`, remains the rollback candidate. The temporary `publication-48-once.yml` was removed under #48 without rebuilding or redeploying RC.7.
 - User browser review is still required for **two-line** Hero/Architecture/Product Experience, **single-line** integration message, both modes' Violet card contrast, footer typography, mobile wrap/accessibility and real visual acceptance. Do not promote `main` on CI/health alone.
+
+## Issue #99 — public edge safety for canonical manual release
+
+`Release Deployment` now has an explicit boolean `publish_existing_edge` option,
+defaulting to `false`. The default is an isolated, loopback-only UAT release.
+It must not replace a website container already connected to `edge-public`.
+The existing pinned-SSH deployment adapter checks for that condition before
+recreating a container and blocks the action.
+
+For an authorized public replacement, the maintainer must approve the exact
+signed candidate and the public publication step, then select
+`publish_existing_edge=true`. The adapter reuses the approved
+`reattach-existing-site.sh preflight` before replacing the website container
+and `reattach-existing-site.sh attach` afterward. The existing script validates
+the registered `kaori.cloud` site and the public website, application and
+automation HTTPS readiness. Public deployment cannot claim success if these
+checks fail.
+
+No DNS, Nginx, Certbot, site registration, KAORI Application or n8n mutation
+is added. If the site registration is unreadable or any public check fails,
+stop and follow the standalone shared-edge runbook. The workflow summary
+distinguishes isolated deployment from public edge readiness. Full TLS,
+redirect, Host/SNI, browser UAT and human acceptance remain separate gates.
+
+The signed `v0.1.1-rc.1` and `v0.1.1-rc.2` digests are immutable.
+These safeguards only apply to releases from subsequently admitted source.
+See incident #98 and prevention #99 for operator evidence and review.

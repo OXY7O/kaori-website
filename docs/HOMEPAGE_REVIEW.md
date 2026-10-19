@@ -96,3 +96,37 @@ Maintainer's six screenshot findings require a **targeted** change, preserving t
 6. **Footer:** two concise rows — official five-term acronym and OXY7 ORBITAL attribution — with measured bold Violet accents, not entire paragraph in Violet.
 
 **Recheck visually after signed deployment:** desktop 1366/1440 light/dark line counts and readability, keyboard/focus and text zoom, tablet 768/1024, mobile 375/390/430, all CTA targets, no overflow. Existing app and automation edge availability and the signed image identity must stay intact. Human acceptance #3 remains required.
+
+## Mobile homepage visual polish — #91 (2026-10-19)
+
+New maintainer screenshots from public `kaori.cloud` showed an orphan acronym separator, Hero copy `evidence.It`, visually clipped mobile capability artwork and narrow descriptions, plus disproportionately spaced mobile sections. This bounded visual remediation preserves the approved Option 3 editorial structure, KAORI Violet tokens, official brand assets, provider-authoritative claims, and the existing conceptual Product Experience; it does not claim live application screenshots.
+
+- Explicitly separate Hero and architecture sentence spans on sub-1100px layouts, following the admitted Product Experience whitespace regression pattern (#53 / PR #89).
+- At <=540px present each capability card as a mobile grid: canonical icon/tag and fully contained orbit artwork in the header row, with the title and readable description across full card width below. Do not hide clipping with page-level overflow, modify domain content or add fake status indicators.
+- Use a shared wrap-safe acronym presentation for the Hero and footer so individual terms and their separator stay together. Preserve official five-term acronym and approved selective Violet emphasis.
+- Keep product CTA naming and destination consistent (`Open Application` → `https://app.kaori.cloud`), improve small-screen typography, spacing and supporting-note readability without introducing a second design system.
+- Extend the existing Playwright 12-project viewport/light-dark suite with actual rendered sentence-spacing, acronym-term, application destination and mobile card bounds/font-size checks. These tests complement—not replace—real screenshot, keyboard, screen-reader and 200% zoom acceptance.
+
+**Required admission and release evidence:** source/formatter/Astro/build Developer Check on exact PR SHA; reviewed merge into `kaori/staging`; same-SHA Full Admission, Container and Browser Quality Evidence; inspect six viewport widths in both themes, iOS Safari and zoom manually where available; issue-authorized new immutable signed candidate, scan/SBOM/provenance and guarded public deployment; maintainer Human Acceptance of the deployed visual baseline before `main`. A CI PASS does not prove public runtime promotion or visually accepted layout. Existing #53 sanitized real-product media remains separately gated on approval.
+
+## Focused mobile visual refinement — #100 (2026-10-19)
+
+Maintainer reviewed six screenshots from the signed RC.1 public mobile homepage and approved focused composition improvements (not adoption of mockup images or a homepage redesign). Authority remains the existing KAORI Violet/Inter/neutral-first system, official copy, external-system authority and conceptual Product Experience. This work follows #91 and the CSS-cascade/CLS regression finding #95; it must **not** overwrite the accepted immutable `v0.1.1-rc.1` tag/image.
+
+- **Hero/Footer acronym:** five original KAORI terms in a deliberate 3+2 mobile CSS grid, no leading middle dot on the second row. Use one shared presentation rule for both and keep the desktop wrap pattern unchanged; final mobile CSS source order must override the prior generic `flex: 1` without `!important`.
+- **How KAORI Works:** refine scenario card, arrow rhythm and concept disclaimer spacing, without suggesting a live connected workflow.
+- **Technology Ecosystem:** tighten mobile title/description and approved Violet context panel while keeping provider-authoritative claims and high-contrast text.
+- **Filters/Cards:** change mobile filters from wrap to one scrollable touch- and keyboard-reachable row; preserve accessible `aria-pressed`, category behavior, 44px button targets, six static illustrative examples and responsive cards. The horizontal overflow is limited to its own filter element, never the document.
+- **Product Experience:** consistent mobile full-width `Open Application` CTA and existing Lucide lock icon with readable authentication note. The URL stays `https://app.kaori.cloud`; UI illustration remains conceptual.
+
+**Quality contract:** exact-head Draft+Ready Developer Checks; exact merged staging Full Admission, Container Admission, Browser Quality Evidence (including the new mobile geometry regression); 360/390/768/1024/1280/1440 light/dark, plus supplemental 320px and 200% zoom manual QA, Safari/keyboard, no horizontal document overflow, existing LCP <=2500ms and conservative non-input cumulative lab shift <=0.1 (not field Core Web Vitals). Visual and human acceptance are separate.
+
+**Release boundary:** publish a **new** unique signed candidate (proposed `v0.1.1-rc.2` after admission and tag readback), separately authorize Release Deployment, then explicitly reattach the new healthy container to the existing registered `edge-public` site following resolved #98 / prevention #99. Manual deployment's private loopback health is insufficient proof of public HTTPS publication. Preserve `app.kaori.cloud` and `auto.kaori.cloud` and collect actual public screenshots before Human Acceptance, `main` promotion or a stable release. This source change alone does not deploy.
+
+## Desktop Product Experience auth-note alignment — #104 (2026-10-19)
+
+Maintainer's deployed RC.2 desktop screenshot shows a lock icon above the authentication supporting text. The root cause is responsive CSS ownership: `#experience .small-note` used shared flex/inline icon alignment only inside `max-width:540px`, leaving desktop with an ordinary block paragraph. Move existing flex alignment/icon sizing into base `.experience-section .small-note` so desktop/tablet/mobile use one accessible horizontal icon-and-copy pattern without changing approved wording or CTA destination.
+
+Add an actual Playwright geometry contract across all 12 existing viewport/theme projects: the icon and first line begin at the same vertical position, text starts after the lock, and the note stays within its containing box. Existing 96/96 browser admission and CLS/LCP laboratory thresholds remain unchanged; a fresh exact-head Draft/Ready Developer Check and merged-SHA Full Admission/Container/Browser Evidence are still mandatory.
+
+**Release boundary:** public gateway incident #98 and preventive public-edge opt-in #99 are separate authorities. Full Admission #66 passed the workflow change, but the existing deployed `v0.1.1-rc.2` immutable image is unchanged and the maintainer reported 502/503. Reattach the existing RC.2 site using the reviewed operator script before attributing the public outage to the new visual CSS. For a future signed RC, only explicit owner-approved public mode may replace the public website, with shared-edge preflight before replacement and mandatory reattachment / three-domain HTTPS verification afterward. Full TLS/Host/SNI, real browser light/dark QA, rollback and Human Acceptance remain required before main/stable promotion.
