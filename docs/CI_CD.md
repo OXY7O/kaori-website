@@ -73,7 +73,7 @@ The current GitHub Actions sidebar is defined by the following **four existing w
 | `.github/workflows/publish-staging-image.yml` | **Release Candidate**  | Publish Release Candidate                                                              |
 | `.github/workflows/deploy-staging-host.yml`   | **Release Deployment** | Deploy Release Candidate                                                               |
 
-Pull-request runs include their PR/branch label; manual release runs show the selected candidate tag. The stable-publication job remains restricted to its accepted issue #72 marker and exact-main admission; no ordinary push creates a new stable release.
+Pull-request runs include their PR/branch label; manual release runs show the selected candidate tag. The stable-publication job is issue-bounded: its previous issue #72 marker was consumed by stable v0.1.0 and its next approved marker [KAORI_WEBSITE_STABLE_RELEASE_94] is gated on explicit v0.1.1 RC.3 Human Acceptance, reviewed staging-to-main PR, and exact-main source, container and browser admission. Ordinary pushes do not publish a stable release.
 
 **Historical entries are expected:** GitHub Actions may continue listing retired `KAORI Website One-Time RC.x ...` workflows that executed before their YAML was removed. Their run metadata and audit evidence are preserved. Do not delete historical runs to hide names, change existing workflow file paths to manipulate history, or imply that historic workflow names remain active.
 
