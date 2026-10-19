@@ -639,6 +639,23 @@ svg {
   line-height: 1.55;
   margin: 14px 0 0;
 }
+/* The Product Experience lock and its disclaimer form one accessible text row
+   at every viewport, not only within the mobile media query. */
+.experience-section .small-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.experience-section .small-note svg {
+  flex: 0 0 16px;
+  margin-top: 2px;
+  color: var(--violet);
+}
+.experience-section .small-note span {
+  min-width: 0;
+}
 .product-preview {
   position: relative;
   display: grid;
@@ -2550,19 +2567,6 @@ svg {
     min-height: 52px;
     justify-content: space-between;
     padding: 14px 18px;
-  }
-  .experience-section .small-note {
-    display: flex;
-    align-items: flex-start;
-    gap: 9px;
-    margin-top: 14px;
-    font-size: 12px;
-    line-height: 1.6;
-  }
-  .experience-section .small-note svg {
-    flex: 0 0 16px;
-    margin-top: 2px;
-    color: var(--violet);
   }
   .journey-scenario {
     margin-top: 20px;
