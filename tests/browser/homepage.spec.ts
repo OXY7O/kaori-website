@@ -113,6 +113,36 @@ test("protect mobile copy and capability artwork", async ({ page }) => {
   }
 });
 
+test("align Product Experience auth note icon with text at every viewport", async ({ page }) => {
+  const note = page.locator("#experience .small-note");
+  await expect(note).toContainText(
+    "Application access is subject to existing authentication and permissions.",
+  );
+  await expect(note).toHaveCSS("display", "flex");
+
+  const geometry = await note.evaluate((element) => {
+    const icon = element.querySelector("svg");
+    const text = element.querySelector("span");
+    if (!icon || !text) return null;
+    const iconBox = icon.getBoundingClientRect();
+    const textBox = text.getBoundingClientRect();
+    const parentBox = element.getBoundingClientRect();
+    return {
+      iconLeft: iconBox.x,
+      iconRight: iconBox.right,
+      iconTop: iconBox.top,
+      textLeft: textBox.x,
+      textTop: textBox.top,
+      textRight: textBox.right,
+      parentRight: parentBox.right,
+    };
+  });
+  expect(geometry).not.toBeNull();
+  expect(geometry!.textLeft).toBeGreaterThanOrEqual(geometry!.iconRight + 6);
+  expect(Math.abs(geometry!.iconTop - geometry!.textTop)).toBeLessThanOrEqual(6);
+  expect(geometry!.textRight).toBeLessThanOrEqual(geometry!.parentRight + 1);
+});
+
 test("keep mobile acronym rows and filter overflow stable", async ({ page }) => {
   if ((page.viewportSize()?.width ?? 0) > 540) return;
 
