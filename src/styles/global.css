@@ -2069,14 +2069,6 @@ svg {
 .hero-micro .acronym-terms {
   flex: 1;
 }
-@media (max-width: 540px) {
-  /* Source order is intentional: override the general flex:1 rule so the
-     five terms occupy a stable two-line measure before and after font swap. */
-  .hero-micro .acronym-terms {
-    flex: 0 1 260px;
-    max-width: min(260px, 100%);
-  }
-}
 .footer-identity .footer-acronym.acronym-terms {
   display: flex;
   flex-wrap: wrap;
@@ -2444,5 +2436,138 @@ svg {
   }
   .journey-scenario-flow {
     max-width: none;
+  }
+}
+/* #100: focused mobile refinement of existing KAORI Website components.
+   This final breakpoint owns mobile acronym row geometry after the shared
+   flex declarations, preventing the font-swap CLS regression seen in #95. */
+@media (max-width: 540px) {
+  .hero-micro {
+    align-items: flex-start;
+    gap: 9px;
+  }
+  .hero-micro .micro-indicator {
+    margin-top: 8px;
+  }
+  .hero-micro .acronym-terms,
+  .footer-identity .footer-acronym.acronym-terms {
+    display: grid;
+    grid-template-columns: repeat(3, max-content);
+    column-gap: 6px;
+    row-gap: 4px;
+    flex: none;
+    width: max-content;
+    max-width: 100%;
+    line-height: 1.65;
+  }
+  .acronym-terms > span:nth-child(4) {
+    grid-column: 1;
+  }
+  .acronym-terms > span:nth-child(4)::before {
+    content: none;
+    margin: 0;
+  }
+  .acronym-terms > span:not(:first-child)::before {
+    margin-right: 5px;
+  }
+  .footer-identity .footer-acronym.acronym-terms {
+    font-size: 12px;
+  }
+  .integrations-section .section-heading-row {
+    gap: 19px;
+    margin-bottom: 25px;
+  }
+  .integrations-section .section-heading-row h2 {
+    font-size: clamp(30px, 8vw, 35px);
+    line-height: 1.18;
+    margin-bottom: 15px;
+  }
+  .integrations-section .section-heading-row > div > p:not(.eyebrow) {
+    line-height: 1.6;
+  }
+  .ecosystem-principle {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+  }
+  .ecosystem-principle-icon {
+    flex-basis: 38px;
+    width: 38px;
+    height: 38px;
+  }
+  .ecosystem-principle strong {
+    font-size: 15px;
+    line-height: 1.35;
+  }
+  .section-heading-row .ecosystem-principle p:not(.eyebrow) {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+  .integration-toolbar {
+    min-width: 0;
+    max-width: 100%;
+    margin-bottom: 15px;
+  }
+  .integration-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--outline-strong) transparent;
+  }
+  .integration-filter {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .technology-card {
+    min-height: 94px;
+    padding: 15px;
+  }
+  .integration-outlook {
+    margin-top: 16px;
+    gap: 10px;
+    line-height: 1.6;
+  }
+  .experience-section .section-intro > .button {
+    display: flex;
+    width: 100%;
+    min-height: 52px;
+    justify-content: space-between;
+    padding: 14px 18px;
+  }
+  .experience-section .small-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin-top: 14px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .experience-section .small-note svg {
+    flex: 0 0 16px;
+    margin-top: 2px;
+    color: var(--violet);
+  }
+  .journey-scenario {
+    margin-top: 20px;
+    padding: 22px 18px;
+  }
+  .journey-scenario-flow > div {
+    min-height: 50px;
+    padding: 11px 14px;
+  }
+  .journey-scenario-note {
+    margin-top: 13px;
+    font-size: 12px;
+    line-height: 1.6;
   }
 }
