@@ -16,6 +16,10 @@ Do not import irrelevant Flask/PostgreSQL/Celery checks or weaken required secur
 
 The GitHub Project **KAORI Website** tracks work using the existing KAORI Status, Type, Priority, Story Point, Sprint and relationship taxonomy. Project custom fields and native parent/child association must be set through GitHub UI if connector actions do not expose them.
 
+## v0.1.1 publication preparation — issue #94
+
+The signed and publicly deployed v0.1.1-rc.3 digest remains immutable. Its exact staging source has Full Admission #67, Container Admission and Browser Quality Evidence (108/108) PASS; Release Candidate #5 and guarded public Release Deployment #3 PASS. The maintainer confirmed the website opens and the specific desktop lock-icon defect is corrected. Full mobile light/dark Human Acceptance, Host/SNI and TLS/renewal security review are not inferred from successful origin-host HTTPS checks. The stable v0.1.1 publisher is specifically gated by the issue #94 main merge marker, accepted RC.3 identity, absent stable tag, preserved build inputs, and exact-main Full Admission/Container/Browser checks. Until Human Acceptance under #94, do not merge promotion PR or trigger the stable tag. Existing v0.1.0 remains stable rollback and no rebuild/registry retag is permitted.
+
 ## Runner and implementation parity
 
 CI runner labels and branch authority are documented in [`CI_CD.md`](CI_CD.md). `platform-ci` handles Developer Check, `kaori-ci` handles Full Admission. Reuse requires access granted to the website repository; runner labels do not override repository registration scope. Reference KAORI's existing workflows rather than introducing a parallel taxonomy.
