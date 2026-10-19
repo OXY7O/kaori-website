@@ -113,6 +113,55 @@ test("protect mobile copy and capability artwork", async ({ page }) => {
   }
 });
 
+test("keep mobile acronym rows and filter overflow stable", async ({ page }) => {
+  if ((page.viewportSize()?.width ?? 0) > 540) return;
+
+  for (const selector of [".hero-micro .acronym-terms", ".footer-acronym"]) {
+    const terms = page.locator(`${selector} > span`);
+    await expect(terms).toHaveCount(5);
+    const tops = await terms.evaluateAll((nodes) =>
+      nodes.map((node) => Math.round(node.getBoundingClientRect().top)),
+    );
+    expect(tops[0]).toBe(tops[1]);
+    expect(tops[1]).toBe(tops[2]);
+    expect(tops[3]).toBeGreaterThan(tops[0] + 4);
+    expect(tops[3]).toBe(tops[4]);
+    const separator = await terms.nth(3).evaluate((node) => {
+      const style = getComputedStyle(node, "::before");
+      return style.content;
+    });
+    expect(separator).toBe("none");
+  }
+
+  const filters = page.locator(".integration-filters");
+  await expect(filters).toHaveCSS("flex-wrap", "nowrap");
+  await expect(filters).toHaveCSS("overflow-x", "auto");
+  const dimensions = await filters.evaluate((element) => ({
+    viewport: element.clientWidth,
+    scroll: element.scrollWidth,
+  }));
+  expect(dimensions.scroll).toBeGreaterThan(dimensions.viewport);
+
+  const registry = page.getByRole("button", { name: "Registry", exact: true });
+  await registry.click();
+  await expect(registry).toHaveAttribute("aria-pressed", "true");
+  const visible = page.locator("[data-integration-item]:visible");
+  await expect(visible).toHaveCount(1);
+  await expect(visible).toContainText("Harbor");
+
+  const cta = page.locator("#experience .section-intro > .button");
+  await expect(cta).toHaveAttribute("href", "https://app.kaori.cloud");
+  const isFullWidth = await cta.evaluate((element) => {
+    const container = element.parentElement;
+    if (!container) return false;
+    return element.clientWidth >= container.clientWidth - 1;
+  });
+  expect(isFullWidth).toBe(true);
+  await expect(page.locator("#experience .small-note")).toContainText(
+    "authentication and permissions",
+  );
+});
+
 test("navigate and preserve theme through the real control", async ({ page }) => {
   const journey = page.locator("#how-it-works");
   await expect(journey).toBeVisible();
