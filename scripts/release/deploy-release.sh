@@ -3,7 +3,14 @@ set -Eeuo pipefail
 mode="${1:?expected preflight or deploy}"
 [[ "$mode" == preflight || "$mode" == deploy ]] || { echo 'BLOCK: unsupported operation' >&2; exit 1; }
 fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
-[[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'dispatch from staging only'
+if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+  [[ "$GITHUB_REF" == refs/heads/kaori/uat-request ]] || fail 'push UAT request must use kaori/uat-request'
+  [[ "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" == 0 ]] || fail 'request branch may deploy privately only'
+elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+  [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual UAT dispatch must use kaori/staging'
+else
+  fail 'unsupported UAT request event'
+fi
 [[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || fail 'staged source SHA mismatch'
 [[ "$RC_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'invalid prerelease tag'
 [[ "$APPROVAL_REF" =~ ^https://github.com/OXY7O/kaori-website/(issues|pull)/[0-9]+ ]] || fail 'explicit GitHub authorization reference is required'
@@ -22,7 +29,15 @@ api="https://api.github.com/repos/$GITHUB_REPOSITORY"
 headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
 current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
 [[ "$current" == "$ACCEPTED_SHA" ]] || fail 'staging changed since dispatch'
-release="$(curl -fsS "${headers[@]}" "$api/releases/tags/$RC_TAG")"
+release_file="$(mktemp)"
+http_status="$(curl -sS -o "$release_file" -w '%{http_code}' "${headers[@]}" "$api/releases/tags/$RC_TAG")"
+if [[ "$http_status" == 404 ]]; then
+  rm -f "$release_file"
+  fail "RC $RC_TAG is not published; run Release Candidate before requesting UAT deployment"
+fi
+[[ "$http_status" == 200 ]] || { rm -f "$release_file"; fail "RC authority lookup failed (HTTP $http_status)"; }
+release="$(cat "$release_file")"
+rm -f "$release_file"
 [[ "$(jq -r '.prerelease' <<<"$release")" == true ]] || fail 'candidate is not an intentional prerelease'
 [[ "$(jq -r '.target_commitish' <<<"$release")" == "$ACCEPTED_SHA" ]] || fail 'RC release targets different source SHA'
 body="$(jq -r '.body // empty' <<<"$release")"
