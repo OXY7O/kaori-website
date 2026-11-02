@@ -1,6 +1,9 @@
 name: Release Candidate
-run-name: "Release Candidate · ${{ inputs.candidate_tag }}"
+run-name: "Release Candidate · ${{ inputs.candidate_tag || github.ref_name }}"
 on:
+  push:
+    branches:
+      - kaori/rc-request
   workflow_dispatch:
     inputs:
       candidate_tag:
@@ -24,7 +27,6 @@ jobs:
       REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
       REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
       REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
-      RC_TAG: ${{ inputs.candidate_tag }}
       ACCEPTED_SHA: ${{ github.sha }}
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -33,6 +35,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
+          fetch-tags: true
           persist-credentials: false
       - name: Verify admitted source and registry configuration
         shell: bash
