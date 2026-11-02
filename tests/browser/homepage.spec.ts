@@ -195,11 +195,11 @@ test("keep mobile acronym rows and filter overflow stable", async ({ page }) => 
   );
 });
 
-test("distinguish public Docs in preparation from the authenticated application", async ({ page }) => {
+test("keep Docs links distinct from the App", async ({ page }) => {
   const docsUrl = "https://docs.kaori.cloud/";
-  const desktopDocs = page.locator(".desktop-links a[href='https://docs.kaori.cloud/']");
-  const mobileDocs = page.locator(".mobile-nav a[href='https://docs.kaori.cloud/']");
-  const footerDocs = page.locator(".footer-links a[href='https://docs.kaori.cloud/']");
+  const desktopDocs = page.locator(`.desktop-links a[href="${docsUrl}"]`);
+  const mobileDocs = page.locator(`.mobile-nav a[href="${docsUrl}"]`);
+  const footerDocs = page.locator(`.footer-links a[href="${docsUrl}"]`);
 
   await expect(desktopDocs).toHaveCount(1);
   await expect(mobileDocs).toHaveCount(1);
