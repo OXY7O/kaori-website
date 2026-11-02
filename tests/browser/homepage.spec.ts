@@ -227,6 +227,10 @@ test("keep Docs links distinct from the App", async ({ page }) => {
     await expect(desktopDocs).toBeVisible();
     await expect(mobileDocs).toBeHidden();
   }
+  if (page.viewportSize()?.width === 1024) {
+    await expect(page.locator(".hero-actions")).toHaveCSS("display", "grid");
+    await expect(desktopDocs).toHaveCSS("white-space", "nowrap");
+  }
   const primaryApp = page.locator(".nav-app-link");
   await expect(primaryApp).toHaveAttribute("href", "https://app.kaori.cloud");
 });
