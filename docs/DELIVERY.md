@@ -82,3 +82,24 @@ Existing Release Candidate and Release Deployment workflows require exact
 admitted staging source, immutable signed images, security evidence and approval.
 Private staging/UAT and public-edge attachment are distinct operations.
 Recurring stable auto-deployment is governed separately by #119.
+
+## Request-triggered Website RC and UAT — #122
+
+KAORI Website now supports the two **deliberate** request branch events:
+`kaori/rc-request` for an admitted, source-pinned signed RC and
+`kaori/uat-request` for a separately approved private UAT deployment.
+They do **not** publish on an ordinary `kaori/staging` push. A UAT request
+without an actual matching published RC returns BLOCK before SSH deployment;
+the observed Release Deployment #41533645908 failure is the historical
+missing-RC example. Request-branch UAT cannot reattach the public edge.
+
+Always preserve the signed candidate's source SHA, immutable registry digest,
+SBOM/provenance, release tag, successful publisher run, deployment receipt,
+rollback authority and independent Human Acceptance. The footer's embedded
+`Website build vX.Y.Z-rc.N` remains truthful after same-digest stable promotion;
+it is not an asserted stable GitHub Release label. Stable/main auto-deploy
+remains separately governed by #119 and is not enabled by #122.
+
+For the exact request commands, manual fallback and failure handling, see
+[CI/CD](CI_CD.md). KAORI release request policy is coordinated by
+[KAORI #4201](https://github.com/OXY7O/KAORI/issues/4201).
