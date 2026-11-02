@@ -11,12 +11,36 @@ command -v docker >/dev/null || fail 'Docker is not available'
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 compose_file="${KAORI_WEBSITE_COMPOSE_FILE:-$script_dir/compose.website.yml}"
 state_dir="${KAORI_WEBSITE_STATE_DIR:-/var/lib/kaori-website/deploy-state}"
+runtime_env="${KAORI_WEBSITE_RUNTIME_ENV:-production}"
+case "$runtime_env" in
+    production)
+        [[ -z "${COMPOSE_PROJECT_NAME:-}" || "$COMPOSE_PROJECT_NAME" == kaori-website ]] ||
+            fail 'production project identity must be kaori-website'
+        [[ "$state_dir" == /var/lib/kaori-website/deploy-state ]] ||
+            fail 'production release state authority changed'
+        ;;
+    uat)
+        [[ "${COMPOSE_PROJECT_NAME:-}" == kaori-website-uat ]] ||
+            fail 'UAT must use independent kaori-website-uat project'
+        [[ "$state_dir" == /opt/kaori-website/uat/deploy-state ]] ||
+            fail 'UAT must use separate /opt/kaori-website/uat/deploy-state'
+        [[ "${KAORI_WEBSITE_RELEASE_LOCAL_ONLY:-}" == 1 ]] ||
+            fail 'UAT must be loopback-only'
+        [[ "$compose_file" == "$script_dir/compose.website.yml" ]] ||
+            fail 'UAT base Compose authority changed'
+        ;;
+    *) fail 'unrecognized Website runtime environment' ;;
+esac
 [[ -f "$compose_file" && ! -L "$compose_file" ]] || fail 'compose file missing or symlinked'
 [[ -d "$state_dir" && ! -L "$state_dir" && -w "$state_dir" ]] || fail 'website release state directory must be prepared and writable by deployment identity'
 docker info >/dev/null || fail 'Docker daemon unavailable'
 compose_args=(-f "$compose_file")
 if [[ "${KAORI_WEBSITE_RELEASE_LOCAL_ONLY:-}" == 1 ]]; then
-    override="$script_dir/compose.release.yml"
+    if [[ "$runtime_env" == uat ]]; then
+        override="$script_dir/compose.uat.yml"
+    else
+        override="$script_dir/compose.release.yml"
+    fi
     [[ -f "$override" && ! -L "$override" ]] || { echo 'BLOCK: missing trusted loopback override' >&2; exit 1; }
     compose_args+=(-f "$override")
 fi
@@ -47,6 +71,7 @@ if [[ -f "$state_dir/release.env" ]]; then
     fi
 fi
 export KAORI_WEBSITE_IMAGE="$image"
+export KAORI_WEBSITE_EXPECTED_VERSION="$release_version"
 
 if ! docker compose "${compose_args[@]}" up -d --pull never --no-build web || ! bash "$script_dir/verify.sh"; then
     echo 'FAIL: candidate unhealthy; current release receipt is NOT changed' >&2
