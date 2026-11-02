@@ -3,6 +3,7 @@ import Icon from "./Icon.astro";
 const year = new Date().getFullYear();
 const suppliedVersion = import.meta.env.PUBLIC_KAORI_WEBSITE_VERSION;
 const websiteBuildVersion = suppliedVersion ? `v${suppliedVersion}` : "development";
+const websiteBuildLabel = `Website build ${websiteBuildVersion}`;
 ---
 
 <footer class="site-footer" id="contact">
