@@ -37,7 +37,7 @@ docker run --rm --network none --read-only \
     done
     html="$(wget -q -O - http://127.0.0.1:8080/)"
     printf "%s" "$html" | grep -qi KAORI
-    printf "%s" "$html" | grep -Fq '"'"'data-website-build-version="v0.1.0-rc.1"'"'"'
+    printf "%s" "$html" | grep -Fq "Website build v0.1.0-rc.1"
   '
 # Image security is release-authoritative; fail early during Docker-path validation too.
 docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock \
