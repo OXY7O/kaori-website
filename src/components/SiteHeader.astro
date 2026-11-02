@@ -17,6 +17,13 @@ const links = [
     </a>
     <nav class="desktop-links" aria-label="Primary navigation">
       {links.map((item) => <a href={item.href}>{item.label}</a>)}
+      <a
+        href="https://docs.kaori.cloud/"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Documentation is in preparation"
+        aria-label="Docs (in preparation)"
+      >Docs</a>
     </nav>
     <div class="nav-actions">
       <ThemeToggle />
