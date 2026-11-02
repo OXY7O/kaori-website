@@ -875,9 +875,22 @@ svg {
   color: var(--content-muted);
   font-size: 10px;
 }
+.footer-build-version {
+  color: var(--content-secondary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
 @media (max-width: 1100px) {
+  .nav-shell {
+    gap: 12px;
+  }
   .desktop-links {
-    gap: 16px;
+    gap: 12px;
+  }
+  .nav-app-link {
+    gap: 8px;
+    padding-inline: 12px;
   }
   .hero-grid {
     grid-template-columns: 48% 52%;

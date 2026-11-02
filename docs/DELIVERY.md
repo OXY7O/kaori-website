@@ -66,3 +66,19 @@ The approved domains are `https://kaori.cloud` (website) and `https://app.kaori.
 ## Actions display nomenclature review — issue #23 (after stable v0.1.0)
 
 Four canonical workflows retain their original filenames, job IDs, event triggers, dependency edges, runner labels and security controls. Their **display names** are Developer Check, Full Admission, Release Candidate, and Release Deployment. New workflow run labels show the PR/branch or candidate tag. Historical one-time RC workflow identities persist in the Actions sidebar because run evidence remains intact; deleting the retired YAML did not erase their run records. Do not delete historical runs for cosmetic reasons. The user-accepted stable [v0.1.0](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0) is current; preceding RC.8/RC.9/RC.10 paragraphs above are **historical release handoff evidence**, not current TODOs or authorization to promote again. Check labels/consumers before updating any enforced required check settings. This text-and-metadata-only patch does not rebuild, sign, retag or redeploy the immutable website image.
+
+## Website footer build identity — #121
+
+The footer reads `APP_VERSION` injected by the Dockerfile into the static Astro build.
+The same argument supplies the OCI version label.
+Local builds without a release identity display `development`.
+
+After an RC is promoted to stable without rebuilding, the footer still shows
+its original `vX.Y.Z-rc.N` **build** identity.
+The stable GitHub Release and deployment receipt are separate authorities.
+Do not rebuild or modify a signed digest merely to change the footer.
+
+Existing Release Candidate and Release Deployment workflows require exact
+admitted staging source, immutable signed images, security evidence and approval.
+Private staging/UAT and public-edge attachment are distinct operations.
+Recurring stable auto-deployment is governed separately by #119.
