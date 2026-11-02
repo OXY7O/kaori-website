@@ -103,3 +103,20 @@ remains separately governed by #119 and is not enabled by #122.
 For the exact request commands, manual fallback and failure handling, see
 [CI/CD](CI_CD.md). KAORI release request policy is coordinated by
 [KAORI #4201](https://github.com/OXY7O/KAORI/issues/4201).
+
+## Independent Website UAT runtime — #124
+
+[Signed Website v0.1.2-rc.1](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.2-rc.1)
+was successfully published from admitted staging
+`4e3e037e237ef11e752f645926c4071a4d25c61c`.
+[UAT request #41538667672](https://github.com/OXY7O/kaori-website/actions/runs/41538667672)
+correctly failed closed because the only Website Compose project was already
+attached to the production shared edge. This is a **runtime isolation**
+finding, not a signing or request-branch trigger failure.
+
+Issue #124 separates `kaori-website-uat` and its loopback-only port, source
+adapter, release receipt and rollback from the publicly attached stable Website.
+A new reviewed staging SHA and its own signed RC are required before a real
+private deployment attempt; do not mutate or relabel the accepted RC.1 image.
+Full Admission, private host health, independent production health, browser
+review and Human Acceptance remain separate evidence.

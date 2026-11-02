@@ -251,3 +251,46 @@ redirect, Host/SNI, browser UAT and human acceptance remain separate gates.
 The signed `v0.1.1-rc.1` and `v0.1.1-rc.2` digests are immutable.
 These safeguards only apply to releases from subsequently admitted source.
 See incident #98 and prevention #99 for operator evidence and review.
+
+## Isolated RC/UAT runtime — #124
+
+The original private Compose override is not an isolated staging environment once
+the `kaori-website` container has joined the production `edge-public` network.
+[RC UAT deployment #41538667672](https://github.com/OXY7O/kaori-website/actions/runs/41538667672)
+correctly blocked instead of replacing a publicly attached container.
+
+For `kaori/uat-request`, the canonical SSH deployment now uses the existing
+approved `/opt/kaori-website` authority with separate paths:
+
+- UAT release adapters: `/opt/kaori-website/uat/releases/<accepted-sha>/server`.
+- UAT receipt and previous-release state: `/opt/kaori-website/uat/deploy-state`.
+- Independent Docker Compose project: `kaori-website-uat`.
+- UAT ingress: `127.0.0.1:18083:8080`, using the new `compose.uat.yml`.
+- Production project `kaori-website`, its existing public container, state in
+  `/var/lib/kaori-website/deploy-state` and edge attachment remain unchanged.
+
+The remote preflight requires a writable Website root, safe non-symlinked
+UAT paths, at least 256 MiB of available memory, 512 MiB of free disk and
+an unoccupied UAT port unless owned by the existing UAT project. These are
+runtime checks, **not assertions that capacity/port are currently available**.
+It rejects a missing or unhealthy public Website and verifies its container
+identity and health again after the private deployment. No shared-edge,
+KAORI App or Docs service is restarted.
+
+The same `deploy.sh`, `verify.sh` and `rollback.sh` enforce the UAT project
+and release-state identity. Verification checks the signed OCI digest,
+non-root runtime, container and host-loopback health, correct port and
+embedded `Website build vX.Y.Z-rc.N` footer identity. An operator reviews
+the private Website through an authenticated SSH tunnel:
+
+```bash
+ssh -N -L 18083:127.0.0.1:18083 -p <SSH_PORT> <ADMIN_USER>@<WEBSITE_HOST>
+```
+
+Then browse `http://127.0.0.1:18083/`. Do not use a public hostname for
+an unaccepted RC. A UAT rollback must preserve `COMPOSE_PROJECT_NAME`,
+`KAORI_WEBSITE_RUNTIME_ENV=uat`, `KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1`
+and `KAORI_WEBSITE_STATE_DIR=/opt/kaori-website/uat/deploy-state`.
+A new issue-linked staging merge requires a **new** signed RC; the already
+published `v0.1.2-rc.1` digest remains immutable and is not rebuilt.
+Human visual/UAT approval and promotion to main are separate gates.

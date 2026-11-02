@@ -12,6 +12,21 @@ docker compose -f deploy/server/compose.website.yml -f deploy/server/compose.rel
 config="$(docker compose -f deploy/server/compose.website.yml -f deploy/server/compose.release.yml config --format json)"
 printf '%s' "$config" | grep -Fq '"host_ip": "127.0.0.1"' || { echo 'BLOCK: Release host binding not localhost-only' >&2; exit 1; }
 printf '%s' "$config" | grep -Fq '"website-release-loopback"' || { echo 'BLOCK: Release ingress bridge missing' >&2; exit 1; }
+# The staging/UAT project must be a separate loopback-only container, not the live Website.
+uat_config="$(COMPOSE_PROJECT_NAME=kaori-website-uat docker compose \
+  -f deploy/server/compose.website.yml -f deploy/server/compose.uat.yml config --format json)"
+printf '%s' "$uat_config" | grep -Fq '"name": "kaori-website-uat"' ||
+  { echo 'BLOCK: UAT Compose project identity incorrect' >&2; exit 1; }
+printf '%s' "$uat_config" | grep -Fq '"published": "18083"' ||
+  { echo 'BLOCK: UAT loopback port incorrect' >&2; exit 1; }
+printf '%s' "$uat_config" | grep -Fq '"host_ip": "127.0.0.1"' ||
+  { echo 'BLOCK: UAT must bind localhost only' >&2; exit 1; }
+printf '%s' "$uat_config" | grep -Fq '"website-uat-loopback"' ||
+  { echo 'BLOCK: dedicated UAT ingress network missing' >&2; exit 1; }
+if printf '%s' "$uat_config" | grep -Fq 'edge-public'; then
+  echo 'BLOCK: UAT must never join edge-public' >&2
+  exit 1
+fi
 
 image="kaori-website-smoke:${source_sha:0:12}"
 docker build --target production \
