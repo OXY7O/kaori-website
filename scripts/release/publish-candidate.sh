@@ -11,7 +11,13 @@ host="${REGISTRY_HOST:-}"
 image="${REGISTRY_IMAGE:-}"
 api="https://api.github.com/repos/$repo"
 headers=(-H "Authorization: Bearer ${GH_TOKEN:?}" -H 'Accept: application/vnd.github+json')
-[[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'RC dispatch must use kaori/staging'
+if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+  [[ "$GITHUB_REF" == refs/heads/kaori/rc-request ]] || fail 'push RC request must use kaori/rc-request'
+elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+  [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual RC dispatch must use kaori/staging'
+else
+  fail 'unsupported RC request event'
+fi
 [[ "$(git rev-parse HEAD)" == "$sha" ]] || fail 'source mismatch'
 [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'candidate must use vX.Y.Z-rc.N'
 [[ -n "$host" && "$image" == "$host/"* && "$host" != *://* ]] || fail 'registry variables missing or inconsistent'
