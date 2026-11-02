@@ -97,7 +97,7 @@ fi
 if [[ "$runtime_env" == uat ]]; then
   [[ "$remote_release" == "$deploy_root"/uat/releases/* && "$remote_state_dir" == "$deploy_root/uat/deploy-state" ]] ||
     { echo 'BLOCK: UAT root paths deviate from approved Website namespace' >&2; exit 1; }
-  [[ ! -L "$deploy_root/uat" && ! -L "$deploy_root/uat/deploy-state" ]] ||
+  [[ ! -L "$deploy_root/uat" && ! -L "$deploy_root/uat/releases" && ! -L "$deploy_root/uat/deploy-state" ]] ||
     { echo 'BLOCK: UAT path cannot be symlinked' >&2; exit 1; }
   available_mem="$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo)"
   [[ "$available_mem" =~ ^[0-9]+$ ]] && (( available_mem >= 262144 )) ||
@@ -154,6 +154,15 @@ else
     # Capture production Website identity before isolated UAT mutation.
     existing_public="$(docker ps --filter label=com.docker.compose.project=kaori-website \
       --filter label=com.docker.compose.service=web --format '{{.ID}}')"
+    [[ "$existing_public" =~ ^[a-f0-9]{12,64}$ ]] || {
+      echo 'BLOCK: expected exactly one running public Website container before isolated UAT' >&2
+      exit 1
+    }
+    public_health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' "$existing_public")"
+    [[ "$public_health" == healthy ]] || {
+      echo 'BLOCK: existing public Website must be healthy before isolated UAT' >&2
+      exit 1
+    }
   else
     # A manual private release must never silently replace the already public Website.
     existing_web="$(docker ps --filter label=com.docker.compose.project=kaori-website \
@@ -180,7 +189,12 @@ if [[ "$runtime_env" == uat ]]; then
     echo 'CRITICAL: stable public Website container changed during isolated UAT' >&2
     exit 1
   }
-  echo 'PASS: Website production container identity unchanged; private UAT uses independent Compose project'
+  public_health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' "$existing_public")"
+  [[ "$public_health" == healthy ]] || {
+    echo 'CRITICAL: public Website lost health during private UAT deployment' >&2
+    exit 1
+  }
+  echo 'PASS: public Website container unchanged and healthy; private UAT uses independent Compose project'
 fi
 if [[ "$attach_existing_edge" == 1 ]]; then
   bash "$remote_release/server/reattach-existing-site.sh" attach
