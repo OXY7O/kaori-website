@@ -56,20 +56,7 @@ jobs:
             [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'invalid requested RC tag'
           elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
             [[ "$GITHUB_REF" == refs/heads/kaori/rc-request ]] || fail 'only kaori/rc-request can push RC request'
-            existing="$(git tag --points-at "$current" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*        shell: bash
-        run: bash scripts/release/publish-candidate.sh preflight
-      - name: Build, scan, sign and publish immutable candidate
-        if: ${{ steps.candidate.outputs.should_publish == 'true' }}
-        shell: bash
-        env:
-          RC_TAG: ${{ steps.candidate.outputs.tag }}
-        run: bash scripts/release/publish-candidate.sh publish
-      - name: Logout of registry
-        if: always()
-        shell: bash
-        run: |
-          if [[ -n "$REGISTRY_HOST" ]]; then docker logout "$REGISTRY_HOST" || true; fi
- || true)"
+            existing="$(git tag --points-at "$current" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$' || true)"
             if [[ -n "$existing" ]]; then
               [[ "$(printf '%s\n' "$existing" | wc -l)" -eq 1 ]] || fail 'multiple RC tags on exact staging SHA'
               status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/releases/tags/$existing")"
@@ -83,17 +70,7 @@ jobs:
               fi
               fail "RC tag $existing reserved without completed release (HTTP $status); operator recovery required"
             fi
-            stable="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+        shell: bash
-        run: bash scripts/release/publish-candidate.sh preflight
-      - name: Build, scan, sign and publish immutable candidate
-        shell: bash
-        run: bash scripts/release/publish-candidate.sh publish
-      - name: Logout of registry
-        if: always()
-        shell: bash
-        run: |
-          if [[ -n "$REGISTRY_HOST" ]]; then docker logout "$REGISTRY_HOST" || true; fi
- | head -n1 || true)"
+            stable="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)"
             [[ -n "$stable" ]] || fail 'stable Website base tag absent; manual bootstrap required'
             IFS=. read -r major minor patch <<<"${stable#v}"
             version="${major}.${minor}.$((patch + 1))"
@@ -117,7 +94,10 @@ jobs:
           RC_TAG: ${{ steps.candidate.outputs.tag }}
         run: bash scripts/release/publish-candidate.sh preflight
       - name: Build, scan, sign and publish immutable candidate
+        if: ${{ steps.candidate.outputs.should_publish == 'true' }}
         shell: bash
+        env:
+          RC_TAG: ${{ steps.candidate.outputs.tag }}
         run: bash scripts/release/publish-candidate.sh publish
       - name: Logout of registry
         if: always()
