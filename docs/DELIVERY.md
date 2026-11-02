@@ -67,12 +67,18 @@ The approved domains are `https://kaori.cloud` (website) and `https://app.kaori.
 
 Four canonical workflows retain their original filenames, job IDs, event triggers, dependency edges, runner labels and security controls. Their **display names** are Developer Check, Full Admission, Release Candidate, and Release Deployment. New workflow run labels show the PR/branch or candidate tag. Historical one-time RC workflow identities persist in the Actions sidebar because run evidence remains intact; deleting the retired YAML did not erase their run records. Do not delete historical runs for cosmetic reasons. The user-accepted stable [v0.1.0](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0) is current; preceding RC.8/RC.9/RC.10 paragraphs above are **historical release handoff evidence**, not current TODOs or authorization to promote again. Check labels/consumers before updating any enforced required check settings. This text-and-metadata-only patch does not rebuild, sign, retag or redeploy the immutable website image.
 
-## Website footer build identity and RC review — #121
+## Website footer build identity — #121
 
-The Website footer shows **Website build vX.Y.Z-rc.N** for an immutable signed release candidate, or **Website build development** for a local/CI Astro build without an admitted release identity. The build stage receives the *same* `APP_VERSION` argument used by `scripts/release/publish-candidate.sh` for the `org.opencontainers.image.version` label, not the stale `package.json` version. `Dockerfile` exposes it to Astro only during static compilation; the deployed container does not call GitHub on every page load and the existing immutable assets and HTML cache policy remain in force.
+The footer reads `APP_VERSION` injected by the Dockerfile into the static Astro build.
+The same argument supplies the OCI version label.
+Local builds without a release identity display `development`.
 
-**Build identity is not the stable GitHub Release identity.** When a reviewed `vX.Y.Z-rc.N` is accepted and the *same* signed OCI digest is promoted to stable `vX.Y.Z` without rebuilding, its footer must continue to show the honest original RC **build** value. The stable release, its GitHub Release record, and host-side deployment receipt are distinct approval/evidence authorities. Generic recurring stable publishing, production auto-deployment, and a possible runtime stable-release presentation are governed separately by #119; do not mutate the served static files or image merely to replace the RC build string.
+After an RC is promoted to stable without rebuilding, the footer still shows
+its original `vX.Y.Z-rc.N` **build** identity.
+The stable GitHub Release and deployment receipt are separate authorities.
+Do not rebuild or modify a signed digest merely to change the footer.
 
-The existing `Release Candidate` manual workflow accepts a unique `vX.Y.Z-rc.N` and the exact admitted `kaori/staging` SHA and must pass Trivy, SBOM, SLSA/Cosign and digest verification. The existing `Release Deployment` workflow requires the signed RC, matching source, explicit approval reference and pinned SSH trust. Its private loopback deployment remains separate from the opt-in shared-public-edge attachment. **Do not expose a new RC at `kaori.cloud` or claim user-visible UAT until the maintainer explicitly approves that exact tag, SHA and digest, and the real browser/edge evidence is collected.** Container smoke now inspects the built HTML identity as well as the OCI labels.
-
-Refs #117 and #121 share Website PR #120; no new release engine, branch trigger, automatic production deploy, or unapproved public cutover is created.
+Existing Release Candidate and Release Deployment workflows require exact
+admitted staging source, immutable signed images, security evidence and approval.
+Private staging/UAT and public-edge attachment are distinct operations.
+Recurring stable auto-deployment is governed separately by #119.
