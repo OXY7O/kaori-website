@@ -81,44 +81,28 @@ Pull-request runs include their PR/branch label; manual release runs show the se
 
 **Operating state:** [stable v0.1.0](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0) is published on main, reusing the signed deployed RC.10 digest, without a new image build. This naming-only workstream does not redeploy that image, modify shared-edge runtime or make product changes. External provider names, immutability and signed-evidence authority remain unchanged.
 
-## Explicit RC/UAT request branch parity — Website #122
+## Explicit Website release request branches — #122
 
-The Website follows KAORI Application's **explicit release request** pattern:
-`kaori/rc-request` and `kaori/uat-request` are request refs, **not**
-integration branches. Ordinary `kaori/staging` commits still run Full Admission,
-**not** publication or host deployment. A maintainer deliberately advances a
-request ref to the exact *current* staging SHA only after the applicable gate.
-Use the existing canonical workflow files; do not add one-time release YAML.
+Website RC and UAT use deliberate `kaori/rc-request` and `kaori/uat-request` branch pushes.
+Ordinary staging pushes only run Full Admission and never publish or deploy.
+The existing Release Candidate and Release Deployment workflows retain manual dispatch.
 
-1. **RC request:** advance `kaori/rc-request` to the exact current admitted
-   `kaori/staging` SHA. The existing Release Candidate workflow requires
-   source equality and completed exact-source Full Admission. It selects the
-   next patch RC from the latest accepted stable Website SemVer and existing
-   reserved RC tag numbers, never the stale `package.json`. The publisher
-   retains Trivy HIGH/CRITICAL, SBOM, provenance, Cosign, source label,
-   immutable digest and prerelease authority. Existing completed RCs on the
-   same source are not republished; orphan reserved tags fail closed.
-2. **UAT request:** **only after signed RC publication succeeds**, advance
-   `kaori/uat-request` to that exact accepted staging SHA. Release Deployment
-   requires exactly one matching prerelease and its Git tag, same-SHA successful
-   RC publisher evidence and merged staging PR authorization. The existing
-   deployment preflight requires the digest/registry identity, pinned SSH and
-   source equality; missing releases return an actionable BLOCK before SSH.
-   A branch request **always deploys to the private loopback runtime** with
-   shared-public-edge attachment disabled. Human UAT is separate.
-3. **Manual fallback:** `workflow_dispatch` on `kaori/staging` continues
-   to accept explicit `candidate_tag`, approval reference and optional
-   separately authorized public-edge attachment. It is not automatic
-   production authorization.
-4. **Recovery:** stale request refs, incomplete admission, unresolved release
-   provenance, ambiguous prereleases and reserved-but-incomplete RC tags
-   require operator reconciliation. Never force-push a stale request ref,
-   overwrite an immutable tag, retag a signed digest, or infer acceptance
-   from GitHub Actions success alone.
+**RC request:** The operator advances `kaori/rc-request` to the current admitted staging SHA.
+The publisher checks exact source and Full Admission before building a signed immutable image.
+It resolves the next patch RC from Website stable release tags, not `package.json`.
+Already published same-source RCs are not rebuilt; incomplete reserved tags fail closed.
 
-First reviewed staging rollout of these trigger contracts requires exact-head
-Developer Check, a **new merged-SHA Full Admission/Browser/Container PASS**, and
-source-locked request ref events. Preserve explicit maintainer self-review
-exception and real staging UAT evidence. Automatic stable production deployment
-belongs to #119; admission evidence cache/Fast Smoke belongs to #118. Request
-branch parity coordination is tracked by KAORI #4201.
+**UAT request:** Only after signed RC publication, advance `kaori/uat-request` to that SHA.
+The deploy workflow requires exactly one prerelease and matching tag/source authority.
+It also checks successful signed publisher evidence and the source's merged staging PR.
+It retains the existing digest, SSH trust, Compose verification and rollback controls.
+The request-branch path always disables public-edge attachment; Human UAT remains separate.
+
+**Manual fallback:** Dispatch existing workflows on `kaori/staging` with the approved tag,
+authorization reference and appropriate edge flag. A manual release does not waive admission.
+For failure or stale request, reconcile the Git refs and evidence before a new request;
+never overwrite an immutable tag or force an invalid branch SHA.
+
+This work is scoped by [Website #122](https://github.com/OXY7O/kaori-website/issues/122)
+and [KAORI #4201](https://github.com/OXY7O/KAORI/issues/4201).
+Stable/production automation remains #119 and admission caching remains #118.
