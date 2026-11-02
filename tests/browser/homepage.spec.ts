@@ -222,7 +222,8 @@ test("keep Docs links distinct from the App", async ({ page }) => {
     await expect(desktopDocs).toBeVisible();
     await expect(mobileDocs).toBeHidden();
   }
-  await expect(page.locator(".nav-app-link")).toHaveAttribute("href", "https://app.kaori.cloud");
+  const primaryApp = page.locator(".nav-app-link");
+  await expect(primaryApp).toHaveAttribute("href", "https://app.kaori.cloud");
 });
 
 test("navigate and preserve theme through the real control", async ({ page }) => {
