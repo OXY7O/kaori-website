@@ -229,7 +229,9 @@ test("keep Docs links distinct from the App", async ({ page }) => {
 test("show the actual build identity in the website footer", async ({ page }) => {
   const build = page.locator(".footer-build-version");
   await expect(build).toBeVisible();
-  await expect(build).toHaveText(/^Website build (?:development|v\d+\.\d+\.\d+(?:-rc\.[1-9]\d*)?)$/);
+  await expect(build).toHaveText(
+    /^Website build (?:development|v\d+\.\d+\.\d+(?:-rc\.[1-9]\d*)?)$/,
+  );
 });
 
 test("navigate and preserve theme through the real control", async ({ page }) => {
