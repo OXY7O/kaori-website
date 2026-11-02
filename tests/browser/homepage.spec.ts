@@ -200,16 +200,21 @@ test("keep Docs links distinct from the App", async ({ page }) => {
   const desktopDocs = page.locator(`.desktop-links a[href="${docsUrl}"]`);
   const mobileDocs = page.locator(`.mobile-nav a[href="${docsUrl}"]`);
   const footerDocs = page.locator(`.footer-links a[href="${docsUrl}"]`);
+  const heroDocs = page.locator(`.hero-actions a[href="${docsUrl}"]`);
 
   await expect(desktopDocs).toHaveCount(1);
   await expect(mobileDocs).toHaveCount(1);
   await expect(footerDocs).toHaveCount(1);
+  await expect(heroDocs).toHaveCount(1);
+  await expect(heroDocs).toHaveAttribute("aria-label", "Docs (in preparation)");
+  await expect(heroDocs).toHaveClass(/button-secondary/);
+  await expect(heroDocs).toBeVisible();
   await expect(desktopDocs).toHaveAttribute("href", docsUrl);
   await expect(desktopDocs).toHaveAttribute("aria-label", "Docs (in preparation)");
   await expect(footerDocs).toContainText("Documentation (in preparation)");
   await expect(mobileDocs).toContainText("Docs (in preparation)");
 
-  for (const docsLink of [desktopDocs, mobileDocs, footerDocs]) {
+  for (const docsLink of [desktopDocs, mobileDocs, footerDocs, heroDocs]) {
     await expect(docsLink).toHaveAttribute("target", "_blank");
     await expect(docsLink).toHaveAttribute("rel", "noopener noreferrer");
   }
