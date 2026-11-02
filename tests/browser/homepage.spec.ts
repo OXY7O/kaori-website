@@ -226,6 +226,14 @@ test("keep Docs links distinct from the App", async ({ page }) => {
   await expect(primaryApp).toHaveAttribute("href", "https://app.kaori.cloud");
 });
 
+test("show the actual build identity in the website footer", async ({ page }) => {
+  const build = page.locator(".footer-build-version");
+  await expect(build).toBeVisible();
+  const identity = await build.getAttribute("data-website-build-version");
+  expect(identity).toMatch(/^development$|^v\d+\.\d+\.\d+(?:-rc\.[1-9]\d*)?$/);
+  await expect(build).toHaveText(`Website build ${identity}`);
+});
+
 test("navigate and preserve theme through the real control", async ({ page }) => {
   const journey = page.locator("#how-it-works");
   await expect(journey).toBeVisible();

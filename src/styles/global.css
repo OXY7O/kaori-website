@@ -875,6 +875,20 @@ svg {
   color: var(--content-muted);
   font-size: 10px;
 }
+.footer-bottom-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  min-width: 0;
+}
+.footer-build-version {
+  color: var(--content-secondary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
 @media (max-width: 1100px) {
   .nav-shell {
     gap: 12px;

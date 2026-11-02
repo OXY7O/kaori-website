@@ -6,6 +6,10 @@ RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
 COPY astro.config.mjs tsconfig.json .prettierrc.json ./
 COPY public ./public
 COPY src ./src
+# Publish the same exact RC/build identity that populates the runtime OCI version label.
+# Static Astro content is immutable; stable promotion reuses the accepted RC digest.
+ARG APP_VERSION=0.1.0-dev
+ENV PUBLIC_KAORI_WEBSITE_VERSION=${APP_VERSION}
 RUN npm run check && npm run build && test -s dist/index.html
 
 # Pinned current stable NGINX on supported Alpine 3.24; release Trivy remains authoritative.
