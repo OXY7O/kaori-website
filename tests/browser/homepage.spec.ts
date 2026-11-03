@@ -116,7 +116,7 @@ test("protect mobile copy and capability artwork", async ({ page }) => {
 test("align Product Experience auth note icon with text at every viewport", async ({ page }) => {
   const note = page.locator("#experience .small-note");
   await expect(note).toContainText(
-    "Application access is subject to existing authentication and permissions.",
+    "Authentication and authorization required.",
   );
   await expect(note).toHaveCSS("display", "flex");
 
@@ -191,7 +191,7 @@ test("keep mobile acronym rows and filter overflow stable", async ({ page }) => 
   });
   expect(widths.button, JSON.stringify(widths)).toBeGreaterThanOrEqual(widths.content - 1);
   await expect(page.locator("#experience .small-note")).toContainText(
-    "authentication and permissions",
+    "Authentication and authorization required.",
   );
 });
 
@@ -207,21 +207,22 @@ test("keep exactly two Hero CTAs and Docs in navigation and footer", async ({ pa
   await expect(heroButtons.nth(0)).toContainText("Open Application");
   await expect(heroButtons.nth(0)).toHaveClass(/button-primary/);
   await expect(heroButtons.nth(0)).toHaveAttribute("href", "https://app.kaori.cloud");
-  await expect(heroButtons.nth(1)).toContainText("How KAORI Works");
+  await expect(heroButtons.nth(1)).toContainText("Documentation");
   await expect(heroButtons.nth(1)).toHaveClass(/button-secondary/);
-  await expect(heroButtons.nth(1)).toHaveAttribute("href", "#how-it-works");
-  await expect(heroDocs).toHaveCount(0);
+  await expect(heroButtons.nth(1)).toHaveAttribute("href", docsUrl);
+  await expect(heroDocs).toHaveCount(1);
+  await expect(heroDocs).toHaveAttribute("aria-label", "Documentation");
 
   await expect(desktopDocs).toHaveCount(1);
   await expect(mobileDocs).toHaveCount(1);
   await expect(footerDocs).toHaveCount(1);
   await expect(desktopDocs).toHaveAttribute("href", docsUrl);
-  await expect(desktopDocs).toHaveAttribute("aria-label", "Docs (in preparation)");
+  await expect(desktopDocs).toHaveAttribute("aria-label", "Documentation");
   await expect(desktopDocs.locator("svg")).toHaveCount(0);
-  await expect(footerDocs).toContainText("Documentation (in preparation)");
-  await expect(mobileDocs).toContainText("Docs (in preparation)");
+  await expect(footerDocs).toContainText("Documentation");
+  await expect(mobileDocs).toHaveText("Docs");
 
-  for (const docsLink of [desktopDocs, mobileDocs, footerDocs]) {
+  for (const docsLink of [desktopDocs, mobileDocs, footerDocs, heroDocs]) {
     await expect(docsLink).toHaveAttribute("target", "_blank");
     await expect(docsLink).toHaveAttribute("rel", "noopener noreferrer");
   }
@@ -259,6 +260,30 @@ test("keep exactly two Hero CTAs and Docs in navigation and footer", async ({ pa
   }
   const primaryApp = page.locator(".nav-app-link");
   await expect(primaryApp).toHaveAttribute("href", "https://app.kaori.cloud");
+});
+
+test("keep UAT supporting copy on one desktop line without overflow", async ({ page }) => {
+  const access = page.locator("#experience .small-note span");
+  const closing = page.locator(".closing-description");
+  await expect(access).toHaveText("Authentication and authorization required.");
+  await expect(closing).toHaveText("Connect sources, commit evidence, govern action.");
+
+  await page.evaluate(() => document.fonts.ready);
+  for (const text of [access, closing]) {
+    const geometry = await text.evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return {
+        visualLines: range.getClientRects().length,
+        scrollWidth: element.scrollWidth,
+        clientWidth: element.clientWidth,
+      };
+    });
+    expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth + 1);
+    if ((page.viewportSize()?.width ?? 0) >= 1024) {
+      expect(geometry.visualLines).toBe(1);
+    }
+  }
 });
 
 test("show the actual build identity in the website footer", async ({ page }) => {
