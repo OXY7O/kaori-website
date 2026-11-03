@@ -238,9 +238,10 @@ signed candidate and the public publication step, then select
 `publish_existing_edge=true`. The adapter reuses the approved
 `reattach-existing-site.sh preflight` before replacing the website container
 and `reattach-existing-site.sh attach` afterward. The existing script validates
-the registered `kaori.cloud` site and the public website, application and
-automation HTTPS readiness. Public deployment cannot claim success if these
-checks fail.
+the registered `kaori.cloud` site and the public Website, Application and
+Docs HTTPS readiness. The formerly checked `auto.kaori.cloud` endpoint was retired
+with n8n (ops-runbooks #93; KAORI #4197); it must not block an active release.
+Public deployment cannot claim success if any **active** site check fails.
 
 No DNS, Nginx, Certbot, site registration, KAORI Application or n8n mutation
 is added. If the site registration is unreadable or any public check fails,
@@ -294,3 +295,42 @@ and `KAORI_WEBSITE_STATE_DIR=/opt/kaori-website/uat/deploy-state`.
 A new issue-linked staging merge requires a **new** signed RC; the already
 published `v0.1.2-rc.1` digest remains immutable and is not rebuilt.
 Human visual/UAT approval and promotion to main are separate gates.
+
+## Public Website RC readiness after n8n decommission — #129 / #130 (2026-11-03)
+
+The maintainer authorized public RC review on the **same** `kaori-website` Compose
+project and public hostname used by stable. A signed RC replaces the active
+Website container through the existing **manual** Release Deployment workflow
+on the exact admitted staging SHA with `publish_existing_edge=true`.
+This is a preview publication, **not** promotion to `main` or stable release.
+Preserve the prior accepted stable image/receipt for rollback.
+
+The three **active** HTTPS readiness destinations after n8n retirement are:
+
+- Website: `https://kaori.cloud/healthz` (body `healthy`).
+- Application: `https://app.kaori.cloud/health/ready` (JSON `status=ready`).
+- Docs: `https://docs.kaori.cloud/healthz` (HTTP 2xx).
+
+The old `auto.kaori.cloud` site was archived under
+[ops-runbooks #93](https://github.com/OXY7O/ops-runbooks/issues/93); the obsolete
+certificate lineage was retired under
+[KAORI #4197](https://github.com/OXY7O/KAORI/issues/4197). Do not restore n8n or
+skip HTTPS/TLS just to pass a stale Website check.
+
+**Observed partial deployment:** [run #41556104946](https://github.com/OXY7O/kaori-website/actions/runs/41556104946)
+recreated the public Website with signed `v0.1.2-rc.3`, passed host-loopback,
+image/health checks, and committed the release receipt. The job **FAILED** at
+obsolete n8n TLS/SNI verification; this is not a completed release. Before
+retrying, inspect the actual public build label and digest, retained rollback
+receipt, existing shared-edge site registration and live three-domain HTTPS.
+Any code-authority change needs issue-linked staging PR, fresh admission and
+its own immutable release identity; do not rebuild or mutate an old RC tag.
+
+After successful verified public RC publication, retire the independent private
+`kaori-website-uat` Compose runtime only via a reviewed, scoped host operation
+with runtime and rollback evidence. Until then the host can still have a private
+UAT container; do not claim single-active-runtime completion solely from the
+public Website replacement. Human visual/browser acceptance remains mandatory
+before staging-to-main promotion. The shared-edge owner retains full
+DNS/redirect/TLS/Host-SNI and certificate renewal checks via the existing
+[KAORI shared-edge procedure](https://github.com/OXY7O/KAORI/blob/main/docs/deployment/SHARED_EDGE_OPERATIONS.md).
