@@ -242,7 +242,10 @@ test("keep exactly two Hero CTAs and Docs in navigation and footer", async ({ pa
       }),
     );
     for (const [index, link] of navigation.entries()) {
-      expect(Math.abs(link.top - navigation[0].top), `nav link ${index} baseline`).toBeLessThanOrEqual(2);
+      expect(
+        Math.abs(link.top - navigation[0].top),
+        `nav link ${index} baseline`,
+      ).toBeLessThanOrEqual(2);
       if (index > 0) expect(link.left).toBeGreaterThan(navigation[index - 1].right);
     }
     await expect(desktopDocs).toHaveCSS("white-space", "nowrap");
