@@ -60,7 +60,9 @@ app_ready="$(curl -fsS --max-time 10 https://app.kaori.cloud/health/ready)" ||
     fail 'application HTTPS readiness changed after website reattachment'
 [[ "$app_ready" == *'"status":"ready"'* ]] ||
     fail 'application readiness did not indicate ready'
-curl -fsS --max-time 10 https://auto.kaori.cloud/healthz >/dev/null ||
-    fail 'automation HTTPS readiness changed after website reattachment'
+# Docs replaced the retired n8n public site as the third active shared-edge service.
+# Keep this a mandatory trusted-HTTPS readiness check; never bypass TLS failures.
+curl -fsS --max-time 10 https://docs.kaori.cloud/healthz >/dev/null ||
+    fail 'Docs HTTPS readiness changed after website reattachment'
 printf 'PASS: existing kaori.cloud edge attached to accepted healthy website\n'
-printf 'PASS: app.kaori.cloud and auto.kaori.cloud HTTPS readiness retained\n'
+printf 'PASS: app.kaori.cloud and docs.kaori.cloud HTTPS readiness retained\n'
