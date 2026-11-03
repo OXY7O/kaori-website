@@ -134,6 +134,9 @@ svg {
   gap: 32px;
 }
 .desktop-links a {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
   color: var(--content-secondary);
   font-size: 13px;
   font-weight: 600;
@@ -2608,23 +2611,11 @@ svg {
     padding-inline: 12px;
     white-space: nowrap;
   }
-  .hero-actions .button:last-child {
-    grid-column: 1 / -1;
-    justify-self: start;
-  }
 }
 @media (min-width: 801px) and (max-width: 900px) {
   .hero-actions {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     justify-items: start;
-  }
-}
-@media (min-width: 801px) and (max-width: 1100px) {
-  .desktop-links a[href="https://docs.kaori.cloud/"] {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap;
   }
 }
