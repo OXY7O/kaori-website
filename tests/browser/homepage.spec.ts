@@ -195,26 +195,33 @@ test("keep mobile acronym rows and filter overflow stable", async ({ page }) => 
   );
 });
 
-test("keep Docs links distinct from the App", async ({ page }) => {
+test("keep exactly two Hero CTAs and Docs in navigation and footer", async ({ page }) => {
   const docsUrl = "https://docs.kaori.cloud/";
   const desktopDocs = page.locator(`.desktop-links a[href="${docsUrl}"]`);
   const mobileDocs = page.locator(`.mobile-nav a[href="${docsUrl}"]`);
   const footerDocs = page.locator(`.footer-links a[href="${docsUrl}"]`);
   const heroDocs = page.locator(`.hero-actions a[href="${docsUrl}"]`);
+  const heroButtons = page.locator(".hero-actions > a.button");
+
+  await expect(heroButtons).toHaveCount(2);
+  await expect(heroButtons.nth(0)).toContainText("Open Application");
+  await expect(heroButtons.nth(0)).toHaveClass(/button-primary/);
+  await expect(heroButtons.nth(0)).toHaveAttribute("href", "https://app.kaori.cloud");
+  await expect(heroButtons.nth(1)).toContainText("How KAORI Works");
+  await expect(heroButtons.nth(1)).toHaveClass(/button-secondary/);
+  await expect(heroButtons.nth(1)).toHaveAttribute("href", "#how-it-works");
+  await expect(heroDocs).toHaveCount(0);
 
   await expect(desktopDocs).toHaveCount(1);
   await expect(mobileDocs).toHaveCount(1);
   await expect(footerDocs).toHaveCount(1);
-  await expect(heroDocs).toHaveCount(1);
-  await expect(heroDocs).toHaveAttribute("aria-label", "Docs (in preparation)");
-  await expect(heroDocs).toHaveClass(/button-secondary/);
-  await expect(heroDocs).toBeVisible();
   await expect(desktopDocs).toHaveAttribute("href", docsUrl);
   await expect(desktopDocs).toHaveAttribute("aria-label", "Docs (in preparation)");
+  await expect(desktopDocs.locator("svg")).toHaveCount(0);
   await expect(footerDocs).toContainText("Documentation (in preparation)");
   await expect(mobileDocs).toContainText("Docs (in preparation)");
 
-  for (const docsLink of [desktopDocs, mobileDocs, footerDocs, heroDocs]) {
+  for (const docsLink of [desktopDocs, mobileDocs, footerDocs]) {
     await expect(docsLink).toHaveAttribute("target", "_blank");
     await expect(docsLink).toHaveAttribute("rel", "noopener noreferrer");
   }
@@ -226,10 +233,26 @@ test("keep Docs links distinct from the App", async ({ page }) => {
   } else {
     await expect(desktopDocs).toBeVisible();
     await expect(mobileDocs).toBeHidden();
+    const navLinks = page.locator(".desktop-links > a");
+    await expect(navLinks).toHaveCount(5);
+    const navigation = await navLinks.evaluateAll((links) =>
+      links.map((link) => {
+        const { top, right, left } = link.getBoundingClientRect();
+        return { top, right, left };
+      }),
+    );
+    for (const [index, link] of navigation.entries()) {
+      expect(Math.abs(link.top - navigation[0].top), `nav link ${index} baseline`).toBeLessThanOrEqual(2);
+      if (index > 0) expect(link.left).toBeGreaterThan(navigation[index - 1].right);
+    }
+    await expect(desktopDocs).toHaveCSS("white-space", "nowrap");
   }
   if (page.viewportSize()?.width === 1024) {
     await expect(page.locator(".hero-actions")).toHaveCSS("display", "grid");
-    await expect(desktopDocs).toHaveCSS("white-space", "nowrap");
+    const tops = await heroButtons.evaluateAll((buttons) =>
+      buttons.map((button) => button.getBoundingClientRect().top),
+    );
+    expect(Math.abs(tops[0] - tops[1])).toBeLessThanOrEqual(2);
   }
   const primaryApp = page.locator(".nav-app-link");
   await expect(primaryApp).toHaveAttribute("href", "https://app.kaori.cloud");
