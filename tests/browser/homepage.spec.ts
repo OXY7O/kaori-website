@@ -115,9 +115,7 @@ test("protect mobile copy and capability artwork", async ({ page }) => {
 
 test("align Product Experience auth note icon with text at every viewport", async ({ page }) => {
   const note = page.locator("#experience .small-note");
-  await expect(note).toContainText(
-    "Authentication and authorization required.",
-  );
+  await expect(note).toContainText("Authentication and authorization required.");
   await expect(note).toHaveCSS("display", "flex");
 
   const geometry = await note.evaluate((element) => {
