@@ -305,6 +305,13 @@ on the exact admitted staging SHA with `publish_existing_edge=true`.
 This is a preview publication, **not** promotion to `main` or stable release.
 Preserve the prior accepted stable image/receipt for rollback.
 
+Public release verification must also fetch `https://kaori.cloud/` over trusted
+HTTPS and confirm that its rendered `Website build vX.Y.Z-rc.N` footer matches
+the **selected running Website container's immutable OCI version label**.
+An HTTP `/healthz` PASS by itself does not prove the edge is serving the
+new build; a missing/stale footer is a release-verification **FAIL** and
+requires shared-edge routing/cache diagnosis, not a blind rebuild.
+
 The three **active** HTTPS readiness destinations after n8n retirement are:
 
 - Website: `https://kaori.cloud/healthz` (body `healthy`).
