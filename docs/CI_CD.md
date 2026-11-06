@@ -4,17 +4,19 @@
 
 ## Runner ownership
 
-Use the same **physical or organization runner pool** as KAORI, without replacing the existing registration or weakening host isolation:
+Use the same **approved hosted and organization runner pools** as KAORI, without replacing the existing registration or weakening host isolation:
 
-| Stage                     | Required runner labels              |
+| Stage                     | Runner selection                    |
 | ------------------------- | ----------------------------------- |
-| Developer Check / routing | `self-hosted,linux,x64,platform-ci` |
+| Developer Check / routing | GitHub-hosted `ubuntu-24.04`        |
 | Staging Full Admission    | `self-hosted,linux,x64,kaori-ci`    |
 | Release control-plane     | `self-hosted,linux,x64,platform-ci` |
 
 **Important:** A runner registered exclusively for the `OXY7O/KAORI` repository will _not_ execute workflows from `OXY7O/kaori-website` merely because the labels match. The operator must grant the new repo access via an appropriately scoped **organization runner or runner group** (or an additional independent registration, if approved). Runner registration and groups are external operational authority and must be inspected before CI is counted as PASS. Do not deregister or repurpose KAORI's working runner in order to enable this repository.
 
 Temporary release runner co-location with the deployment VPS retains the SSH trust boundary; no direct container deployment is made from the runner's local Docker daemon into the application namespace.
+
+**Hosted CI increment #138:** The existing trusted `Route Checks` and `Website Validation` jobs now run on ephemeral GitHub-hosted `ubuntu-24.04`; the `Website Validation` `setup-node` `cache: npm` continues using GitHub Actions cache service and may be cold on the first hosted run. `Container Validation`, `Release Configuration`, staging Full Admission, release publisher and deploy workflows still use the approved self-hosted runner groups and remain subject to exact-source/manual governance. The hosted Route Checks job still rejects fork heads and non-issue-linked branches **before checkout**, but fork-only public feedback remains a separate explicitly governed workstream; this migration does not grant forks trusted validation or deployment access.
 
 ## Gate contracts
 
@@ -27,9 +29,9 @@ Temporary release runner co-location with the deployment VPS retains the SSH tru
 
 ## External protection configuration
 
-**Approved temporary exception (private GitHub Free organization):** protected branches/rulesets and protected GitHub Environments are not enforced under the current plan. Use issue-linked Draft PRs, a recorded manual reviewer decision, exact-SHA Developer Check, staging admission, and explicit release verification and human acceptance. This is a compensating **procedure**, not equivalent enforcement. Do not claim protection is enabled; revisit enforcement if the plan changes.
+**Current GitHub-native branch governance (public repository, 2026-11-06):** active long-lived branch safety ruleset #26685572 blocks deletion and force-push on `main` and `kaori/staging`; PR-only integration ruleset #26685631 protects both branches; staging developer check ruleset #26685877 requires exact named `Route Checks` and `Website Validation` from GitHub Actions. These rulesets currently require zero reviewer approvals due to the single-maintainer configuration: documented Human Acceptance and authorized staging-to-main promotion remain mandatory procedural controls, not a claimed enforced independent approval. Required status checks have not been configured for `main`; never infer that a passing Draft check equals staging Full Admission or public release acceptance.
 
-Use **repository-level** Actions Variables and Secrets for this private repository; organization-level and environment-level secrets/variables must not be relied on. The Developer Check and Full Admission require no custom credentials. The canonical `publish-staging-image.yml` RC publisher and `deploy-staging-host.yml` release deployment use repository-scoped registry and SSH credentials with explicit operator authority and an admitted exact staging SHA. These are **manual** release operations and must not be turned into unconditional push-to-deploy behavior. Both were authored on staging, and the default-branch dispatch limitation is documented below.
+Use **repository-level** Actions Variables and Secrets for this public repository; organization-level and environment-level secrets/variables must not be relied on. The Developer Check and Full Admission require no custom credentials. The canonical `publish-staging-image.yml` RC publisher and `deploy-staging-host.yml` release deployment use repository-scoped registry and SSH credentials with explicit operator authority and an admitted exact staging SHA. These are **manual** release operations and must not be turned into unconditional push-to-deploy behavior. Both were authored on staging, and the default-branch dispatch limitation is documented below.
 
 Runner access, GitHub Project custom fields, native relationships, and review metadata still require GitHub-side setup where connector capabilities are absent. **A YAML check cannot substitute for server-enforced branch protection.**
 
