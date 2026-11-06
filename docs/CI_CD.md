@@ -8,13 +8,15 @@ Use the same **physical or organization runner pool** as KAORI, without replacin
 
 | Stage                     | Required runner labels              |
 | ------------------------- | ----------------------------------- |
-| Developer Check / routing | `self-hosted,linux,x64,platform-ci` |
+| Developer Check / routing | GitHub-hosted `ubuntu-24.04`         |
 | Staging Full Admission    | `self-hosted,linux,x64,kaori-ci`    |
 | Release control-plane     | `self-hosted,linux,x64,platform-ci` |
 
 **Important:** A runner registered exclusively for the `OXY7O/KAORI` repository will _not_ execute workflows from `OXY7O/kaori-website` merely because the labels match. The operator must grant the new repo access via an appropriately scoped **organization runner or runner group** (or an additional independent registration, if approved). Runner registration and groups are external operational authority and must be inspected before CI is counted as PASS. Do not deregister or repurpose KAORI's working runner in order to enable this repository.
 
 Temporary release runner co-location with the deployment VPS retains the SSH trust boundary; no direct container deployment is made from the runner's local Docker daemon into the application namespace.
+
+**Hosted CI increment #138:** The existing trusted `Route Checks` and `Website Validation` jobs now run on ephemeral GitHub-hosted `ubuntu-24.04`; the `Website Validation` `setup-node` `cache: npm` continues using GitHub Actions cache service and may be cold on the first hosted run. `Container Validation`, `Release Configuration`, staging Full Admission, release publisher and deploy workflows still use the approved self-hosted runner groups and remain subject to exact-source/manual governance. The hosted Route Checks job still rejects fork heads and non-issue-linked branches **before checkout**, but fork-only public feedback remains a separate explicitly governed workstream; this migration does not grant forks trusted validation or deployment access.
 
 ## Gate contracts
 
