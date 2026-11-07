@@ -28,24 +28,27 @@ test("external fork code only receives isolated GitHub-hosted feedback", () => {
   assert.match(validation, /npm ci --ignore-scripts/);
 });
 
-test("trusted developer jobs deny a fork before a self-hosted runner is allocated", () => {
+test("required route rejects forks on hosted runner without skip bypass", () => {
   const developer = workflow("developer-check");
   const route = job(developer, "route");
-  assert.match(route, /^    if:.*head\.repo\.full_name == github\.repository/m);
-  assert.match(route, /runs-on: \[self-hosted,/);
-  assert.match(route, /Source branch must be issue-linked/);
+  assert.match(route, /name: Route Checks/);
+  assert.match(route, /runs-on: ubuntu-24\\.04/);
+  assert.doesNotMatch(route, /^    if:/m);
+  assert.match(route, /HEAD_REPO.*github\\.event\\.pull_request\\.head\\.repo\\.full_name/);
+  assert.match(route, /Fork PR is not trusted for KAORI staging admission/);
+  assert.ok(route.indexOf("Validate issue-linked source branch") < route.indexOf("Checkout exact work SHA"));
   for (const name of ["targeted", "container-smoke", "release-registry-preflight"]) {
     assert.match(job(developer, name), /needs: route/);
   }
 });
 
-test("promotion blocks untrusted pull requests at the job boundary", () => {
+test("promotion fails untrusted PRs before scheduling privileged validation", () => {
   const quality = workflow("quality");
   const promotion = job(quality, "promotion-source");
-  assert.match(promotion, /^    if:.*github\.event_name != 'pull_request'/m);
-  assert.match(promotion, /head\.repo\.full_name == github\.repository/);
-  assert.match(promotion, /head\.ref == 'kaori\/staging'/);
-  assert.match(promotion, /base\.ref == 'main'/);
-  assert.match(promotion, /runs-on: \[self-hosted,/);
+  assert.match(promotion, /name: Promotion Policy/);
+  assert.match(promotion, /runs-on: ubuntu-24\\.04/);
+  assert.doesNotMatch(promotion, /^    if:/m);
+  assert.match(promotion, /HEAD_REPO.*github\\.event\\.pull_request\\.head\\.repo\\.full_name/);
+  assert.match(promotion, /Only kaori\\/staging may open a promotion PR to main/);
   assert.match(job(quality, "full-admission"), /needs: promotion-source/);
 });
