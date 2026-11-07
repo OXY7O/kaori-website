@@ -31,6 +31,8 @@ env:
 jobs:
   promotion-source:
     name: Promotion Policy
+    # No fork or non-staging promotion PR may schedule on a trusted runner.
+    if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'kaori/staging' && github.event.pull_request.base.ref == 'main') }}
     runs-on: [self-hosted, linux, x64, platform-ci]
     timeout-minutes: 5
     steps:
