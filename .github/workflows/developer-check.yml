@@ -25,6 +25,8 @@ env:
 jobs:
   route:
     name: Route Checks
+    # Reject fork events before a self-hosted runner is allocated.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.event.pull_request.head.ref, 'kaori/') }}
     runs-on: [self-hosted, linux, x64, platform-ci]
     timeout-minutes: 5
     outputs:
