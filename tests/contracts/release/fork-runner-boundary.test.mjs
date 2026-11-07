@@ -8,9 +8,7 @@ function job(source, name) {
   const lines = source.split("\n");
   const start = lines.findIndex((line) => line === `  ${name}:`);
   assert.notEqual(start, -1, `missing job ${name}`);
-  const end = lines.findIndex(
-    (line, index) => index > start && /^  [a-z][a-z0-9-]*:$/.test(line),
-  );
+  const end = lines.findIndex((line, index) => index > start && /^  [a-z][a-z0-9-]*:$/.test(line));
   return lines.slice(start, end === -1 ? undefined : end).join("\n");
 }
 
