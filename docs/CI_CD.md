@@ -6,11 +6,12 @@
 
 Use the same **physical or organization runner pool** as KAORI, without replacing the existing registration or weakening host isolation:
 
-| Stage                     | Required runner labels              |
-| ------------------------- | ----------------------------------- |
-| Developer Check / routing | `self-hosted,linux,x64,platform-ci` |
-| Staging Full Admission    | `self-hosted,linux,x64,kaori-ci`    |
-| Release control-plane     | `self-hosted,linux,x64,platform-ci` |
+| Stage                           | Required runner labels              |
+| ------------------------------- | ----------------------------------- |
+| Route Checks / Promotion Policy | `ubuntu-24.04` (hosted, read-only)  |
+| Developer Check validation      | `self-hosted,linux,x64,platform-ci` |
+| Full Admission (heavy)          | `self-hosted,linux,x64,kaori-ci`    |
+| Release control-plane           | `self-hosted,linux,x64,platform-ci` |
 
 **Important:** A runner registered exclusively for the `OXY7O/KAORI` repository will _not_ execute workflows from `OXY7O/kaori-website` merely because the labels match. The operator must grant the new repo access via an appropriately scoped **organization runner or runner group** (or an additional independent registration, if approved). Runner registration and groups are external operational authority and must be inspected before CI is counted as PASS. Do not deregister or repurpose KAORI's working runner in order to enable this repository.
 
@@ -18,26 +19,28 @@ Temporary release runner co-location with the deployment VPS retains the SSH tru
 
 ## Untrusted community PR runner boundary (#140)
 
-For a public fork PR targeting `kaori/staging`, the separate
-`Community Fork Check` is feedback only. Its hosted runner has read-only
-permissions and runs no deployment, publishing, or privileged jobs. The
-trusted `Developer Check` now checks same-repository source identity at
-the **route job-level** before allocating `platform-ci`; the existing
-first-step canonical issue-branch validation remains defense in depth.
-Every trusted downstream job depends on that route.
+For a fork PR targeting `kaori/staging`, `Community Fork Check` is
+unprivileged feedback on a hosted runner. The canonical required
+`Route Checks` also runs on hosted `ubuntu-24.04`, **fails** a
+different-repository source in its first step before source checkout,
+and only then performs the approved issue-branch routing for trusted PRs.
+This is deliberate: GitHub considers job-level `skipped` conclusions
+successful for required checks. A skipped self-hosted gate would not
+reliably block untrusted merge proposals. All privileged Developer
+Check jobs still depend on a successful Route Checks result.
 
-A PR targeting `main` enters `Full Admission` only from the
-same-repository `kaori/staging` branch. The `Promotion Policy` also
-rejects external PRs **at the job-level** before `platform-ci` is
-allocated; its existing shell guard remains in place. Subsequent
-admission jobs depend on that promotion gate and must be skipped when
-it is skipped. These restrictions preserve permitted push/manual events.
-Never promote community feedback into trusted admission or count a
-skipped job as PASS.
+For PRs targeting `main`, the same-repository `kaori/staging`
+promotion restriction executes as a **failing policy step**, not a
+skipped job, in hosted `Promotion Policy`. All privileged Full
+Admission jobs depend on its success. The existing source-branch
+constraints and push/manual event authorization are unchanged.
+GitHub administrators must still require suitable approval and
+promotion check contexts on `main`; this source patch cannot
+configure branch rulesets or substitute for Human Acceptance.
 
-The exact external-fork negative test, official staging Full Admission,
-deployment UAT and Human Acceptance are still required evidence,
-**not completed by this source change**.
+No fork source is checked out on a privileged runner. The real external
+fork negative test, exact-head Full Admission, deployment UAT and
+Human Acceptance remain **NOT RUN** until separately evidenced.
 
 ## Gate contracts
 
