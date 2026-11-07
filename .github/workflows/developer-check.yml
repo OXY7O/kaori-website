@@ -25,9 +25,9 @@ env:
 jobs:
   route:
     name: Route Checks
-    # Reject fork events before a self-hosted runner is allocated.
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.event.pull_request.head.ref, 'kaori/') }}
-    runs-on: [self-hosted, linux, x64, platform-ci]
+    # Run the REQUIRED Route Checks on an ephemeral host: external forks FAIL
+    # before checkout rather than skipping an otherwise required check.
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       web: ${{ steps.route.outputs.web }}
@@ -42,7 +42,7 @@ jobs:
           SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           set -Eeuo pipefail
-          [[ "$HEAD_REPO" == "$GITHUB_REPOSITORY" ]] || { echo 'Cross-repo PRs are not admitted to the self-hosted runner.' >&2; exit 1; }
+          [[ "$HEAD_REPO" == "$GITHUB_REPOSITORY" ]] || { echo 'Fork PR is not trusted for KAORI staging admission.' >&2; exit 1; }
           [[ "$SOURCE_BRANCH" =~ ^kaori/(story|bug|task|spike|chore|tech-debt|hotfix)-[0-9]+-[a-z0-9-]+$ ]] || { echo 'Source branch must be issue-linked.' >&2; exit 1; }
       - name: Checkout exact work SHA
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
