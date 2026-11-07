@@ -109,6 +109,9 @@ jobs:
       - name: Audit changes to dependency authority
         if: ${{ needs.route.outputs.dependencies == 'true' }}
         run: npm audit --audit-level=high
+      - name: Verify fork runner isolation contracts
+        if: ${{ needs.route.outputs.web == 'true' }}
+        run: node --test tests/contracts/release/fork-runner-boundary.test.mjs
       - name: Validate website formatting
         if: ${{ needs.route.outputs.web == 'true' }}
         run: npm run check-format
