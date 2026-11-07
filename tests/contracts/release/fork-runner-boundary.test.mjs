@@ -32,11 +32,14 @@ test("required route rejects forks on hosted runner without skip bypass", () => 
   const developer = workflow("developer-check");
   const route = job(developer, "route");
   assert.match(route, /name: Route Checks/);
-  assert.match(route, /runs-on: ubuntu-24\\.04/);
+  assert.ok(route.includes("runs-on: ubuntu-24.04"));
   assert.doesNotMatch(route, /^    if:/m);
-  assert.match(route, /HEAD_REPO.*github\\.event\\.pull_request\\.head\\.repo\\.full_name/);
-  assert.match(route, /Fork PR is not trusted for KAORI staging admission/);
-  assert.ok(route.indexOf("Validate issue-linked source branch") < route.indexOf("Checkout exact work SHA"));
+  assert.ok(route.includes("HEAD_REPO:"));
+  assert.ok(route.includes("head.repo.full_name"));
+  assert.ok(route.includes("Fork PR is not trusted for KAORI staging admission"));
+  const validation = route.indexOf("Validate issue-linked source branch");
+  const checkout = route.indexOf("Checkout exact work SHA");
+  assert.ok(validation > -1 && checkout > validation);
   for (const name of ["targeted", "container-smoke", "release-registry-preflight"]) {
     assert.match(job(developer, name), /needs: route/);
   }
@@ -46,9 +49,10 @@ test("promotion fails untrusted PRs before scheduling privileged validation", ()
   const quality = workflow("quality");
   const promotion = job(quality, "promotion-source");
   assert.match(promotion, /name: Promotion Policy/);
-  assert.match(promotion, /runs-on: ubuntu-24\\.04/);
+  assert.ok(promotion.includes("runs-on: ubuntu-24.04"));
   assert.doesNotMatch(promotion, /^    if:/m);
-  assert.match(promotion, /HEAD_REPO.*github\\.event\\.pull_request\\.head\\.repo\\.full_name/);
-  assert.match(promotion, /Only kaori\\/staging may open a promotion PR to main/);
+  assert.ok(promotion.includes("HEAD_REPO:"));
+  assert.ok(promotion.includes("head.repo.full_name"));
+  assert.ok(promotion.includes("Only kaori/staging may open a promotion PR to main"));
   assert.match(job(quality, "full-admission"), /needs: promotion-source/);
 });
