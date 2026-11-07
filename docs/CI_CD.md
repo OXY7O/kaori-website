@@ -16,6 +16,29 @@ Use the same **physical or organization runner pool** as KAORI, without replacin
 
 Temporary release runner co-location with the deployment VPS retains the SSH trust boundary; no direct container deployment is made from the runner's local Docker daemon into the application namespace.
 
+## Untrusted community PR runner boundary (#140)
+
+For a public fork PR targeting `kaori/staging`, the separate
+`Community Fork Check` is feedback only. Its hosted runner has read-only
+permissions and runs no deployment, publishing, or privileged jobs. The
+trusted `Developer Check` now checks same-repository source identity at
+the **route job-level** before allocating `platform-ci`; the existing
+first-step canonical issue-branch validation remains defense in depth.
+Every trusted downstream job depends on that route.
+
+A PR targeting `main` enters `Full Admission` only from the
+same-repository `kaori/staging` branch. The `Promotion Policy` also
+rejects external PRs **at the job-level** before `platform-ci` is
+allocated; its existing shell guard remains in place. Subsequent
+admission jobs depend on that promotion gate and must be skipped when
+it is skipped. These restrictions preserve permitted push/manual events.
+Never promote community feedback into trusted admission or count a
+skipped job as PASS.
+
+The exact external-fork negative test, official staging Full Admission,
+deployment UAT and Human Acceptance are still required evidence,
+**not completed by this source change**.
+
 ## Gate contracts
 
 1. **Issue → work branch:** canonical branch `kaori/<type>-<issue>-<slug>`, source from current `kaori/staging`.
