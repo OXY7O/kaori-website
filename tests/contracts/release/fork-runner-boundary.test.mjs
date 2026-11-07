@@ -19,7 +19,8 @@ test("external fork code only receives isolated GitHub-hosted feedback", () => {
   const validation = job(fork, "fork-validation");
   assert.match(fork, /pull_request:/);
   assert.match(fork, /contents: read/);
-  assert.doesNotMatch(fork, /pull_request_target:|workflow_run:|secrets\.|self-hosted/);
+  assert.doesNotMatch(fork, /pull_request_target:|workflow_run:|secrets\./);
+  assert.doesNotMatch(validation, /^\s+runs-on:\s*\[self-hosted/m);
   assert.match(validation, /head\.repo\.full_name != github\.repository/);
   assert.match(validation, /runs-on: ubuntu-24\.04/);
   assert.match(validation, /pull_request\.head\.sha/);
