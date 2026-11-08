@@ -112,12 +112,9 @@ jobs:
       - name: Verify release and runner safety contracts
         if: ${{ needs.route.outputs.web == 'true' }}
         run: node --test tests/contracts/release/*.test.mjs
-      - name: Diagnose Prettier formatting mismatch (TEMPORARY, FAIL CLOSED)
+      - name: Validate website formatting
         if: ${{ needs.route.outputs.web == 'true' }}
-        run: |
-          npx prettier --write tests/contracts/release/uat-runtime-recovery.test.mjs
-          git diff -- tests/contracts/release/uat-runtime-recovery.test.mjs
-          exit 1
+        run: npm run check-format
       - name: Validate committed shell script syntax
         if: ${{ needs.route.outputs.web == 'true' }}
         run: |
