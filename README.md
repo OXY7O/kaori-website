@@ -77,3 +77,9 @@ Passing community feedback is **not** trusted Developer Check, staging Full Admi
 ## Security and ownership
 
 This is a public repository for KAORI Website development. Do not commit credentials, private endpoints, internal infrastructure data, or screenshots containing operational information. Security and product policy remain governed by the approved KAORI standards.
+
+For **non-security Website defects or feedback**, use the [Website issue tracker](https://github.com/OXY7O/kaori-website/issues) and its existing issue forms. Search for duplicates and provide sanitized reproduction evidence. This public channel is not a promise of immediate support or automatic acceptance into KAORI delivery.
+
+To **report a Website vulnerability**, use [GitHub's private vulnerability reporting form for this repository](https://github.com/OXY7O/kaori-website/security/advisories/new); this repository's private reporting capability was verified enabled on 2026-11-08. Do **not** publish vulnerability details in a public issue, discussion, pull request, or email thread. If that private form is unavailable, consult the [organization security routing guidance](https://github.com/OXY7O/.github/blob/main/SECURITY.md) and contact authorized maintainers through a confirmed confidential route. Reports for the KAORI Application or Docs belong to their own repositories and private channels.
+
+The shared [OXY7O contributing policy](https://github.com/OXY7O/.github/blob/main/CONTRIBUTING.md) is the organization fallback; local repository policy and the accepted issue → review → staging/UAT → promotion workflow take precedence. Public visibility is not an open-source license grant while the separately governed rights audit remains pending.
