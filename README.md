@@ -70,4 +70,4 @@ See [CI/CD](docs/CI_CD.md), [delivery workflow](docs/DELIVERY.md), and [deployme
 
 ## Security and ownership
 
-This is a private repository for authorized KAORI Website development. Do not commit credentials, private endpoints, internal infrastructure data, or screenshots containing operational information. Security and product policy remain governed by the approved KAORI standards.
+This is a private repository for authorized KAORI Website Development. Do not commit credentials, private endpoints, internal infrastructure data, or screenshots containing operational information. Security and product policy remain governed by the approved KAORI standards.
