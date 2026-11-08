@@ -1,0 +1,70 @@
+# #160 / #137: review-only dependency intake.
+# This file activates only when accepted on the repository default branch (main).
+# Version updates target governed staging; security updates always target main.
+# Bot pull requests are proposals only: trusted Developer Check remains issue-linked.
+version: 2
+
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    target-branch: "kaori/staging"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Jakarta"
+    open-pull-requests-limit: 3
+    labels:
+      - "area:platform"
+      - "scope:ci"
+      - "quality:security"
+    groups:
+      npm-minor-patch:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    target-branch: "kaori/staging"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Jakarta"
+    open-pull-requests-limit: 2
+    labels:
+      - "area:platform"
+      - "scope:ci"
+      - "quality:security"
+
+  - package-ecosystem: "docker"
+    directory: "/.devcontainer"
+    target-branch: "kaori/staging"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Jakarta"
+    open-pull-requests-limit: 2
+    labels:
+      - "area:platform"
+      - "scope:ci"
+      - "quality:security"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "kaori/staging"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Jakarta"
+    open-pull-requests-limit: 2
+    labels:
+      - "area:platform"
+      - "scope:ci"
+      - "quality:security"
