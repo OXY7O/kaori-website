@@ -433,17 +433,13 @@ test("route Website community issues and security findings to the owning reposit
   const issueLink = footer.getByRole("link", { name: "Website issues" });
   const securityLink = footer.getByRole("link", { name: "Report a vulnerability" });
 
-  await expect(issueLink).toHaveAttribute(
-    "href",
-    "https://github.com/OXY7O/kaori-website/issues",
-  );
+  await expect(issueLink).toHaveAttribute("href", "https://github.com/OXY7O/kaori-website/issues");
   await expect(securityLink).toHaveAttribute(
     "href",
     "https://github.com/OXY7O/kaori-website/security/advisories/new",
   );
   for (const link of [issueLink, securityLink]) {
-    await expect(link).toHaveAttribute("target", "_blank");
-    await expect(link).toHaveAttribute("rel", "noopener noreferrer");
     await expect(link).toBeVisible();
+    await expect(link).not.toHaveAttribute("target", "_blank");
   }
 });
