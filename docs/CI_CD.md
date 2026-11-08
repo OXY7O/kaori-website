@@ -51,39 +51,11 @@ a real fork test.
 
 ## Governed Dependabot intake — #160
 
-The proposed `.github/dependabot.yml` monitors the Website's npm lockfile,
-root Dockerfile, DevContainer Dockerfile, and SHA-pinned GitHub Actions weekly
-(Monday 09:00 Asia/Jakarta). It caps update-PR volume; npm minor/patch updates
-are grouped, while potentially breaking major changes require separate review.
-No auto-merge, registry/SSH token, workflow dispatch, or dependency version
-change is authorized by this configuration.
+The `.github/dependabot.yml` proposal monitors npm, root Dockerfile, DevContainer Dockerfile and SHA-pinned GitHub Actions on a bounded weekly cadence (Monday 09:00 Asia/Jakarta). Only version updates target `kaori/staging`; security updates always target default `main` and require the separate native Dependabot Security Updates setting. No auto-merge, release, deployment, secret or runner permission is granted.
 
-**Activation boundary:** GitHub reads Dependabot configuration only from
-the repository's **default branch (`main`)**. A validated file on
-`kaori/staging` is **not an active Dependabot updater** until it reaches
-`main` through the independently approved and admitted staging promotion
-process. The `target-branch: kaori/staging` setting routes *version updates*
-to the integration branch; Dependabot *security update* PRs always target
-default `main` and require a separate GitHub Settings toggle. Existing
-Dependabot Alerts are independent from both mechanisms.
+**Activation boundary:** GitHub reads Dependabot configuration from default `main`, not just from `kaori/staging`. A future reviewed staging-to-main promotion and actual Dependabot readback are necessary before version updates can be called active. GitHub Alerts and CodeQL are separate native security settings governed by [#150](https://github.com/OXY7O/kaori-website/issues/150).
 
-**Bot PRs are intake, not admission.** The current trusted `Route Checks`
-requires a same-repository issue-linked `kaori/<type>-<issue>-<slug>` branch.
-Dependabot-generated branches are not permitted to bypass this check; a
-Dependabot PR with a blocked required check must **not** be merged directly.
-A maintainer reviews the proposed changes, records an accepted KAORI issue
-and new issue-linked trusted branch based on current staging, applies only
-reviewed updates, obtains independent PR approval and exact-head Developer
-Check, then runs official staging Full Admission, container vulnerability scan
-and browser tests. Separately approve UAT and any promotion/release. Treat
-security alerts and bot-generated PRs against `main` as triage only; never
-merge those PRs directly to `main`.
-
-GitHub-native CodeQL, Dependabot Alerts, Security Updates, secret scanning,
-push protection and private vulnerability reporting require actual
-authenticated settings readback under [#150](https://github.com/OXY7O/kaori-website/issues/150).
-Version-update YAML is not proof those settings were enabled; do not relax
-required check names or grant bot PRs self-hosted privileges.
+**Trust boundary:** Dependabot PRs are intake, not accepted implementation. The existing Developer Check requires a same-repository, issue-linked KAORI source branch and must reject ordinary bot branches. A maintainer must triage each proposed change under an accepted issue, reproduce it on a trusted issue-linked branch, obtain independent review, then run Developer Check, staging Full Admission, container scanning, browser quality, and relevant UAT before promotion. Security-update PRs targeting `main` must not bypass this process.
 
 ## Gate contracts
 
