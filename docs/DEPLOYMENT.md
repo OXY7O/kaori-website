@@ -341,3 +341,60 @@ public Website replacement. Human visual/browser acceptance remains mandatory
 before staging-to-main promotion. The shared-edge owner retains full
 DNS/redirect/TLS/Host-SNI and certificate renewal checks via the existing
 [KAORI shared-edge procedure](https://github.com/OXY7O/KAORI/blob/main/docs/deployment/SHARED_EDGE_OPERATIONS.md).
+
+## UAT verification and recovery incident — #156 (2026-11-08)
+
+[Signed v0.1.2-rc.6](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.2-rc.6)
+was published from admitted staging
+`62f164e222053c0774f08748f6cbe8d822f694ef`. The deliberate
+[private UAT request #42478001400](https://github.com/OXY7O/kaori-website/actions/runs/42478001400)
+**FAILED**. The existing UAT Compose service was started, but candidate
+verification failed and the subsequent recovery printed an unverified
+`CRITICAL: previous website recovery failed`. During recovery the host
+loopback HTTP health was **PASS**, while the previous image was compared
+to the **new candidate's footer version**. The failed deployment did not
+commit the candidate release receipt, but the final host/runtime state
+cannot be established from the GitHub Actions job alone.
+
+[Remediation authority #156](https://github.com/OXY7O/kaori-website/issues/156)
+corrects two release-adapter defects: avoid short-circuiting streamed
+homepage output with `grep -q` under `pipefail`, and recover the prior
+image using the **prior committed receipt's version**, not the rejected
+candidate version. Regression checks use the existing Node test runner
+and preserve digest, version, health, localhost-only and non-root gates.
+A new source revision requires a **new admission and uniquely signed RC**;
+never rebuild or overwrite the immutable RC.6 digest.
+
+**Operator stop condition:** do not retry `kaori/uat-request`, blindly
+restart/replace containers, remove the UAT project, or detach the public
+Website based on the false/ambiguous critical message. First read back the
+actual state on the approved Website host using the authorized operator
+identity. Record only sanitized output: public `kaori-website` and
+private `kaori-website-uat` Compose container names, health, image digest,
+published port, edge network membership, UAT `release.env` versus
+`previous-release.env` presence, and trusted HTTPS health for Website,
+Application and Docs. Do not print deployment credentials or private
+release receipt contents into public issues. Existing supported checks:
+
+```bash
+docker ps -a --filter label=com.docker.compose.project=kaori-website \
+  --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'
+docker ps -a --filter label=com.docker.compose.project=kaori-website-uat \
+  --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'
+docker ps -q --filter label=com.docker.compose.project=kaori-website-uat |
+  while read -r container; do
+    docker inspect --format '{{.Name}}: health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} image={{.Config.Image}}' "$container"
+    docker port "$container" 8080/tcp || true
+  done
+curl -fsS --max-time 5 https://kaori.cloud/healthz
+curl -fsS --max-time 5 https://app.kaori.cloud/health/ready
+curl -fsS --max-time 5 https://docs.kaori.cloud/healthz
+```
+
+**Current operating policy:** [single-active Website #129](https://github.com/OXY7O/kaori-website/issues/129)
+was human accepted after retirement of the legacy private UAT project.
+The older #124 private UAT flow still exists as a technical fallback,
+but does **not** authorize a new standing parallel UAT environment.
+Reconcile that authority and record the human runtime decision before
+any future private UAT mutation or public-edge RC activation. Maintain
+the current public Website and prior signed rollback receipt.
