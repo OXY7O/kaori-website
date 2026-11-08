@@ -31,7 +31,7 @@ env:
 jobs:
   promotion-source:
     name: Promotion Policy
-    runs-on: [self-hosted, linux, x64, platform-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Verify promotion source
@@ -59,10 +59,11 @@ jobs:
     name: Full Admission
     needs: promotion-source
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
-    runs-on: [self-hosted, linux, x64, kaori-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
       - name: Recover runner-owned workspace after isolated browser test
+        if: ${{ runner.environment == 'self-hosted' }}
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -92,6 +93,8 @@ jobs:
           cache: npm
       - name: Restore locked dependencies
         run: npm ci --no-audit --no-fund
+      - name: Verify release and runner safety contracts
+        run: node --test tests/contracts/release/*.test.mjs
       - name: Validate committed shell script syntax
         run: |
           set -Eeuo pipefail
@@ -125,7 +128,7 @@ jobs:
     name: Container Admission
     needs: full-admission
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
-    runs-on: [self-hosted, linux, x64, kaori-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: Checkout exact admitted source
@@ -141,7 +144,7 @@ jobs:
     name: Browser Quality Evidence
     needs: [promotion-source, full-admission]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
-    runs-on: [self-hosted, linux, x64, kaori-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     container:
       image: mcr.microsoft.com/playwright:v1.56.1-noble
@@ -181,7 +184,7 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
       - name: Restore host runner ownership of browser workspace
-        if: always()
+        if: ${{ always() && runner.environment == 'self-hosted' }}
         shell: bash
         run: |
           set -Eeuo pipefail

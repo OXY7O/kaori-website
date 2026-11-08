@@ -66,3 +66,57 @@ The approved domains are `https://kaori.cloud` (website) and `https://app.kaori.
 ## Actions display nomenclature review — issue #23 (after stable v0.1.0)
 
 Four canonical workflows retain their original filenames, job IDs, event triggers, dependency edges, runner labels and security controls. Their **display names** are Developer Check, Full Admission, Release Candidate, and Release Deployment. New workflow run labels show the PR/branch or candidate tag. Historical one-time RC workflow identities persist in the Actions sidebar because run evidence remains intact; deleting the retired YAML did not erase their run records. Do not delete historical runs for cosmetic reasons. The user-accepted stable [v0.1.0](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0) is current; preceding RC.8/RC.9/RC.10 paragraphs above are **historical release handoff evidence**, not current TODOs or authorization to promote again. Check labels/consumers before updating any enforced required check settings. This text-and-metadata-only patch does not rebuild, sign, retag or redeploy the immutable website image.
+
+## Website footer build identity — #121
+
+The footer reads `APP_VERSION` injected by the Dockerfile into the static Astro build.
+The same argument supplies the OCI version label.
+Local builds without a release identity display `development`.
+
+After an RC is promoted to stable without rebuilding, the footer still shows
+its original `vX.Y.Z-rc.N` **build** identity.
+The stable GitHub Release and deployment receipt are separate authorities.
+Do not rebuild or modify a signed digest merely to change the footer.
+
+Existing Release Candidate and Release Deployment workflows require exact
+admitted staging source, immutable signed images, security evidence and approval.
+Private staging/UAT and public-edge attachment are distinct operations.
+Recurring stable auto-deployment is governed separately by #119.
+
+## Request-triggered Website RC and UAT — #122
+
+KAORI Website now supports the two **deliberate** request branch events:
+`kaori/rc-request` for an admitted, source-pinned signed RC and
+`kaori/uat-request` for a separately approved private UAT deployment.
+They do **not** publish on an ordinary `kaori/staging` push. A UAT request
+without an actual matching published RC returns BLOCK before SSH deployment;
+the observed Release Deployment #41533645908 failure is the historical
+missing-RC example. Request-branch UAT cannot reattach the public edge.
+
+Always preserve the signed candidate's source SHA, immutable registry digest,
+SBOM/provenance, release tag, successful publisher run, deployment receipt,
+rollback authority and independent Human Acceptance. The footer's embedded
+`Website build vX.Y.Z-rc.N` remains truthful after same-digest stable promotion;
+it is not an asserted stable GitHub Release label. Stable/main auto-deploy
+remains separately governed by #119 and is not enabled by #122.
+
+For the exact request commands, manual fallback and failure handling, see
+[CI/CD](CI_CD.md). KAORI release request policy is coordinated by
+[KAORI #4201](https://github.com/OXY7O/KAORI/issues/4201).
+
+## Independent Website UAT runtime — #124
+
+[Signed Website v0.1.2-rc.1](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.2-rc.1)
+was successfully published from admitted staging
+`4e3e037e237ef11e752f645926c4071a4d25c61c`.
+[UAT request #41538667672](https://github.com/OXY7O/kaori-website/actions/runs/41538667672)
+correctly failed closed because the only Website Compose project was already
+attached to the production shared edge. This is a **runtime isolation**
+finding, not a signing or request-branch trigger failure.
+
+Issue #124 separates `kaori-website-uat` and its loopback-only port, source
+adapter, release receipt and rollback from the publicly attached stable Website.
+A new reviewed staging SHA and its own signed RC are required before a real
+private deployment attempt; do not mutate or relabel the accepted RC.1 image.
+Full Admission, private host health, independent production health, browser
+review and Human Acceptance remain separate evidence.

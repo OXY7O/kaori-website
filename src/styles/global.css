@@ -134,6 +134,9 @@ svg {
   gap: 32px;
 }
 .desktop-links a {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
   color: var(--content-secondary);
   font-size: 13px;
   font-weight: 600;
@@ -875,9 +878,22 @@ svg {
   color: var(--content-muted);
   font-size: 10px;
 }
+.footer-build-version {
+  color: var(--content-secondary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
 @media (max-width: 1100px) {
+  .nav-shell {
+    gap: 12px;
+  }
   .desktop-links {
-    gap: 16px;
+    gap: 12px;
+  }
+  .nav-app-link {
+    gap: 8px;
+    padding-inline: 12px;
   }
   .hero-grid {
     grid-template-columns: 48% 52%;
@@ -2580,5 +2596,26 @@ svg {
     margin-top: 13px;
     font-size: 12px;
     line-height: 1.6;
+  }
+}
+
+/* #126: lock CTA row geometry across the compact-laptop font swap.
+   Keep the existing shared Hero/buttons and mobile column pattern. */
+@media (min-width: 901px) and (max-width: 1100px) {
+  .hero-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .hero-actions .button {
+    min-width: 0;
+    padding-inline: 12px;
+    white-space: nowrap;
+  }
+}
+@media (min-width: 801px) and (max-width: 900px) {
+  .hero-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
   }
 }

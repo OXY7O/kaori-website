@@ -115,9 +115,7 @@ test("protect mobile copy and capability artwork", async ({ page }) => {
 
 test("align Product Experience auth note icon with text at every viewport", async ({ page }) => {
   const note = page.locator("#experience .small-note");
-  await expect(note).toContainText(
-    "Application access is subject to existing authentication and permissions.",
-  );
+  await expect(note).toContainText("Authentication and authorization required.");
   await expect(note).toHaveCSS("display", "flex");
 
   const geometry = await note.evaluate((element) => {
@@ -191,7 +189,106 @@ test("keep mobile acronym rows and filter overflow stable", async ({ page }) => 
   });
   expect(widths.button, JSON.stringify(widths)).toBeGreaterThanOrEqual(widths.content - 1);
   await expect(page.locator("#experience .small-note")).toContainText(
-    "authentication and permissions",
+    "Authentication and authorization required.",
+  );
+});
+
+test("keep exactly two Hero CTAs and Docs in navigation and footer", async ({ page }) => {
+  const docsUrl = "https://docs.kaori.cloud/";
+  const desktopDocs = page.locator(`.desktop-links a[href="${docsUrl}"]`);
+  const mobileDocs = page.locator(`.mobile-nav a[href="${docsUrl}"]`);
+  const footerDocs = page.locator(`.footer-links a[href="${docsUrl}"]`);
+  const heroDocs = page.locator(`.hero-actions a[href="${docsUrl}"]`);
+  const heroButtons = page.locator(".hero-actions > a.button");
+
+  await expect(heroButtons).toHaveCount(2);
+  await expect(heroButtons.nth(0)).toContainText("Open Application");
+  await expect(heroButtons.nth(0)).toHaveClass(/button-primary/);
+  await expect(heroButtons.nth(0)).toHaveAttribute("href", "https://app.kaori.cloud");
+  await expect(heroButtons.nth(1)).toContainText("Documentation");
+  await expect(heroButtons.nth(1)).toHaveClass(/button-secondary/);
+  await expect(heroButtons.nth(1)).toHaveAttribute("href", docsUrl);
+  await expect(heroDocs).toHaveCount(1);
+  await expect(heroDocs).toHaveAttribute("aria-label", "Documentation");
+
+  await expect(desktopDocs).toHaveCount(1);
+  await expect(mobileDocs).toHaveCount(1);
+  await expect(footerDocs).toHaveCount(1);
+  await expect(desktopDocs).toHaveAttribute("href", docsUrl);
+  await expect(desktopDocs).toHaveAttribute("aria-label", "Documentation");
+  await expect(desktopDocs.locator("svg")).toHaveCount(0);
+  await expect(footerDocs).toContainText("Documentation");
+  await expect(mobileDocs).toHaveText("Docs");
+
+  for (const docsLink of [desktopDocs, mobileDocs, footerDocs, heroDocs]) {
+    await expect(docsLink).toHaveAttribute("target", "_blank");
+    await expect(docsLink).toHaveAttribute("rel", "noopener noreferrer");
+  }
+
+  if ((page.viewportSize()?.width ?? 0) <= 800) {
+    await page.locator(".mobile-nav summary").click();
+    await expect(mobileDocs).toBeVisible();
+    await expect(desktopDocs).toBeHidden();
+  } else {
+    await expect(desktopDocs).toBeVisible();
+    await expect(mobileDocs).toBeHidden();
+    const navLinks = page.locator(".desktop-links > a");
+    await expect(navLinks).toHaveCount(5);
+    const navigation = await navLinks.evaluateAll((links) =>
+      links.map((link) => {
+        const { top, right, left } = link.getBoundingClientRect();
+        return { top, right, left };
+      }),
+    );
+    for (const [index, link] of navigation.entries()) {
+      expect(
+        Math.abs(link.top - navigation[0].top),
+        `nav link ${index} baseline`,
+      ).toBeLessThanOrEqual(2);
+      if (index > 0) expect(link.left).toBeGreaterThan(navigation[index - 1].right);
+    }
+    await expect(desktopDocs).toHaveCSS("white-space", "nowrap");
+  }
+  if (page.viewportSize()?.width === 1024) {
+    await expect(page.locator(".hero-actions")).toHaveCSS("display", "grid");
+    const tops = await heroButtons.evaluateAll((buttons) =>
+      buttons.map((button) => button.getBoundingClientRect().top),
+    );
+    expect(Math.abs(tops[0] - tops[1])).toBeLessThanOrEqual(2);
+  }
+  const primaryApp = page.locator(".nav-app-link");
+  await expect(primaryApp).toHaveAttribute("href", "https://app.kaori.cloud");
+});
+
+test("keep UAT supporting copy on one desktop line without overflow", async ({ page }) => {
+  const access = page.locator("#experience .small-note span");
+  const closing = page.locator(".closing-description");
+  await expect(access).toHaveText("Authentication and authorization required.");
+  await expect(closing).toHaveText("Connect sources, commit evidence, govern action.");
+
+  await page.evaluate(() => document.fonts.ready);
+  for (const text of [access, closing]) {
+    const geometry = await text.evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return {
+        visualLines: range.getClientRects().length,
+        scrollWidth: element.scrollWidth,
+        clientWidth: element.clientWidth,
+      };
+    });
+    expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth + 1);
+    if ((page.viewportSize()?.width ?? 0) >= 1024) {
+      expect(geometry.visualLines).toBe(1);
+    }
+  }
+});
+
+test("show the actual build identity in the website footer", async ({ page }) => {
+  const build = page.locator(".footer-build-version");
+  await expect(build).toBeVisible();
+  await expect(build).toHaveText(
+    /^Website build (?:development|v\d+\.\d+\.\d+(?:-rc\.[1-9]\d*)?)$/,
   );
 });
 
@@ -327,4 +424,22 @@ test("collect browser-observed lab paint and layout shift budgets", async ({ pag
   expect(metrics.clsScore!).toBeLessThanOrEqual(metrics.labClsConservativeBudget);
   // No field telemetry exists yet: do not synthesize INP or a Lighthouse score.
   expect(metrics.inpFieldP75).toBeNull();
+});
+
+test("route Website community issues and security findings to the owning repository", async ({
+  page,
+}) => {
+  const footer = page.locator(".footer-links");
+  const issueLink = footer.getByRole("link", { name: "Website issues" });
+  const securityLink = footer.getByRole("link", { name: "Report a vulnerability" });
+
+  await expect(issueLink).toHaveAttribute("href", "https://github.com/OXY7O/kaori-website/issues");
+  await expect(securityLink).toHaveAttribute(
+    "href",
+    "https://github.com/OXY7O/kaori-website/security/advisories/new",
+  );
+  for (const link of [issueLink, securityLink]) {
+    await expect(link).toBeVisible();
+    await expect(link).not.toHaveAttribute("target", "_blank");
+  }
 });

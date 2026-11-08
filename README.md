@@ -68,6 +68,20 @@ See [CI/CD](docs/CI_CD.md), [delivery workflow](docs/DELIVERY.md), and [deployme
 - [Release and delivery governance](docs/DELIVERY.md)
 - [Deployment, verification, and rollback](docs/DEPLOYMENT.md)
 
+## Community pull requests
+
+**Start here:** [External fork walkthrough and merge-conflict recovery](docs/DEVELOPMENT.md#external-fork-prs--controlled-pre-launch-procedure). This repository is public, but **external contributor launch and relicensing remain on hold** until the [KAORI rights audit](https://github.com/OXY7O/KAORI/issues/4212) and [community approval](https://github.com/OXY7O/KAORI/issues/4217) are accepted. These instructions currently support maintainer-authorized testing and proposal review; visibility does not grant rights to redistribute KAORI code or branding.
+
+For an approved test/proposal: **fork the repository → fetch `OXY7O/kaori-website:kaori/staging` as `upstream` → create a new branch from `upstream/kaori/staging` (not your fork's `main`) → make one scoped change → open a PR with base `OXY7O:kaori/staging` and head `YOUR_FORK:YOUR_BRANCH`.** Avoid reusing a fork branch that contains old `main` commits: that can cause conflicts even for a one-line README edit. See the linked guide for exact Git commands and the GitHub PR picker.
+
+External fork PRs receive **feedback-only** `Community Fork Check` on an ephemeral GitHub-hosted runner with read-only permissions, no shared cache, deployment secrets or internal host access. Their trusted `Developer Check` intentionally rejects a foreign source **before checkout**; first-time contributors may also require a maintainer's safe workflow approval. A green community check is **not** trusted staging admission, UAT, license approval, or release authority. Maintainers first triage accepted work into an issue-linked trusted branch, then follow [CI/CD governance](docs/CI_CD.md) and the [KAORI delivery workflow](docs/DELIVERY.md).
+
 ## Security and ownership
 
-This is a private repository for authorized KAORI Website development. Do not commit credentials, private endpoints, internal infrastructure data, or screenshots containing operational information. Security and product policy remain governed by the approved KAORI standards.
+This is a public repository for KAORI Website development. Do not commit credentials, private endpoints, internal infrastructure data, or screenshots containing operational information. Security and product policy remain governed by the approved KAORI standards.
+
+For **non-security Website defects or feedback**, use the [Website issue tracker](https://github.com/OXY7O/kaori-website/issues) and its existing issue forms. Search for duplicates and provide sanitized reproduction evidence. This public channel is not a promise of immediate support or automatic acceptance into KAORI delivery.
+
+To **report a Website vulnerability**, use [GitHub's private vulnerability reporting form for this repository](https://github.com/OXY7O/kaori-website/security/advisories/new); this repository's private reporting capability was verified enabled on 2026-11-08. Do **not** publish vulnerability details in a public issue, discussion, pull request, or email thread. If that private form is unavailable, consult the [organization security routing guidance](https://github.com/OXY7O/.github/blob/main/SECURITY.md) and contact authorized maintainers through a confirmed confidential route. Reports for the KAORI Application or Docs belong to their own repositories and private channels.
+
+The shared [OXY7O contributing policy](https://github.com/OXY7O/.github/blob/main/CONTRIBUTING.md) is the organization fallback; local repository policy and the accepted issue → review → staging/UAT → promotion workflow take precedence. Public visibility is not an open-source license grant while the separately governed rights audit remains pending.

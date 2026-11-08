@@ -1,6 +1,9 @@
 name: Release Deployment
-run-name: "Release Deployment · ${{ inputs.candidate_tag }}"
+run-name: "Release Deployment · ${{ inputs.candidate_tag || github.ref_name }}"
 on:
+  push:
+    branches:
+      - kaori/uat-request
   workflow_dispatch:
     inputs:
       candidate_tag:
@@ -29,9 +32,6 @@ jobs:
     timeout-minutes: 45
     env:
       ACCEPTED_SHA: ${{ github.sha }}
-      RC_TAG: ${{ inputs.candidate_tag }}
-      APPROVAL_REF: ${{ inputs.approval_reference }}
-      KAORI_WEBSITE_ATTACH_EXISTING_EDGE: ${{ inputs.publish_existing_edge && '1' || '0' }}
       GH_TOKEN: ${{ github.token }}
       REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
       REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
@@ -51,6 +51,49 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Resolve source-pinned UAT request and signed RC
+        id: request
+        shell: bash
+        env:
+          REQUEST_TAG: ${{ inputs.candidate_tag }}
+          REQUEST_APPROVAL: ${{ inputs.approval_reference }}
+          REQUEST_PUBLIC_EDGE: ${{ inputs.publish_existing_edge && '1' || '0' }}
+        run: |
+          set -Eeuo pipefail
+          fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
+          accepted="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
+          [[ "$accepted" =~ ^[a-f0-9]{40}$ && "$GITHUB_SHA" == "$accepted" ]] || fail 'UAT request SHA does not match current admitted staging'
+          [[ "$(git rev-parse HEAD)" == "$accepted" ]] || fail 'UAT checkout does not match accepted staging'
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual UAT must target staging'
+            tag="$REQUEST_TAG"
+            approval="$REQUEST_APPROVAL"
+            edge="$REQUEST_PUBLIC_EDGE"
+          elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            [[ "$GITHUB_REF" == refs/heads/kaori/uat-request ]] || fail 'only kaori/uat-request may trigger UAT on push'
+            releases="$(curl -fsS "${headers[@]}" "$api/releases?per_page=100")"
+            matches="$(jq -c --arg sha "$accepted" '[.[] | select(.prerelease == true and .target_commitish == $sha) | select(.tag_name | test("^v[0-9]+[.][0-9]+[.][0-9]+-rc[.][1-9][0-9]*$"))]' <<<"$releases")"
+            [[ "$(jq length <<<"$matches")" == 1 ]] || fail 'exactly one signed RC prerelease must exist for current staging SHA before requesting UAT'
+            tag="$(jq -r '.[0].tag_name' <<<"$matches")"
+            tag_sha="$(curl -fsS "${headers[@]}" "$api/git/ref/tags/$tag" | jq -r '.object.sha')"
+            [[ "$tag_sha" == "$accepted" ]] || fail 'RC tag does not identify accepted staging SHA'
+            publisher="$(curl -fsS "${headers[@]}" "$api/actions/workflows/publish-staging-image.yml/runs?per_page=100")"
+            jq -e --arg sha "$accepted" '[.workflow_runs[] | select(.head_sha == $sha and .status == "completed" and .conclusion == "success")] | length > 0' <<<"$publisher" >/dev/null || fail 'successful signed RC publisher run missing for this source'
+            pull_requests="$(curl -fsS "${headers[@]}" "$api/commits/$accepted/pulls")"
+            number="$(jq -r --arg sha "$accepted" '[.[] | select(.merge_commit_sha == $sha and .base.ref == "kaori/staging" and .merged_at != null)] | first.number // empty' <<<"$pull_requests")"
+            [[ "$number" =~ ^[0-9]+$ ]] || fail 'cannot identify merged staging PR that authorizes this UAT request'
+            approval="https://github.com/$GITHUB_REPOSITORY/pull/$number"
+            edge=0
+          else
+            fail 'unsupported UAT request event'
+          fi
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'UAT candidate tag is invalid'
+          [[ "$approval" =~ ^https://github.com/OXY7O/kaori-website/(pull|issues)/[0-9]+$ ]] || fail 'explicit merged PR or issue authorization required'
+          [[ "$edge" == 0 || "$edge" == 1 ]] || fail 'invalid public edge option'
+          printf 'RC_TAG=%s\nAPPROVAL_REF=%s\nKAORI_WEBSITE_ATTACH_EXISTING_EDGE=%s\n' "$tag" "$approval" "$edge" >> "$GITHUB_ENV"
+          printf 'PASS: UAT request %s -> %s; edge attachment=%s\n' "$tag" "$accepted" "$edge"
       - name: Verify prerelease, pinned host and explicit approval reference
         shell: bash
         run: bash scripts/release/deploy-release.sh preflight

@@ -1,6 +1,9 @@
 ---
 import Icon from "./Icon.astro";
 const year = new Date().getFullYear();
+const suppliedVersion = import.meta.env.PUBLIC_KAORI_WEBSITE_VERSION;
+const websiteBuildVersion = suppliedVersion ? `v${suppliedVersion}` : "development";
+const websiteBuildLabel = `Website build ${websiteBuildVersion}`;
 ---
 
 <footer class="site-footer" id="contact">
@@ -34,6 +37,15 @@ const year = new Date().getFullYear();
         <a href="https://app.kaori.cloud"
           >Open Application <Icon name="arrow-up-right" size={14} /></a
         >
+        <a href="https://docs.kaori.cloud/" target="_blank" rel="noopener noreferrer"
+          >Documentation <Icon name="arrow-up-right" size={14} /></a
+        >
+        <a href="https://github.com/OXY7O/kaori-website/issues"
+          >Website issues <Icon name="arrow-up-right" size={14} /></a
+        >
+        <a href="https://github.com/OXY7O/kaori-website/security/advisories/new"
+          >Report a vulnerability <Icon name="arrow-up-right" size={14} /></a
+        >
         <a href="mailto:lethisaputri@gmail.com">Contact us <Icon name="mail" size={14} /></a>
       </div>
       <div class="footer-contact">
@@ -48,5 +60,6 @@ const year = new Date().getFullYear();
   <div class="container footer-bottom">
     <span>© {year} KAORI. All rights reserved.</span>
     <span>Public introduction · Access to the operational application requires authorization</span>
+    <span class="footer-build-version">{websiteBuildLabel}</span>
   </div>
 </footer>

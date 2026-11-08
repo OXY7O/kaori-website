@@ -1,6 +1,9 @@
 name: Release Candidate
-run-name: "Release Candidate · ${{ inputs.candidate_tag }}"
+run-name: "Release Candidate · ${{ inputs.candidate_tag || github.ref_name }}"
 on:
+  push:
+    branches:
+      - kaori/rc-request
   workflow_dispatch:
     inputs:
       candidate_tag:
@@ -24,7 +27,6 @@ jobs:
       REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
       REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
       REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
-      RC_TAG: ${{ inputs.candidate_tag }}
       ACCEPTED_SHA: ${{ github.sha }}
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -33,12 +35,69 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
+          fetch-tags: true
           persist-credentials: false
-      - name: Verify admitted source and registry configuration
+      - name: Resolve exact admitted RC request
+        id: candidate
         shell: bash
+        env:
+          REQUEST_TAG: ${{ inputs.candidate_tag }}
+        run: |
+          set -Eeuo pipefail
+          fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
+          current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
+          [[ "$current" =~ ^[a-f0-9]{40}$ && "$GITHUB_SHA" == "$current" ]] || fail 'RC request differs from current staging SHA'
+          [[ "$(git rev-parse HEAD)" == "$current" ]] || fail 'RC checkout differs from accepted staging'
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual RC must target staging'
+            tag="$REQUEST_TAG"
+            [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'invalid requested RC tag'
+          elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            [[ "$GITHUB_REF" == refs/heads/kaori/rc-request ]] || fail 'only kaori/rc-request can push RC request'
+            existing="$(git tag --points-at "$current" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$' || true)"
+            if [[ -n "$existing" ]]; then
+              [[ "$(printf '%s\n' "$existing" | wc -l)" -eq 1 ]] || fail 'multiple RC tags on exact staging SHA'
+              status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/releases/tags/$existing")"
+              if [[ "$status" == 200 ]]; then
+                release="$(curl -fsS "${headers[@]}" "$api/releases/tags/$existing")"
+                [[ "$(jq -r '.prerelease' <<<"$release")" == true && "$(jq -r '.target_commitish' <<<"$release")" == "$current" ]] || fail 'published RC identity mismatch'
+                [[ "$(jq -r '.body // ""' <<<"$release")" == *'Immutable digest: sha256:'* ]] || fail 'published RC missing immutable evidence'
+                printf 'tag=%s\nshould_publish=false\n' "$existing" >> "$GITHUB_OUTPUT"
+                printf 'PASS: RC %s already published; no duplicate\n' "$existing"
+                exit 0
+              fi
+              fail "RC tag $existing reserved without completed release (HTTP $status); operator recovery required"
+            fi
+            stable="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)"
+            [[ -n "$stable" ]] || fail 'stable Website base tag absent; manual bootstrap required'
+            IFS=. read -r major minor patch <<<"${stable#v}"
+            version="${major}.${minor}.$((patch + 1))"
+            highest=0
+            while IFS= read -r used; do
+              [[ -n "$used" ]] || continue
+              count="${used##*.}"
+              [[ "$count" =~ ^[1-9][0-9]*$ ]] || continue
+              if (( 10#$count > highest )); then highest=$((10#$count)); fi
+            done < <(git tag --list "v${version}-rc.*")
+            tag="v${version}-rc.$((highest + 1))"
+          else
+            fail 'unsupported release request event'
+          fi
+          printf 'tag=%s\nshould_publish=true\n' "$tag" >> "$GITHUB_OUTPUT"
+          printf 'PASS: %s bound to admitted staging SHA %s\n' "$tag" "$current"
+      - name: Verify admitted source and registry configuration
+        if: ${{ steps.candidate.outputs.should_publish == 'true' }}
+        shell: bash
+        env:
+          RC_TAG: ${{ steps.candidate.outputs.tag }}
         run: bash scripts/release/publish-candidate.sh preflight
       - name: Build, scan, sign and publish immutable candidate
+        if: ${{ steps.candidate.outputs.should_publish == 'true' }}
         shell: bash
+        env:
+          RC_TAG: ${{ steps.candidate.outputs.tag }}
         run: bash scripts/release/publish-candidate.sh publish
       - name: Logout of registry
         if: always()

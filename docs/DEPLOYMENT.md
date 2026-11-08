@@ -238,9 +238,10 @@ signed candidate and the public publication step, then select
 `publish_existing_edge=true`. The adapter reuses the approved
 `reattach-existing-site.sh preflight` before replacing the website container
 and `reattach-existing-site.sh attach` afterward. The existing script validates
-the registered `kaori.cloud` site and the public website, application and
-automation HTTPS readiness. Public deployment cannot claim success if these
-checks fail.
+the registered `kaori.cloud` site and the public Website, Application and
+Docs HTTPS readiness. The formerly checked `auto.kaori.cloud` endpoint was retired
+with n8n (ops-runbooks #93; KAORI #4197); it must not block an active release.
+Public deployment cannot claim success if any **active** site check fails.
 
 No DNS, Nginx, Certbot, site registration, KAORI Application or n8n mutation
 is added. If the site registration is unreadable or any public check fails,
@@ -251,3 +252,165 @@ redirect, Host/SNI, browser UAT and human acceptance remain separate gates.
 The signed `v0.1.1-rc.1` and `v0.1.1-rc.2` digests are immutable.
 These safeguards only apply to releases from subsequently admitted source.
 See incident #98 and prevention #99 for operator evidence and review.
+
+## Isolated RC/UAT runtime — #124
+
+The original private Compose override is not an isolated staging environment once
+the `kaori-website` container has joined the production `edge-public` network.
+[RC UAT deployment #41538667672](https://github.com/OXY7O/kaori-website/actions/runs/41538667672)
+correctly blocked instead of replacing a publicly attached container.
+
+For `kaori/uat-request`, the canonical SSH deployment now uses the existing
+approved `/opt/kaori-website` authority with separate paths:
+
+- UAT release adapters: `/opt/kaori-website/uat/releases/<accepted-sha>/server`.
+- UAT receipt and previous-release state: `/opt/kaori-website/uat/deploy-state`.
+- Independent Docker Compose project: `kaori-website-uat`.
+- UAT ingress: `127.0.0.1:18083:8080`, using the new `compose.uat.yml`.
+- Production project `kaori-website`, its existing public container, state in
+  `/var/lib/kaori-website/deploy-state` and edge attachment remain unchanged.
+
+The remote preflight requires a writable Website root, safe non-symlinked
+UAT paths, at least 256 MiB of available memory, 512 MiB of free disk and
+an unoccupied UAT port unless owned by the existing UAT project. These are
+runtime checks, **not assertions that capacity/port are currently available**.
+It rejects a missing or unhealthy public Website and verifies its container
+identity and health again after the private deployment. No shared-edge,
+KAORI App or Docs service is restarted.
+
+The same `deploy.sh`, `verify.sh` and `rollback.sh` enforce the UAT project
+and release-state identity. Verification checks the signed OCI digest,
+non-root runtime, container and host-loopback health, correct port and
+embedded `Website build vX.Y.Z-rc.N` footer identity. An operator reviews
+the private Website through an authenticated SSH tunnel:
+
+```bash
+ssh -N -L 18083:127.0.0.1:18083 -p <SSH_PORT> <ADMIN_USER>@<WEBSITE_HOST>
+```
+
+Then browse `http://127.0.0.1:18083/`. Do not use a public hostname for
+an unaccepted RC. A UAT rollback must preserve `COMPOSE_PROJECT_NAME`,
+`KAORI_WEBSITE_RUNTIME_ENV=uat`, `KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1`
+and `KAORI_WEBSITE_STATE_DIR=/opt/kaori-website/uat/deploy-state`.
+A new issue-linked staging merge requires a **new** signed RC; the already
+published `v0.1.2-rc.1` digest remains immutable and is not rebuilt.
+Human visual/UAT approval and promotion to main are separate gates.
+
+## Public Website RC readiness after n8n decommission — #129 / #130 (2026-11-03)
+
+The maintainer authorized public RC review on the **same** `kaori-website` Compose
+project and public hostname used by stable. A signed RC replaces the active
+Website container through the existing **manual** Release Deployment workflow
+on the exact admitted staging SHA with `publish_existing_edge=true`.
+This is a preview publication, **not** promotion to `main` or stable release.
+Preserve the prior accepted stable image/receipt for rollback.
+
+Public release verification must also fetch `https://kaori.cloud/` over trusted
+HTTPS and confirm that its rendered `Website build vX.Y.Z-rc.N` footer matches
+the **selected running Website container's immutable OCI version label**.
+An HTTP `/healthz` PASS by itself does not prove the edge is serving the
+new build; a missing/stale footer is a release-verification **FAIL** and
+requires shared-edge routing/cache diagnosis, not a blind rebuild.
+
+The three **active** HTTPS readiness destinations after n8n retirement are:
+
+- Website: `https://kaori.cloud/healthz` (body `healthy`).
+- Application: `https://app.kaori.cloud/health/ready` (JSON `status=ready`).
+- Docs: `https://docs.kaori.cloud/healthz` (HTTP 2xx).
+
+The old `auto.kaori.cloud` site was archived under
+[ops-runbooks #93](https://github.com/OXY7O/ops-runbooks/issues/93); the obsolete
+certificate lineage was retired under
+[KAORI #4197](https://github.com/OXY7O/KAORI/issues/4197). Do not restore n8n or
+skip HTTPS/TLS just to pass a stale Website check.
+
+**Observed partial deployment:** [run #41556104946](https://github.com/OXY7O/kaori-website/actions/runs/41556104946)
+recreated the public Website with signed `v0.1.2-rc.3`, passed host-loopback,
+image/health checks, and committed the release receipt. The job **FAILED** at
+obsolete n8n TLS/SNI verification; this is not a completed release. Before
+retrying, inspect the actual public build label and digest, retained rollback
+receipt, existing shared-edge site registration and live three-domain HTTPS.
+Any code-authority change needs issue-linked staging PR, fresh admission and
+its own immutable release identity; do not rebuild or mutate an old RC tag.
+
+After successful verified public RC publication, retire the independent private
+`kaori-website-uat` Compose runtime only via a reviewed, scoped host operation
+with runtime and rollback evidence. Until then the host can still have a private
+UAT container; do not claim single-active-runtime completion solely from the
+public Website replacement. Human visual/browser acceptance remains mandatory
+before staging-to-main promotion. The shared-edge owner retains full
+DNS/redirect/TLS/Host-SNI and certificate renewal checks via the existing
+[KAORI shared-edge procedure](https://github.com/OXY7O/KAORI/blob/main/docs/deployment/SHARED_EDGE_OPERATIONS.md).
+
+## UAT verification and recovery incident — #156 (2026-11-08)
+
+[Signed v0.1.2-rc.6](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.2-rc.6)
+was published from admitted staging
+`62f164e222053c0774f08748f6cbe8d822f694ef`. The deliberate
+[private UAT request #42478001400](https://github.com/OXY7O/kaori-website/actions/runs/42478001400)
+**FAILED**. The existing UAT Compose service was started, but candidate
+verification failed and the subsequent recovery printed an unverified
+`CRITICAL: previous website recovery failed`. During recovery the host
+loopback HTTP health was **PASS**, while the previous image was compared
+to the **new candidate's footer version**. The failed deployment did not
+commit the candidate release receipt, but the final host/runtime state
+cannot be established from the GitHub Actions job alone.
+
+[Remediation authority #156](https://github.com/OXY7O/kaori-website/issues/156)
+corrects two release-adapter defects: avoid short-circuiting streamed
+homepage output with `grep -q` under `pipefail`, and recover the prior
+image using the **prior committed receipt's version**, not the rejected
+candidate version. Regression checks use the existing Node test runner
+and preserve digest, version, health, localhost-only and non-root gates.
+A new source revision requires a **new admission and uniquely signed RC**;
+never rebuild or overwrite the immutable RC.6 digest.
+
+**Operator stop condition:** do not retry `kaori/uat-request`, blindly
+restart/replace containers, remove the UAT project, or detach the public
+Website based on the false/ambiguous critical message. First read back the
+actual state on the approved Website host using the authorized operator
+identity. Record only sanitized output: public `kaori-website` and
+private `kaori-website-uat` Compose container names, health, image digest,
+published port, edge network membership, UAT `release.env` versus
+`previous-release.env` presence, and trusted HTTPS health for Website,
+Application and Docs. Do not print deployment credentials or private
+release receipt contents into public issues. Existing supported checks:
+
+```bash
+docker ps -a --filter label=com.docker.compose.project=kaori-website \
+  --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'
+docker ps -a --filter label=com.docker.compose.project=kaori-website-uat \
+  --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'
+docker ps -q --filter label=com.docker.compose.project=kaori-website-uat |
+  while read -r container; do
+    docker inspect --format '{{.Name}}: health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} image={{.Config.Image}}' "$container"
+    docker port "$container" 8080/tcp || true
+  done
+curl -fsS --max-time 5 https://kaori.cloud/healthz
+curl -fsS --max-time 5 https://app.kaori.cloud/health/ready
+curl -fsS --max-time 5 https://docs.kaori.cloud/healthz
+```
+
+**Current operating policy:** [single-active public Website #129](https://github.com/OXY7O/kaori-website/issues/129) prohibits a second active **public** RC/stable slot. The older [private UAT #124](https://github.com/OXY7O/kaori-website/issues/124) adapter remains technically available, and a temporary private RC.7 UAT was actually deployed under a separate authorization. **Do not claim that this temporary private runtime has been retired**: its current host state and safe retirement require operator evidence and separate acceptance under [#158](https://github.com/OXY7O/kaori-website/issues/158). Preserve signed receipts and the earlier public rollback identity; no standing parallel private UAT is authorized.
+
+## Public RC.7 cutover and outstanding acceptance — #158 (2026-11-08)
+
+The maintainer expressly approved replacing the **existing single public** Website RC.5 with signed [v0.1.2-rc.7](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.2-rc.7) under [#158](https://github.com/OXY7O/kaori-website/issues/158); this is not blanket approval for a stable release, new public slot, host cleanup or main promotion.
+
+- **Immutable source:** `kaori/staging@b77a8dc98d4b342e7002e251fe4ff0abc7149dbe`; signed image `sha256:d686b54a219ea96d60a108bf947f9d0f540275c230171c92ede06a14c56cb10c`.
+- **Quality:** [Full Admission #42482112697](https://github.com/OXY7O/kaori-website/actions/runs/42482112697) four required jobs SUCCESS, 156 Playwright passes, non-root container runtime smoke and Trivy configured HIGH/CRITICAL scan with zero reported findings on Alpine 3.24.3. [RC publisher #42484280809](https://github.com/OXY7O/kaori-website/actions/runs/42484280809) SUCCESS.
+- **Private candidate:** [UAT #42484609068](https://github.com/OXY7O/kaori-website/actions/runs/42484609068) SUCCESS with `edge=0`, private `127.0.0.1:18083` loopback, accepted signed digest/footer. The maintainer explicitly accepted all six real **private** visual UAT checks.
+- **Public cutover:** [Release Deployment #42488631688](https://github.com/OXY7O/kaori-website/actions/runs/42488631688) completed SUCCESS via the **existing** `workflow_dispatch` on the same admitted staging SHA, with `publish_existing_edge=true`. Its logs prove public `127.0.0.1:18080` image/health/non-root checks, existing edge and `Website build v0.1.2-rc.7` identity, release receipt commit, and Website/App/Docs HTTPS readiness. No alternative deployment workflow or image rebuild.
+- **Operator checkpoint:** a fail-closed read-only script returned `PASS: Public Website RC.7, Application and Docs readiness` after inspecting running public image/health, signed RC.7 `release.env`, prior signed **RC.5** `previous-release.env` and three-domain HTTPS. Because only the final marker was pasted, the intermediate readbacks are supported by the script's completion, not separately transcribed output.
+
+**Remaining gates — do not close #158/#156 based on CI alone:** (1) human **public** desktop/tablet/mobile light/dark, keyboard/accessibility, navigation and security-link acceptance at `https://kaori.cloud`; (2) separate operator-scoped approval and safe retirement of the temporary `kaori-website-uat` Compose runtime **without** deleting release receipts, volumes or rollback evidence; (3) independent public Website/App/Docs/rollback readback **after** retirement. Exact patched `musl`, `musl-utils` and `zlib` installed versions are pending under [#147](https://github.com/OXY7O/kaori-website/issues/147), even though hosted Trivy passed its configured severity gate.
+
+For read-only package provenance, an authorized operator can inspect the **existing public** Website container without changing the runtime:
+
+```bash
+container="$(docker ps -q --filter label=com.docker.compose.project=kaori-website --filter label=com.docker.compose.service=web)"
+test -n "$container"
+docker exec "$container" apk info -vv | grep -E '^(musl|musl-utils|zlib)-[0-9]'
+```
+
+Do **not** use `docker compose down -v`, restart unrelated shared-edge services, discard rollback receipts, dispatch a new release, or infer `main`/stable acceptance from this documentation checkpoint. The earlier failed RC.6 private UAT run remains historical FAILURE.

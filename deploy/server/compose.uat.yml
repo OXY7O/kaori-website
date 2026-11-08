@@ -1,0 +1,15 @@
+# Isolated Website RC/UAT runtime. Never join edge-public or reuse public ports.
+# COMPOSE_PROJECT_NAME=kaori-website-uat and source-locked deployment state
+# are enforced by the canonical release adapter.
+services:
+  web:
+    networks:
+      - website-internal
+      - website-uat-loopback
+    ports:
+      - "127.0.0.1:18083:8080"
+
+networks:
+  website-uat-loopback:
+    driver: bridge
+    internal: false
