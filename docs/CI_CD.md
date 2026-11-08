@@ -4,17 +4,21 @@
 
 ## Runner ownership
 
-Use the same **physical or organization runner pool** as KAORI, without replacing the existing registration or weakening host isolation:
+For the hosted admission candidate #142, the application/runtime quality checks run on ephemeral GitHub-hosted workers. Keep public CI separate from privileged release and deployment access:
 
-| Stage                     | Required runner labels              |
-| ------------------------- | ----------------------------------- |
-| Developer Check / routing | `self-hosted,linux,x64,platform-ci` |
-| Staging Full Admission    | `self-hosted,linux,x64,kaori-ci`    |
-| Release control-plane     | `self-hosted,linux,x64,platform-ci` |
+| Stage                                                | Runner selector                            |
+| ---------------------------------------------------- | ------------------------------------------ |
+| Developer Check / routing and targeted validation    | `platform-ci` (self-hosted; #138 separate) |
+| Full Admission / promotion, Node, container, browser | `ubuntu-24.04` (GitHub-hosted)             |
+| Stable release publication                           | `platform-ci` (self-hosted / restricted)   |
+| RC publication / release control                     | `platform-ci` (self-hosted / restricted)   |
+| Release deployment                                   | `kaori-ci` (self-hosted / restricted)      |
 
-**Important:** A runner registered exclusively for the `OXY7O/KAORI` repository will _not_ execute workflows from `OXY7O/kaori-website` merely because the labels match. The operator must grant the new repo access via an appropriately scoped **organization runner or runner group** (or an additional independent registration, if approved). Runner registration and groups are external operational authority and must be inspected before CI is counted as PASS. Do not deregister or repurpose KAORI's working runner in order to enable this repository.
+**Important:** Remaining self-hosted release jobs still require verified repository/group eligibility; matching runner labels alone does not grant access. The operator must grant the new repo access via an appropriately scoped **organization runner or runner group** (or an additional independent registration, if approved). Runner registration and groups are external operational authority and must be inspected before CI is counted as PASS. Do not deregister or repurpose KAORI's working runner in order to enable this repository.
 
 Temporary release runner co-location with the deployment VPS retains the SSH trust boundary; no direct container deployment is made from the runner's local Docker daemon into the application namespace.
+
+Browser evidence continues to run inside the pinned Playwright container, now on ephemeral GitHub-hosted compute; persistent self-hosted checkout-ownership repair is conditional and skipped on hosted jobs. Actual Docker/Playwright and required quality gates must pass at the exact admission SHA; moving the runner selector is not UAT or release authorization.
 
 ## Gate contracts
 
@@ -27,9 +31,9 @@ Temporary release runner co-location with the deployment VPS retains the SSH tru
 
 ## External protection configuration
 
-**Approved temporary exception (private GitHub Free organization):** protected branches/rulesets and protected GitHub Environments are not enforced under the current plan. Use issue-linked Draft PRs, a recorded manual reviewer decision, exact-SHA Developer Check, staging admission, and explicit release verification and human acceptance. This is a compensating **procedure**, not equivalent enforcement. Do not claim protection is enabled; revisit enforcement if the plan changes.
+**GitHub Settings authority:** The repository is public; effective branch rulesets, required checks, runner groups, and protected Environment enforcement must be read back independently by an authorized administrator. Historical private-repository exceptions do not establish the current settings state. Use issue-linked Draft PRs, a recorded manual reviewer decision, exact-SHA Developer Check, staging admission, and explicit release verification and human acceptance. This is a compensating **procedure**, not equivalent enforcement. Do not claim protection is enabled; revisit enforcement if the plan changes.
 
-Use **repository-level** Actions Variables and Secrets for this private repository; organization-level and environment-level secrets/variables must not be relied on. The Developer Check and Full Admission require no custom credentials. The canonical `publish-staging-image.yml` RC publisher and `deploy-staging-host.yml` release deployment use repository-scoped registry and SSH credentials with explicit operator authority and an admitted exact staging SHA. These are **manual** release operations and must not be turned into unconditional push-to-deploy behavior. Both were authored on staging, and the default-branch dispatch limitation is documented below.
+Use repository-scoped Actions Variables and Secrets for approved release jobs as already configured; GitHub-hosted admission does not use publication credentials. Do not infer that organization/environment secrets or policies are enabled without a verified settings readback. The Developer Check and Full Admission require no custom credentials. The canonical `publish-staging-image.yml` RC publisher and `deploy-staging-host.yml` release deployment use repository-scoped registry and SSH credentials with explicit operator authority and an admitted exact staging SHA. These are **manual** release operations and must not be turned into unconditional push-to-deploy behavior. Both were authored on staging, and the default-branch dispatch limitation is documented below.
 
 Runner access, GitHub Project custom fields, native relationships, and review metadata still require GitHub-side setup where connector capabilities are absent. **A YAML check cannot substitute for server-enforced branch protection.**
 
