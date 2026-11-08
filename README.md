@@ -76,7 +76,7 @@ Passing community feedback is **not** trusted Developer Check, staging Full Admi
 
 ## Security and ownership
 
-This is a public repository for KAORI Website development. Do not commit credentials, private endpoints, internal infrastructure data, or screenshots containing operational information. Security and product policy remain governed by the approved KAORI standards.
+This is a public repository for KAORI Website Development. Do not commit credentials, private endpoints, internal infrastructure data, or screenshots containing operational information. Security and product policy remain governed by the approved KAORI standards.
 
 For **non-security Website defects or feedback**, use the [Website issue tracker](https://github.com/OXY7O/kaori-website/issues) and its existing issue forms. Search for duplicates and provide sanitized reproduction evidence. This public channel is not a promise of immediate support or automatic acceptance into KAORI delivery.
 
