@@ -37,34 +37,44 @@ Developer checks are targeted to the work branch. Full Admission, browser Visual
 
 ## External fork PRs — controlled pre-launch procedure
 
-**Status and authority:** The Website is public, but there is no approved public open-source license or general invitation to merge external code. The [KAORI rights audit](https://github.com/OXY7O/KAORI/issues/4212) and [community launch decision](https://github.com/OXY7O/KAORI/issues/4217) remain open. The steps below support **maintainer-authorized, disposable contribution tests** and explain the proposal route; they do not grant redistribution rights or release authority. Never include credentials, private endpoints, internal screenshots, or third-party material without permission. Use [private vulnerability reporting](https://github.com/OXY7O/kaori-website/security/advisories/new) rather than a public PR for security disclosures.
+The Website is public, but external contribution acceptance remains **on hold** until
+[KAORI rights #4212](https://github.com/OXY7O/KAORI/issues/4212) and
+[community launch #4217](https://github.com/OXY7O/KAORI/issues/4217)
+are approved. These instructions support maintainer-authorized fork tests and proposals only.
+Public visibility does not grant copyright or branding redistribution rights.
+Report vulnerabilities through [private reporting](https://github.com/OXY7O/kaori-website/security/advisories/new).
 
-### Understand the four branches before starting
+### Choose the correct source branch
 
-- `upstream/main`: protected production and release baseline owned by `OXY7O/kaori-website`; **not** the starting point for a contributor change.
-- `upstream/kaori/staging`: current official integration baseline; **start new work here**.
-- `origin/main`: default branch of your fork; it can lag staging and produce conflicts.
-- `origin/fork-test-140`: disposable example work branch in your fork, based on the upstream staging commit.
+- `upstream` means the official `OXY7O/kaori-website` repository.
+- `origin` means your personal fork.
+- `upstream/kaori/staging` is the starting point for every new proposal.
+- `origin/main` is your fork's default branch and may contain old commits.
+- `upstream/main` is the protected production baseline, not the contributor base.
 
-`origin` points to **your fork**; `upstream` points to the **OXY7O repository**. Creating a new branch *name* from stale `origin/main` does **not** give it staging's history.
+A new branch name does not change its Git ancestry. To avoid merge conflicts,
+create the branch from current upstream staging, not from the fork's `main`.
 
-### Create a clean fork branch from the correct source
+### Fork, fetch and create an isolated branch
 
-Fork [OXY7O/kaori-website](https://github.com/OXY7O/kaori-website) in GitHub under your own account. For a maintainer-authorized [#140](https://github.com/OXY7O/kaori-website/issues/140) isolation rehearsal, run:
+Fork the [Website repository](https://github.com/OXY7O/kaori-website) on GitHub.
+For the approved [#140](https://github.com/OXY7O/kaori-website/issues/140) test:
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/kaori-website.git
 cd kaori-website
 git remote -v
-# Run the next command only if an "upstream" remote does not already exist.
+# Add upstream only if the remote is not already configured.
 git remote add upstream https://github.com/OXY7O/kaori-website.git
 git fetch upstream kaori/staging
 git switch -c fork-test-140 upstream/kaori/staging
 ```
 
-For an accepted real implementation, use the approved issue and a descriptive branch such as `kaori/chore-123-update-readme`, also created from `upstream/kaori/staging`. Do not commit directly to `origin/main` or `upstream/main`. Only update files within your approved or test scope; a safe isolation test edits a single non-sensitive README line.
+For accepted implementation work, name the branch using its governing issue,
+for example `kaori/chore-123-update-readme`, from the same staging source.
+Change only the approved files. A fork test needs only one harmless README edit.
 
-Before pushing, verify the branch lineage and inspect **only your intended commits and files**:
+Before opening the PR, confirm the diff has no inherited old commits:
 
 ```bash
 git diff --check
@@ -77,34 +87,44 @@ npm run build
 git push -u origin fork-test-140
 ```
 
-For a new test PR, the commit list should contain your own bounded change, not unrelated commits inherited from the fork's old `main`. Record any check not actually executed as **NOT RUN** rather than PASS.
+Record a check as **NOT RUN** if it was not executed.
 
-### Open the PR with the correct GitHub base and head
+### Select the PR base and head on GitHub
 
-Use **Compare across forks** when GitHub's default proposal points to the wrong branch. Set:
+Use **Compare across forks** and set:
 
-- **Base repository:** `OXY7O/kaori-website`
-- **Base branch:** `kaori/staging` (**not `main`**)
-- **Head repository:** `YOUR_USERNAME/kaori-website`
-- **Compare branch:** `fork-test-140` (or the accepted issue-linked branch)
+- Base repository: `OXY7O/kaori-website`
+- Base branch: `kaori/staging` (not `main`)
+- Head repository: `YOUR_USERNAME/kaori-website`
+- Compare branch: `fork-test-140` or your accepted issue-linked branch
 
-The PR should identify the governing issue, one clear change, validation actually executed, and known risks using the existing [PR template](../.github/PULL_REQUEST_TEMPLATE.md). A fork test PR is **not for merging**; the maintainer closes it after retaining evidence.
+Reference the governing issue and use the existing [PR template](../.github/PULL_REQUEST_TEMPLATE.md).
+Do not merge a disposable test PR.
 
-### What GitHub checks mean
+### Understand the security checks
 
-- `Community Fork Check / Untrusted Fork Validation` may run the exact external fork SHA on an ephemeral `ubuntu-24.04` worker with read-only permissions and no shared cache, SSH or deployment credentials. It provides **feedback only**.
-- `Developer Check / Route Checks` must **reject an external repository before checkout**; dependent trusted `Website Validation`, `Container Validation` and `Release Configuration` are not available to untrusted fork code. This deliberate red required check is not a reason to bypass the policy.
-- GitHub may show **Action required** for a first-time contributor. A maintainer must evaluate/approve only an authorized, safe hosted workflow run; that status alone is **not** a test PASS.
-- Maintainers review/triage the proposal into an accepted KAORI issue, reproduce approved changes on a trusted issue-linked work branch, obtain independent review, and complete existing Developer Check → staging Full Admission → relevant UAT → human acceptance → governed `kaori/staging` → `main` promotion. No fork PR can directly publish a release.
+- `Community Fork Check` runs untrusted code on a read-only GitHub-hosted runner.
+  It provides format, typecheck and build feedback without access to secrets or hosts.
+- Trusted `Developer Check / Route Checks` must fail before checkout for an
+  external fork. Dependent trusted and privileged jobs must be skipped.
+  The deliberate failure is expected and must not be bypassed.
+- GitHub may require maintainer approval before first-time contributor checks run.
+  An `Action required` or pending status is not a PASS.
+- Maintainers alone may triage accepted proposals into an approved KAORI issue,
+  reproduce the change in a trusted issue-linked branch, and complete Developer
+  Check, staging Full Admission, UAT, human acceptance and governed promotion.
 
-### Recover from a merge conflict without rewriting history
+### Fix a conflicting fork PR
 
-A fork branched from its old `main` can show `mergeable_state=dirty` even when GitHub displays only a README change. **Do not** force-push, use `git reset --hard`, merge directly into protected branches, or disable required checks to fix it. For a disposable PR, close the conflicted PR **without merge**, fetch current upstream staging, and start a fresh branch:
+If GitHub reports `mergeable_state=dirty`, a fork branch may contain old
+`main` history even if only README changed. Do not force-push, run
+`git reset --hard`, bypass required checks or modify the protected base.
+For a disposable test, close the conflicted PR without merging and start fresh:
 
 ```bash
 git fetch upstream kaori/staging
 git switch -c fork-test-140-v2 upstream/kaori/staging
-# Reapply only the approved, harmless README change.
+# Reapply only the approved harmless README edit.
 git add README.md
 git commit -m "docs: verify isolated fork feedback #140"
 git diff --check
@@ -112,9 +132,12 @@ git log --oneline upstream/kaori/staging..HEAD
 git push -u origin fork-test-140-v2
 ```
 
-Open a **new** PR from `fork-test-140-v2` to `kaori/staging`. Confirm GitHub reports no conflicts. If the contributor has legitimate changes to preserve beyond a disposable test, coordinate a reviewed manual reapplication/cherry-pick of **only** the accepted commits; do not discard uncommitted work or alter the base branch.
+Open a new fork PR targeting `kaori/staging`. For legitimate existing work,
+consult a maintainer to replay only approved commits without losing local changes.
 
-The general organization contributor policy remains [OXY7O/.github/CONTRIBUTING.md](https://github.com/OXY7O/.github/blob/main/CONTRIBUTING.md); Website-local [delivery](DELIVERY.md) and [CI/CD](CI_CD.md) standards take precedence for source/review/admission rules.
+The shared [OXY7O contributor policy](https://github.com/OXY7O/.github/blob/main/CONTRIBUTING.md)
+remains the fallback. Website [delivery](DELIVERY.md) and [CI/CD](CI_CD.md)
+rules take precedence for branch, review, admission and release.
 
 ## Browser quality candidate (#58)
 
