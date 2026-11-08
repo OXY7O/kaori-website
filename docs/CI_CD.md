@@ -4,11 +4,11 @@
 
 ## Runner ownership
 
-For the hosted admission candidate #142, the application/runtime quality checks run on ephemeral GitHub-hosted workers. Keep public CI separate from privileged release and deployment access:
+For the integrated hosted CI candidate (#138 and #142), trusted Route Checks, Website Validation, and nonpublishing Full Admission run on ephemeral GitHub-hosted workers. Public fork feedback remains separate, and privileged release/deployment access stays restricted:
 
 | Stage                                                | Runner selector                            |
 | ---------------------------------------------------- | ------------------------------------------ |
-| Developer Check / routing and targeted validation    | `platform-ci` (self-hosted; #138 separate) |
+| Developer Check / routing and targeted validation    | `ubuntu-24.04` (GitHub-hosted)             |
 | Full Admission / promotion, Node, container, browser | `ubuntu-24.04` (GitHub-hosted)             |
 | Stable release publication                           | `platform-ci` (self-hosted / restricted)   |
 | RC publication / release control                     | `platform-ci` (self-hosted / restricted)   |
@@ -17,6 +17,8 @@ For the hosted admission candidate #142, the application/runtime quality checks 
 **Important:** Remaining self-hosted release jobs still require verified repository/group eligibility; matching runner labels alone does not grant access. The operator must grant the new repo access via an appropriately scoped **organization runner or runner group** (or an additional independent registration, if approved). Runner registration and groups are external operational authority and must be inspected before CI is counted as PASS. Do not deregister or repurpose KAORI's working runner in order to enable this repository.
 
 Temporary release runner co-location with the deployment VPS retains the SSH trust boundary; no direct container deployment is made from the runner's local Docker daemon into the application namespace.
+
+The validated [trusted hosted Developer Check increment #138 / PR #139](https://github.com/OXY7O/kaori-website/pull/139) is incorporated into this candidate without changing validation commands or token permissions. The combined PR must pass its own exact-head Developer Check; source-specific prior success does not transfer Full Admission authority.
 
 Browser evidence continues to run inside the pinned Playwright container, now on ephemeral GitHub-hosted compute; persistent self-hosted checkout-ownership repair is conditional and skipped on hosted jobs. Actual Docker/Playwright and required quality gates must pass at the exact admission SHA; moving the runner selector is not UAT or release authorization.
 
