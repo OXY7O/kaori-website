@@ -1,0 +1,4 @@
+Intentionally disposable negative probe for Website issue #140.
+This branch name intentionally violates the trusted issue-linked Route Checks pattern.
+DO NOT MERGE; verify hosted precheckout rejection, no privileged downstream job scheduling, then close the PR unmerged.
+This same-repository probe is NOT evidence of a real external fork.
