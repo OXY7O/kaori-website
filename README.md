@@ -70,9 +70,11 @@ See [CI/CD](docs/CI_CD.md), [delivery workflow](docs/DELIVERY.md), and [deployme
 
 ## Community pull requests
 
-This repository is public. External fork pull requests targeting `kaori/staging` receive **feedback-only** checks through the separate `Community Fork Check` workflow on an ephemeral GitHub-hosted runner with a read-only token, no shared cache, no deployment secrets, and no access to internal hosts. The checks report exact-source whitespace, locked npm installation without lifecycle scripts, formatting, Astro/TypeScript and static build results.
+**Start here:** [External fork walkthrough and merge-conflict recovery](docs/DEVELOPMENT.md#external-fork-prs--controlled-pre-launch-procedure). This repository is public, but **external contributor launch and relicensing remain on hold** until the [KAORI rights audit](https://github.com/OXY7O/KAORI/issues/4212) and [community approval](https://github.com/OXY7O/KAORI/issues/4217) are accepted. These instructions currently support maintainer-authorized testing and proposal review; visibility does not grant rights to redistribute KAORI code or branding.
 
-Passing community feedback is **not** trusted Developer Check, staging Full Admission, UAT, or permission to publish/deploy. To adopt a contribution, a maintainer reviews it, creates or links an approved KAORI issue and trusted work branch, and uses the existing staged delivery flow. See [CI/CD governance](docs/CI_CD.md) and [KAORI contributor authority](https://github.com/OXY7O/KAORI).
+For an approved test/proposal: **fork the repository → fetch `OXY7O/kaori-website:kaori/staging` as `upstream` → create a new branch from `upstream/kaori/staging` (not your fork's `main`) → make one scoped change → open a PR with base `OXY7O:kaori/staging` and head `YOUR_FORK:YOUR_BRANCH`.** Avoid reusing a fork branch that contains old `main` commits: that can cause conflicts even for a one-line README edit. See the linked guide for exact Git commands and the GitHub PR picker.
+
+External fork PRs receive **feedback-only** `Community Fork Check` on an ephemeral GitHub-hosted runner with read-only permissions, no shared cache, deployment secrets or internal host access. Their trusted `Developer Check` intentionally rejects a foreign source **before checkout**; first-time contributors may also require a maintainer's safe workflow approval. A green community check is **not** trusted staging admission, UAT, license approval, or release authority. Maintainers first triage accepted work into an issue-linked trusted branch, then follow [CI/CD governance](docs/CI_CD.md) and the [KAORI delivery workflow](docs/DELIVERY.md).
 
 ## Security and ownership
 
