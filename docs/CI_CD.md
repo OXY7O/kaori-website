@@ -22,6 +22,27 @@ The validated [trusted hosted Developer Check increment #138 / PR #139](https://
 
 Browser evidence continues to run inside the pinned Playwright container, now on ephemeral GitHub-hosted compute; persistent self-hosted checkout-ownership repair is conditional and skipped on hosted jobs. Actual Docker/Playwright and required quality gates must pass at the exact admission SHA; moving the runner selector is not UAT or release authorization.
 
+## Untrusted community PR runner boundary (#140)
+
+External fork pull requests targeting `kaori/staging` receive feedback from
+`Community Fork Check` on an ephemeral GitHub-hosted runner with read-only
+permissions, exact-source checkout and `npm ci --ignore-scripts`.
+The canonical required `Route Checks` job is already hosted under #138/#142
+and **fails** an untrusted fork in its initial source-identity step before
+any checkout; it does not merely skip a required status check. Hosted
+`Website Validation` depends on successful route verification and now
+executes the existing fork-boundary regression contract alongside formatting,
+Astro/TypeScript and static build checks.
+
+This integration **preserves the newer hosted CI architecture** already
+recorded above. Container/release-specific self-hosted jobs retain their
+separate eligibility, scoped credentials and governed approval. For `main`
+promotion PRs, hosted `Promotion Policy` explicitly fails sources other than
+trusted same-repository `kaori/staging` before downstream admission.
+Fork feedback is neither trusted Developer Check, Full Admission, UAT
+nor release authority. A real external-fork negative test, effective ruleset
+readback, official staging admission and human acceptance remain pending.
+
 ## Gate contracts
 
 1. **Issue → work branch:** canonical branch `kaori/<type>-<issue>-<slug>`, source from current `kaori/staging`.
