@@ -4,7 +4,7 @@
 
 ## Runner ownership
 
-For the integrated hosted CI candidate (#138 and #142), trusted Route Checks, Website Validation, and nonpublishing Full Admission run on ephemeral GitHub-hosted workers. Public fork feedback remains separate, and privileged release/deployment access stays restricted:
+As integrated into official `kaori/staging` through [PR #146](https://github.com/OXY7O/kaori-website/pull/146) and the [runtime remediation PR #149](https://github.com/OXY7O/kaori-website/pull/149), trusted Route Checks, Website Validation, and nonpublishing Full Admission run on ephemeral GitHub-hosted workers. Public fork feedback remains separate, and privileged release/deployment access stays restricted:
 
 | Stage                                                | Runner selector                          |
 | ---------------------------------------------------- | ---------------------------------------- |
@@ -18,7 +18,7 @@ For the integrated hosted CI candidate (#138 and #142), trusted Route Checks, We
 
 Temporary release runner co-location with the deployment VPS retains the SSH trust boundary; no direct container deployment is made from the runner's local Docker daemon into the application namespace.
 
-The validated [trusted hosted Developer Check increment #138 / PR #139](https://github.com/OXY7O/kaori-website/pull/139) is incorporated into this candidate without changing validation commands or token permissions. The combined PR must pass its own exact-head Developer Check; source-specific prior success does not transfer Full Admission authority.
+The earlier [trusted hosted Developer Check increment #138 / PR #139](https://github.com/OXY7O/kaori-website/pull/139) was integrated, rather than merging its superseded Draft PR. The combined staging candidate passed [exact-head Developer Check #42444593112](https://github.com/OXY7O/kaori-website/actions/runs/42444593112). After the security runtime fix, official staging `898b4b97eb1465909b8d6f1b41184daa78c21981` passed [Full Admission #42445238337](https://github.com/OXY7O/kaori-website/actions/runs/42445238337): `Promotion Policy`, `Full Admission`, `Container Admission`, and `Browser Quality Evidence` all succeeded. The latter published an immutable browser artifact, and the updated pinned NGINX image scan reported **0 vulnerabilities** (Alpine 3.24.3). `Publish Accepted Stable Release` was SKIPPED by scope; this does **not** establish an RC deployment or Human UAT.
 
 Browser evidence continues to run inside the pinned Playwright container, now on ephemeral GitHub-hosted compute; persistent self-hosted checkout-ownership repair is conditional and skipped on hosted jobs. Actual Docker/Playwright and required quality gates must pass at the exact admission SHA; moving the runner selector is not UAT or release authorization.
 
@@ -40,8 +40,14 @@ separate eligibility, scoped credentials and governed approval. For `main`
 promotion PRs, hosted `Promotion Policy` explicitly fails sources other than
 trusted same-repository `kaori/staging` before downstream admission.
 Fork feedback is neither trusted Developer Check, Full Admission, UAT
-nor release authority. A real external-fork negative test, effective ruleset
-readback, official staging admission and human acceptance remain pending.
+nor release authority. Effective main/staging rulesets have been read back and
+official staging Full Admission has passed on the SHA above. A controlled
+[same-repository invalid-branch PR #153](https://github.com/OXY7O/kaori-website/pull/153)
+confirmed hosted `Route Checks` fails before checkout and downstream
+self-hosted jobs are skipped; the probe was closed **without merge**.
+A real external-fork-origin test and staged deployment/Human Acceptance
+are still required; do not interpret same-repository negative evidence as
+a real fork test.
 
 ## Gate contracts
 
@@ -54,7 +60,7 @@ readback, official staging admission and human acceptance remain pending.
 
 ## External protection configuration
 
-**GitHub Settings authority:** The repository is public; effective branch rulesets, required checks, runner groups, and protected Environment enforcement must be read back independently by an authorized administrator. Historical private-repository exceptions do not establish the current settings state. Use issue-linked Draft PRs, a recorded manual reviewer decision, exact-SHA Developer Check, staging admission, and explicit release verification and human acceptance. This is a compensating **procedure**, not equivalent enforcement. Do not claim protection is enabled; revisit enforcement if the plan changes.
+**Verified GitHub branch settings (2026-11-08):** the public repository's `main` and `kaori/staging` are protected with active branch-safety ruleset **#26685572** (no deletion/non-fast-forward) and PR-only ruleset **#26685631** (one independent approval, stale-dismissal and resolved review conversations; no bypass). Staging ruleset **#26685877** requires exact GitHub Actions contexts `Route Checks` and `Website Validation`. Main ruleset **#26786379** requires `Promotion Policy`, `Full Admission`, `Container Admission`, and `Browser Quality Evidence`, all with GitHub Actions integration **15368**. Read-back after subsequent admin changes is still mandatory; neither protected branches nor successful CI substitute for deployed staging/UAT, signed immutable RC, release verification or explicit human acceptance. Native GitHub CodeQL configuration is a separate [security workstream #150](https://github.com/OXY7O/kaori-website/issues/150), not an admission gate in this document.
 
 Use repository-scoped Actions Variables and Secrets for approved release jobs as already configured; GitHub-hosted admission does not use publication credentials. Do not infer that organization/environment secrets or policies are enabled without a verified settings readback. The Developer Check and Full Admission require no custom credentials. The canonical `publish-staging-image.yml` RC publisher and `deploy-staging-host.yml` release deployment use repository-scoped registry and SSH credentials with explicit operator authority and an admitted exact staging SHA. These are **manual** release operations and must not be turned into unconditional push-to-deploy behavior. Both were authored on staging, and the default-branch dispatch limitation is documented below.
 
