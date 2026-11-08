@@ -391,10 +391,26 @@ curl -fsS --max-time 5 https://app.kaori.cloud/health/ready
 curl -fsS --max-time 5 https://docs.kaori.cloud/healthz
 ```
 
-**Current operating policy:** [single-active Website #129](https://github.com/OXY7O/kaori-website/issues/129)
-was human accepted after retirement of the legacy private UAT project.
-The older #124 private UAT flow still exists as a technical fallback,
-but does **not** authorize a new standing parallel UAT environment.
-Reconcile that authority and record the human runtime decision before
-any future private UAT mutation or public-edge RC activation. Maintain
-the current public Website and prior signed rollback receipt.
+**Current operating policy:** [single-active public Website #129](https://github.com/OXY7O/kaori-website/issues/129) prohibits a second active **public** RC/stable slot. The older [private UAT #124](https://github.com/OXY7O/kaori-website/issues/124) adapter remains technically available, and a temporary private RC.7 UAT was actually deployed under a separate authorization. **Do not claim that this temporary private runtime has been retired**: its current host state and safe retirement require operator evidence and separate acceptance under [#158](https://github.com/OXY7O/kaori-website/issues/158). Preserve signed receipts and the earlier public rollback identity; no standing parallel private UAT is authorized.
+
+## Public RC.7 cutover and outstanding acceptance — #158 (2026-11-08)
+
+The maintainer expressly approved replacing the **existing single public** Website RC.5 with signed [v0.1.2-rc.7](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.2-rc.7) under [#158](https://github.com/OXY7O/kaori-website/issues/158); this is not blanket approval for a stable release, new public slot, host cleanup or main promotion.
+
+- **Immutable source:** `kaori/staging@b77a8dc98d4b342e7002e251fe4ff0abc7149dbe`; signed image `sha256:d686b54a219ea96d60a108bf947f9d0f540275c230171c92ede06a14c56cb10c`.
+- **Quality:** [Full Admission #42482112697](https://github.com/OXY7O/kaori-website/actions/runs/42482112697) four required jobs SUCCESS, 156 Playwright passes, non-root container runtime smoke and Trivy configured HIGH/CRITICAL scan with zero reported findings on Alpine 3.24.3. [RC publisher #42484280809](https://github.com/OXY7O/kaori-website/actions/runs/42484280809) SUCCESS.
+- **Private candidate:** [UAT #42484609068](https://github.com/OXY7O/kaori-website/actions/runs/42484609068) SUCCESS with `edge=0`, private `127.0.0.1:18083` loopback, accepted signed digest/footer. The maintainer explicitly accepted all six real **private** visual UAT checks.
+- **Public cutover:** [Release Deployment #42488631688](https://github.com/OXY7O/kaori-website/actions/runs/42488631688) completed SUCCESS via the **existing** `workflow_dispatch` on the same admitted staging SHA, with `publish_existing_edge=true`. Its logs prove public `127.0.0.1:18080` image/health/non-root checks, existing edge and `Website build v0.1.2-rc.7` identity, release receipt commit, and Website/App/Docs HTTPS readiness. No alternative deployment workflow or image rebuild.
+- **Operator checkpoint:** a fail-closed read-only script returned `PASS: Public Website RC.7, Application and Docs readiness` after inspecting running public image/health, signed RC.7 `release.env`, prior signed **RC.5** `previous-release.env` and three-domain HTTPS. Because only the final marker was pasted, the intermediate readbacks are supported by the script's completion, not separately transcribed output.
+
+**Remaining gates — do not close #158/#156 based on CI alone:** (1) human **public** desktop/tablet/mobile light/dark, keyboard/accessibility, navigation and security-link acceptance at `https://kaori.cloud`; (2) separate operator-scoped approval and safe retirement of the temporary `kaori-website-uat` Compose runtime **without** deleting release receipts, volumes or rollback evidence; (3) independent public Website/App/Docs/rollback readback **after** retirement. Exact patched `musl`, `musl-utils` and `zlib` installed versions are pending under [#147](https://github.com/OXY7O/kaori-website/issues/147), even though hosted Trivy passed its configured severity gate.
+
+For read-only package provenance, an authorized operator can inspect the **existing public** Website container without changing the runtime:
+
+```bash
+container="$(docker ps -q --filter label=com.docker.compose.project=kaori-website --filter label=com.docker.compose.service=web)"
+test -n "$container"
+docker exec "$container" apk info -vv | grep -E '^(musl|musl-utils|zlib)-[0-9]'
+```
+
+Do **not** use `docker compose down -v`, restart unrelated shared-edge services, discard rollback receipts, dispatch a new release, or infer `main`/stable acceptance from this documentation checkpoint. The earlier failed RC.6 private UAT run remains historical FAILURE.
