@@ -24,6 +24,12 @@ Browser evidence continues to run inside the pinned Playwright container, now on
 
 ## Untrusted community PR runner boundary (#140)
 
+Contributor-facing source/target branch setup, clean fork history, conflict
+recovery and first-time GitHub workflow approval are documented in the
+[external fork walkthrough](DEVELOPMENT.md#external-fork-prs--controlled-pre-launch-procedure).
+This is controlled pre-launch feedback, not a general contribution or licensing
+authorization while KAORI rights and community approvals remain outstanding.
+
 External fork pull requests targeting `kaori/staging` receive feedback from
 `Community Fork Check` on an ephemeral GitHub-hosted runner with read-only
 permissions, exact-source checkout and `npm ci --ignore-scripts`.
