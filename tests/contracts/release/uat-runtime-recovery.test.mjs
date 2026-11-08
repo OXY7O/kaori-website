@@ -86,12 +86,7 @@ function fixture(t, { failCandidate = false } = {}) {
   const guard = '[[ "$state_dir" == /opt/kaori-website/uat/deploy-state ]]';
   const deploySource = readFileSync(resolve("deploy/server/deploy.sh"), "utf8");
   assert.equal(deploySource.split(guard).length, 2, "canonical UAT state guard changed");
-  for (const filename of [
-    "deploy.sh",
-    "verify.sh",
-    "compose.website.yml",
-    "compose.uat.yml",
-  ]) {
+  for (const filename of ["deploy.sh", "verify.sh", "compose.website.yml", "compose.uat.yml"]) {
     const original = readFileSync(resolve("deploy/server", filename), "utf8");
     const sandboxed =
       filename === "deploy.sh"
