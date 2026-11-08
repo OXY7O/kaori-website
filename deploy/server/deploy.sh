@@ -62,13 +62,21 @@ printf 'KAORI_WEBSITE_IMAGE=%s\nKAORI_WEBSITE_SOURCE_SHA=%s\nKAORI_WEBSITE_VERSI
 
 # Keep the prior immutable identity separate; failed candidate must not advance state.
 previous_image=''
+previous_version=''
 if [[ -f "$state_dir/release.env" ]]; then
-    # The release receipt is private to the approved website deployment identity.
+    # The committed receipt is the authority for BOTH the prior digest and
+    # its embedded build identity. Never check a recovered image against
+    # the rejected candidate's version.
     # shellcheck source=/dev/null
     source "$state_dir/release.env"
-    if [[ "${KAORI_WEBSITE_IMAGE:-}" =~ @sha256:[a-f0-9]{64}$ ]]; then
-        previous_image="$KAORI_WEBSITE_IMAGE"
-    fi
+    [[ "${KAORI_WEBSITE_IMAGE:-}" =~ @sha256:[a-f0-9]{64}$ ]] ||
+        fail 'previous release receipt contains an invalid image digest'
+    [[ "${KAORI_WEBSITE_SOURCE_SHA:-}" =~ ^[a-f0-9]{40}$ ]] ||
+        fail 'previous release receipt contains an invalid source SHA'
+    [[ "${KAORI_WEBSITE_VERSION:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[1-9][0-9]*)?$ ]] ||
+        fail 'previous release receipt contains an invalid build version'
+    previous_image="$KAORI_WEBSITE_IMAGE"
+    previous_version="$KAORI_WEBSITE_VERSION"
 fi
 export KAORI_WEBSITE_IMAGE="$image"
 export KAORI_WEBSITE_EXPECTED_VERSION="$release_version"
@@ -78,6 +86,7 @@ if ! docker compose "${compose_args[@]}" up -d --pull never --no-build web || ! 
     if [[ -n "$previous_image" && "$previous_image" != "$image" ]]; then
         echo 'Attempting recovery of last committed website digest' >&2
         export KAORI_WEBSITE_IMAGE="$previous_image"
+        export KAORI_WEBSITE_EXPECTED_VERSION="$previous_version"
         if docker compose "${compose_args[@]}" up -d --no-build web && bash "$script_dir/verify.sh"; then
             echo 'RECOVERED: previous website digest is healthy; release receipt unchanged' >&2
         else
