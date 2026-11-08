@@ -68,6 +68,12 @@ See [CI/CD](docs/CI_CD.md), [delivery workflow](docs/DELIVERY.md), and [deployme
 - [Release and delivery governance](docs/DELIVERY.md)
 - [Deployment, verification, and rollback](docs/DEPLOYMENT.md)
 
+## Community pull requests
+
+This repository is public. External fork pull requests targeting `kaori/staging` receive **feedback-only** checks through the separate `Community Fork Check` workflow on an ephemeral GitHub-hosted runner with a read-only token, no shared cache, no deployment secrets, and no access to internal hosts. The checks report exact-source whitespace, locked npm installation without lifecycle scripts, formatting, Astro/TypeScript and static build results.
+
+Passing community feedback is **not** trusted Developer Check, staging Full Admission, UAT, or permission to publish/deploy. To adopt a contribution, a maintainer reviews it, creates or links an approved KAORI issue and trusted work branch, and uses the existing staged delivery flow. See [CI/CD governance](docs/CI_CD.md) and [KAORI contributor authority](https://github.com/OXY7O/KAORI).
+
 ## Security and ownership
 
-This is a private repository for authorized KAORI Website development. Do not commit credentials, private endpoints, internal infrastructure data, or screenshots containing operational information. Security and product policy remain governed by the approved KAORI standards.
+This is a public repository for KAORI Website development. Do not commit credentials, private endpoints, internal infrastructure data, or screenshots containing operational information. Security and product policy remain governed by the approved KAORI standards.
