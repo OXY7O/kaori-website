@@ -25,7 +25,8 @@ env:
 jobs:
   route:
     name: Route Checks
-    runs-on: [self-hosted, linux, x64, platform-ci]
+    # Hosted trusted validation; privileged container/release lanes stay self-hosted.
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       web: ${{ steps.route.outputs.web }}
@@ -40,7 +41,7 @@ jobs:
           SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           set -Eeuo pipefail
-          [[ "$HEAD_REPO" == "$GITHUB_REPOSITORY" ]] || { echo 'Cross-repo PRs are not admitted to the self-hosted runner.' >&2; exit 1; }
+          [[ "$HEAD_REPO" == "$GITHUB_REPOSITORY" ]] || { echo 'Cross-repo PRs are not admitted to trusted Developer Check.' >&2; exit 1; }
           [[ "$SOURCE_BRANCH" =~ ^kaori/(story|bug|task|spike|chore|tech-debt|hotfix)-[0-9]+-[a-z0-9-]+$ ]] || { echo 'Source branch must be issue-linked.' >&2; exit 1; }
       - name: Checkout exact work SHA
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -79,7 +80,8 @@ jobs:
   targeted:
     name: Website Validation
     needs: route
-    runs-on: [self-hosted, linux, x64, platform-ci]
+    # Hosted trusted validation; privileged container/release lanes stay self-hosted.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Confirm path-aware profile
