@@ -1,12 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import {
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
@@ -158,10 +152,7 @@ test("UAT verifier consumes large homepage without pipefail SIGPIPE", (t) => {
   const { env } = fixture(t);
   const result = run("deploy/server/verify.sh", [], env);
   assert.equal(result.status, 0, result.stderr);
-  assert.match(
-    result.stdout,
-    /PASS: isolated UAT Website footer build version v0\.1\.2-rc\.6/,
-  );
+  assert.match(result.stdout, /PASS: isolated UAT Website footer build version v0\.1\.2-rc\.6/);
 });
 
 test("UAT verifier rejects wrong expected signed build version", (t) => {
@@ -213,9 +204,6 @@ test("invalid prior release receipt blocks before container replacement", (t) =>
     env,
   );
   assert.notEqual(result.status, 0);
-  assert.match(
-    result.stderr,
-    /BLOCK: previous release receipt contains an invalid build version/,
-  );
+  assert.match(result.stderr, /BLOCK: previous release receipt contains an invalid build version/);
   assert.equal(readFileSync(env.MOCK_RUNNING_IMAGE, "utf8"), priorImage);
 });
