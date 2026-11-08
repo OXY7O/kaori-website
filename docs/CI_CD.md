@@ -6,13 +6,13 @@
 
 For the integrated hosted CI candidate (#138 and #142), trusted Route Checks, Website Validation, and nonpublishing Full Admission run on ephemeral GitHub-hosted workers. Public fork feedback remains separate, and privileged release/deployment access stays restricted:
 
-| Stage                                                | Runner selector                            |
-| ---------------------------------------------------- | ------------------------------------------ |
-| Developer Check / routing and targeted validation    | `ubuntu-24.04` (GitHub-hosted)             |
-| Full Admission / promotion, Node, container, browser | `ubuntu-24.04` (GitHub-hosted)             |
-| Stable release publication                           | `platform-ci` (self-hosted / restricted)   |
-| RC publication / release control                     | `platform-ci` (self-hosted / restricted)   |
-| Release deployment                                   | `kaori-ci` (self-hosted / restricted)      |
+| Stage                                                | Runner selector                          |
+| ---------------------------------------------------- | ---------------------------------------- |
+| Developer Check / routing and targeted validation    | `ubuntu-24.04` (GitHub-hosted)           |
+| Full Admission / promotion, Node, container, browser | `ubuntu-24.04` (GitHub-hosted)           |
+| Stable release publication                           | `platform-ci` (self-hosted / restricted) |
+| RC publication / release control                     | `platform-ci` (self-hosted / restricted) |
+| Release deployment                                   | `kaori-ci` (self-hosted / restricted)    |
 
 **Important:** Remaining self-hosted release jobs still require verified repository/group eligibility; matching runner labels alone does not grant access. The operator must grant the new repo access via an appropriately scoped **organization runner or runner group** (or an additional independent registration, if approved). Runner registration and groups are external operational authority and must be inspected before CI is counted as PASS. Do not deregister or repurpose KAORI's working runner in order to enable this repository.
 
