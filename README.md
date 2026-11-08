@@ -4,7 +4,7 @@
 
 <h1 align="center">KAORI Website</h1>
 <p align="center"><strong>Knowledge, Automation, Operations, Resilience & Intelligence</strong></p>
-<p align="center">Meet KAORI. Explore the platform, then open the app.</p>
+<p align="center">Meet KAORI. Explore the Platform, then Open the App.</p>
 
 <p align="center">
   <img alt="Astro 7" src="https://img.shields.io/badge/Astro-7-7C3AED" />
