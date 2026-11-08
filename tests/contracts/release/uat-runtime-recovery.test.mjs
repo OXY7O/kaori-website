@@ -85,6 +85,26 @@ function fixture(t, { failCandidate = false } = {}) {
   const state = join(dir, "state");
   mkdirSync(bin);
   mkdirSync(state);
+  const scriptDir = join(dir, "server");
+  mkdirSync(scriptDir);
+  // UAT's real fixed state path guard must remain intact in the repository.
+  // For this fake-Docker-only test, isolate a copy under the temp fixture.
+  const guard = '[[ "$state_dir" == /opt/kaori-website/uat/deploy-state ]]';
+  const deploySource = readFileSync(resolve("deploy/server/deploy.sh"), "utf8");
+  assert.equal(deploySource.split(guard).length, 2, "canonical UAT state guard changed");
+  for (const filename of [
+    "deploy.sh",
+    "verify.sh",
+    "compose.website.yml",
+    "compose.uat.yml",
+  ]) {
+    const original = readFileSync(resolve("deploy/server", filename), "utf8");
+    const sandboxed =
+      filename === "deploy.sh"
+        ? original.replace(guard, '[[ "$state_dir" == "' + state + '" ]]')
+        : original;
+    writeFileSync(join(scriptDir, filename), sandboxed);
+  }
   writeFileSync(join(bin, "docker"), fakeDocker, { mode: 0o755 });
   writeFileSync(join(bin, "curl"), fakeCurl, { mode: 0o755 });
   writeFileSync(join(state, "running-image"), candidateImage);
@@ -105,6 +125,7 @@ function fixture(t, { failCandidate = false } = {}) {
   );
   return {
     state,
+    scriptDir,
     env: {
       ...process.env,
       PATH: bin + ":" + process.env.PATH,
@@ -154,7 +175,7 @@ test("UAT verifier rejects wrong expected signed build version", (t) => {
 });
 
 test("failed candidate restores and verifies prior committed build identity", (t) => {
-  const { env, state } = fixture(t, { failCandidate: true });
+  const { env, state, scriptDir } = fixture(t, { failCandidate: true });
   const receipt = [
     "KAORI_WEBSITE_IMAGE=" + priorImage,
     "KAORI_WEBSITE_SOURCE_SHA=" + priorSha,
@@ -165,7 +186,7 @@ test("failed candidate restores and verifies prior committed build identity", (t
   writeFileSync(receiptPath, receipt);
   writeFileSync(env.MOCK_RUNNING_IMAGE, priorImage);
   const result = run(
-    "deploy/server/deploy.sh",
+    join(scriptDir, "deploy.sh"),
     [candidateImage, candidateSha, candidateVersion],
     env,
   );
@@ -177,7 +198,7 @@ test("failed candidate restores and verifies prior committed build identity", (t
 });
 
 test("invalid prior release receipt blocks before container replacement", (t) => {
-  const { env, state } = fixture(t);
+  const { env, state, scriptDir } = fixture(t);
   const receipt = [
     "KAORI_WEBSITE_IMAGE=" + priorImage,
     "KAORI_WEBSITE_SOURCE_SHA=" + priorSha,
@@ -187,7 +208,7 @@ test("invalid prior release receipt blocks before container replacement", (t) =>
   writeFileSync(join(state, "release.env"), receipt);
   writeFileSync(env.MOCK_RUNNING_IMAGE, priorImage);
   const result = run(
-    "deploy/server/deploy.sh",
+    join(scriptDir, "deploy.sh"),
     [candidateImage, candidateSha, candidateVersion],
     env,
   );
