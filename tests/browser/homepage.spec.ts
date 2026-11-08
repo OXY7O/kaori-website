@@ -425,3 +425,25 @@ test("collect browser-observed lab paint and layout shift budgets", async ({ pag
   // No field telemetry exists yet: do not synthesize INP or a Lighthouse score.
   expect(metrics.inpFieldP75).toBeNull();
 });
+
+test("route Website community issues and security findings to the owning repository", async ({
+  page,
+}) => {
+  const footer = page.locator(".footer-links");
+  const issueLink = footer.getByRole("link", { name: "Website issues" });
+  const securityLink = footer.getByRole("link", { name: "Report a vulnerability" });
+
+  await expect(issueLink).toHaveAttribute(
+    "href",
+    "https://github.com/OXY7O/kaori-website/issues",
+  );
+  await expect(securityLink).toHaveAttribute(
+    "href",
+    "https://github.com/OXY7O/kaori-website/security/advisories/new",
+  );
+  for (const link of [issueLink, securityLink]) {
+    await expect(link).toHaveAttribute("target", "_blank");
+    await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    await expect(link).toBeVisible();
+  }
+});
