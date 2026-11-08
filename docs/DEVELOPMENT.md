@@ -41,12 +41,10 @@ Developer checks are targeted to the work branch. Full Admission, browser Visual
 
 ### Understand the four branches before starting
 
-| Name | Owner | Purpose |
-| ---- | ----- | ------- |
-| `upstream/main` | `OXY7O/kaori-website` | Protected production and release baseline; **not** the starting point for a contributor change |
-| `upstream/kaori/staging` | `OXY7O/kaori-website` | Current integration baseline; **start new work here** |
-| `origin/main` | Your fork | GitHub's default fork branch; it can lag staging and produce conflicts |
-| `origin/fork-test-140` | Your fork | Disposable example work branch based on the upstream staging commit |
+- `upstream/main`: protected production and release baseline owned by `OXY7O/kaori-website`; **not** the starting point for a contributor change.
+- `upstream/kaori/staging`: current official integration baseline; **start new work here**.
+- `origin/main`: default branch of your fork; it can lag staging and produce conflicts.
+- `origin/fork-test-140`: disposable example work branch in your fork, based on the upstream staging commit.
 
 `origin` points to **your fork**; `upstream` points to the **OXY7O repository**. Creating a new branch *name* from stale `origin/main` does **not** give it staging's history.
 
@@ -54,7 +52,7 @@ Developer checks are targeted to the work branch. Full Admission, browser Visual
 
 Fork [OXY7O/kaori-website](https://github.com/OXY7O/kaori-website) in GitHub under your own account. For a maintainer-authorized [#140](https://github.com/OXY7O/kaori-website/issues/140) isolation rehearsal, run:
 
-~~~bash
+```bash
 git clone https://github.com/YOUR_USERNAME/kaori-website.git
 cd kaori-website
 git remote -v
@@ -62,13 +60,13 @@ git remote -v
 git remote add upstream https://github.com/OXY7O/kaori-website.git
 git fetch upstream kaori/staging
 git switch -c fork-test-140 upstream/kaori/staging
-~~~
+```
 
 For an accepted real implementation, use the approved issue and a descriptive branch such as `kaori/chore-123-update-readme`, also created from `upstream/kaori/staging`. Do not commit directly to `origin/main` or `upstream/main`. Only update files within your approved or test scope; a safe isolation test edits a single non-sensitive README line.
 
 Before pushing, verify the branch lineage and inspect **only your intended commits and files**:
 
-~~~bash
+```bash
 git diff --check
 git log --oneline upstream/kaori/staging..HEAD
 git diff --stat upstream/kaori/staging...HEAD
@@ -77,7 +75,7 @@ npm run check-format
 npm run check
 npm run build
 git push -u origin fork-test-140
-~~~
+```
 
 For a new test PR, the commit list should contain your own bounded change, not unrelated commits inherited from the fork's old `main`. Record any check not actually executed as **NOT RUN** rather than PASS.
 
@@ -103,7 +101,7 @@ The PR should identify the governing issue, one clear change, validation actuall
 
 A fork branched from its old `main` can show `mergeable_state=dirty` even when GitHub displays only a README change. **Do not** force-push, use `git reset --hard`, merge directly into protected branches, or disable required checks to fix it. For a disposable PR, close the conflicted PR **without merge**, fetch current upstream staging, and start a fresh branch:
 
-~~~bash
+```bash
 git fetch upstream kaori/staging
 git switch -c fork-test-140-v2 upstream/kaori/staging
 # Reapply only the approved, harmless README change.
@@ -112,7 +110,7 @@ git commit -m "docs: verify isolated fork feedback #140"
 git diff --check
 git log --oneline upstream/kaori/staging..HEAD
 git push -u origin fork-test-140-v2
-~~~
+```
 
 Open a **new** PR from `fork-test-140-v2` to `kaori/staging`. Confirm GitHub reports no conflicts. If the contributor has legitimate changes to preserve beyond a disposable test, coordinate a reviewed manual reapplication/cherry-pick of **only** the accepted commits; do not discard uncommitted work or alter the base branch.
 
