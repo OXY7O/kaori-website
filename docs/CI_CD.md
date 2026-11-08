@@ -49,6 +49,42 @@ A real external-fork-origin test and staged deployment/Human Acceptance
 are still required; do not interpret same-repository negative evidence as
 a real fork test.
 
+## Governed Dependabot intake — #160
+
+The proposed `.github/dependabot.yml` monitors the Website's npm lockfile,
+root Dockerfile, DevContainer Dockerfile, and SHA-pinned GitHub Actions weekly
+(Monday 09:00 Asia/Jakarta). It caps update-PR volume; npm minor/patch updates
+are grouped, while potentially breaking major changes require separate review.
+No auto-merge, registry/SSH token, workflow dispatch, or dependency version
+change is authorized by this configuration.
+
+**Activation boundary:** GitHub reads Dependabot configuration only from
+the repository's **default branch (`main`)**. A validated file on
+`kaori/staging` is **not an active Dependabot updater** until it reaches
+`main` through the independently approved and admitted staging promotion
+process. The `target-branch: kaori/staging` setting routes *version updates*
+to the integration branch; Dependabot *security update* PRs always target
+default `main` and require a separate GitHub Settings toggle. Existing
+Dependabot Alerts are independent from both mechanisms.
+
+**Bot PRs are intake, not admission.** The current trusted `Route Checks`
+requires a same-repository issue-linked `kaori/<type>-<issue>-<slug>` branch.
+Dependabot-generated branches are not permitted to bypass this check; a
+Dependabot PR with a blocked required check must **not** be merged directly.
+A maintainer reviews the proposed changes, records an accepted KAORI issue
+and new issue-linked trusted branch based on current staging, applies only
+reviewed updates, obtains independent PR approval and exact-head Developer
+Check, then runs official staging Full Admission, container vulnerability scan
+and browser tests. Separately approve UAT and any promotion/release. Treat
+security alerts and bot-generated PRs against `main` as triage only; never
+merge those PRs directly to `main`.
+
+GitHub-native CodeQL, Dependabot Alerts, Security Updates, secret scanning,
+push protection and private vulnerability reporting require actual
+authenticated settings readback under [#150](https://github.com/OXY7O/kaori-website/issues/150).
+Version-update YAML is not proof those settings were enabled; do not relax
+required check names or grant bot PRs self-hosted privileges.
+
 ## Gate contracts
 
 1. **Issue → work branch:** canonical branch `kaori/<type>-<issue>-<slug>`, source from current `kaori/staging`.
@@ -74,7 +110,7 @@ The most recent **verified public release deployment** is signed [v0.1.2-rc.7](h
 
 Under [specific public-cutover authority #158](https://github.com/OXY7O/kaori-website/issues/158), [manual public Release Deployment #42488631688](https://github.com/OXY7O/kaori-website/actions/runs/42488631688) completed SUCCESS on that same SHA and digest, with `publish_existing_edge=true`. The existing `kaori-website` public Compose slot, public footer `Website build v0.1.2-rc.7`, Website HTTPS readiness and independent Application/Docs HTTPS readiness passed recorded deployment checks. A subsequent fail-closed operator script returned the final marker `PASS: Public Website RC.7, Application and Docs readiness`; public `release.env` and prior signed **RC.5** rollback identity were exercised within that script, but full intermediate readback was not separately pasted.
 
-**Still pending, not to be inferred from CI or deployment SUCCESS:** actual **public** desktop/tablet/mobile light/dark/accessibility Human Acceptance, explicitly authorized safe retirement of the temporary private UAT, and post-cleanup three-domain/rollback readback [#158](https://github.com/OXY7O/kaori-website/issues/158). Runtime `musl`/`zlib` installed package-version readback remains [#147](https://github.com/OXY7O/kaori-website/issues/147); real external fork negative evidence [#140](https://github.com/OXY7O/kaori-website/issues/140), native CodeQL language coverage [#150](https://github.com/OXY7O/kaori-website/issues/150), and licensing/rights [#136](https://github.com/OXY7O/kaori-website/issues/136) are independently open. `main` promotion and stable/automatic publication are **not** authorized by RC.7 deployment.
+**Accepted 2026-11-09:** the maintainer explicitly recorded **Public Human UAT PASS** on live `kaori.cloud`, following verified signed RC.7/previous RC.5 receipt and rollback checks, safe private `kaori-website-uat/web` retirement with public/private receipts preserved, and successful post-retirement Website/Application/Docs HTTPS readiness. [Operational #158](https://github.com/OXY7O/kaori-website/issues/158) and [recovery #156](https://github.com/OXY7O/kaori-website/issues/156) are **CLOSED / completed**. Installed public `musl`/`musl-utils` are `1.2.6-r3`, and `zlib` is `1.3.2-r1`; [runtime security #147](https://github.com/OXY7O/kaori-website/issues/147) is completed. Outstanding independent controls are a real external-fork negative test [#140](https://github.com/OXY7O/kaori-website/issues/140), native GitHub CodeQL/security-settings evidence [#150](https://github.com/OXY7O/kaori-website/issues/150), separate rights approval [#136](https://github.com/OXY7O/kaori-website/issues/136), and governed Dependabot default-branch activation [#160](https://github.com/OXY7O/kaori-website/issues/160). RC.7 UAT does **not** authorize an unrelated `main` promotion, stable publication, or dependency-bot bypass.
 
 ## Historical signed public candidate — v0.1.0-rc.7
 
