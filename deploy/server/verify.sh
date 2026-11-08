@@ -42,7 +42,14 @@ done
 uid="$(docker exec "$container" id -u)"
 [[ "$uid" != 0 ]] || { echo 'BLOCK: website process runs as root' >&2; exit 1; }
 docker exec "$container" wget -q -O - http://127.0.0.1:8080/healthz | grep -Fxq healthy
-docker exec "$container" wget -q -O - http://127.0.0.1:8080/ | grep -qi KAORI
+# Consume the complete static HTML response before matching. With pipefail, using
+# wget | grep -q can report SIGPIPE even when a valid marker was already found.
+html="$(docker exec "$container" wget -q -O - http://127.0.0.1:8080/)" || {
+    echo 'BLOCK: website homepage unavailable from container' >&2; exit 1;
+}
+grep -qi KAORI <<< "$html" || {
+    echo 'BLOCK: website homepage identity missing' >&2; exit 1;
+}
 if [[ "${KAORI_WEBSITE_RELEASE_LOCAL_ONLY:-}" == 1 ]]; then
     # Internal health does not prove the host published a loopback port.
     mapping="$(docker port "$container" 8080/tcp 2>/dev/null || true)"
@@ -67,8 +74,7 @@ if [[ "$runtime_env" == uat ]]; then
     [[ "$expected_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || {
         echo 'BLOCK: UAT expected signed RC build version missing' >&2; exit 1;
     }
-    docker exec "$container" wget -q -O - http://127.0.0.1:8080/ |
-        grep -Fq "Website build $expected_version" || {
+    grep -Fq "Website build $expected_version" <<< "$html" || {
         echo 'BLOCK: UAT footer build identity differs from accepted RC version' >&2; exit 1;
     }
     printf 'PASS: isolated UAT Website footer build version %s\n' "$expected_version"

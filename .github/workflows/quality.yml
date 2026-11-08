@@ -93,6 +93,8 @@ jobs:
           cache: npm
       - name: Restore locked dependencies
         run: npm ci --no-audit --no-fund
+      - name: Verify release and runner safety contracts
+        run: node --test tests/contracts/release/*.test.mjs
       - name: Validate committed shell script syntax
         run: |
           set -Eeuo pipefail
