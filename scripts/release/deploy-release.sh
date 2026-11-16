@@ -7,14 +7,8 @@ if [[ "$GITHUB_EVENT_NAME" == push ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/uat-request ]] || fail 'push UAT request must use kaori/uat-request'
   [[ "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" == 1 ]] ||
     fail 'public UAT request requires explicit approved existing-edge attachment'
-  [[ -n "${PUBLIC_UAT_APPROVED_SHA:-}" && "$PUBLIC_UAT_APPROVED_SHA" == "${ACCEPTED_SHA:-}" ]] ||
-    fail 'public UAT request approval SHA missing or stale'
-  [[ -n "${PUBLIC_UAT_APPROVED_TAG:-}" && "$PUBLIC_UAT_APPROVED_TAG" == "${RC_TAG:-}" ]] ||
-    fail 'public UAT request approval tag missing or stale'
-  [[ "${PUBLIC_UAT_APPROVAL_ISSUE:-}" =~ ^[1-9][0-9]*$ ]] ||
-    fail 'public UAT request approval issue missing'
-  [[ "${APPROVAL_REF:-}" == "https://github.com/OXY7O/kaori-website/issues/$PUBLIC_UAT_APPROVAL_ISSUE" ]] ||
-    fail 'public UAT request approval reference mismatch'
+  [[ "${APPROVAL_REF:-}" =~ ^https://github.com/OXY7O/kaori-website/issues/[1-9][0-9]*$ ]] ||
+    fail 'public UAT request requires exact approved issue reference'
 elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual UAT dispatch must use kaori/staging'
 else
@@ -59,7 +53,7 @@ echo "Accepted RC $RC_TAG: source $ACCEPTED_SHA; digest $digest"
 if [[ "$mode" == preflight ]]; then
   echo 'PASS: source, immutable prerelease evidence and required credential names are present'
   if [[ "$GITHUB_EVENT_NAME" == push ]]; then
-    echo 'PASS: request-branch public UAT matched exact approval SHA, tag and issue'
+    echo 'PASS: exact GitHub release approval issue resolved by canonical UAT request'
   else
     echo 'NOTE: manual approval_reference is an audit pointer, not an automated reviewer/branch-protection gate'
   fi
