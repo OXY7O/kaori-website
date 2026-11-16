@@ -105,6 +105,55 @@ Collect the exact SHA, image digest, immutable OCI release metadata, application
 
 Once a unique prerelease for the current admitted staging SHA exists, an operator may dispatch `deploy-staging-host.yml` from `kaori/staging`, providing the exact `candidate_tag` and a link to explicit maintainer authorization (`approval_reference`). The workflow validates GitHub RC evidence for the exact SHA/image digest, checks repository-level credentials without printing them, verifies the SSH pinned host key, and transfers the reviewed adapter via a separate SSH deployment identity. There is no automated dispatch from a feature branch, and no automatic shared-edge publication. A GitHub Free private repository does not enforce human approval; the authorization link is audit evidence for the operating procedure, not a substitute for technical branch protection.
 
+## Current approved public UAT request — #195
+
+This is the **current** Website request-branch operating contract and supersedes
+the private-only push behavior originally documented under #122/#124.
+Historical private UAT runbooks and RC.8 records below remain valid
+**historical evidence**, not current default behavior.
+
+1. Obtain exact accepted `kaori/staging` SHA, successful all-lanes Full Admission,
+   one matching signed RC tag, immutable OCI digest/SBOM/provenance and successful
+   publisher. Record a **separate issue** whose body explicitly contains
+   `Public UAT authorization: APPROVED`, `Source SHA: <sha>`, and
+   `RC tag: <tag>`, plus the intended one-slot replacement and previous
+   signed rollback identity. Approval is a real maintainer decision, not a
+   PR merge or an implicit result of CI PASS.
+2. Before moving `kaori/uat-request`, set the three release-scoped repository
+   Actions variables `KAORI_WEBSITE_PUBLIC_UAT_APPROVED_SHA`,
+   `KAORI_WEBSITE_PUBLIC_UAT_APPROVED_TAG`, and
+   `KAORI_WEBSITE_PUBLIC_UAT_APPROVAL_ISSUE` to those exact values. Check the
+   issue and variable setter are authorized. Missing or stale values fail
+   closed before the pinned SSH boundary.
+3. Non-force fast-forward `kaori/uat-request` to that accepted SHA.
+   The existing Release Deployment workflow verifies the exact source,
+   one signed RC, successful publisher, merged staging PR and the recorded
+   approval. It uses **the existing** public `kaori-website` Compose project,
+   its release receipts in `/var/lib/kaori-website/deploy-state`, the existing
+   loopback `127.0.0.1:18080`, and `edge-public` registration. It does
+   **not** use `kaori-website-uat` as the normal request-branch target.
+   The deploy adapter preflights current shared-edge registration before
+   replacing the live container, retains signed rollback and checks trusted
+   `kaori.cloud`, Application and Docs HTTPS after attachment.
+4. Verify the **actual public** version footer, digest, HTTPS/TLS/Host-SNI,
+   navigation/CTA, desktop/tablet/mobile, light/dark, keyboard/accessibility
+   and third-party notices where relevant; record separate **Human UAT
+   PASS/FAIL**. Never conflate successful GitHub Actions with acceptance.
+   A failed public replacement follows the existing scoped rollback and
+   shared-edge recovery instructions, not a fresh image build or new edge.
+5. Rotate/clear the per-RC approval variables after completion. Stable/main
+   promotion, source relicensing, repository rights clearance, DNS/TLS
+   ownership changes and cleanup of the older private UAT project remain
+   separate approved workstreams.
+
+**Critical historical exception:** Signed RC.8 was deployed privately under
+[#194](https://github.com/OXY7O/kaori-website/issues/194) before this behavior
+changed. That approval was **private only** and does not authorize moving
+RC.8 onto the public `kaori.cloud` slot. Applying the new contract requires
+a new signed post-merge source revision plus explicit per-release cutover
+authorization. Parent [KAORI #4212](https://github.com/OXY7O/KAORI/issues/4212)
+remains the separate public-source rights audit authority.
+
 ## Private release browser access (no shared-edge publication)
 
 For the initial website release, the deployment adapter can opt into a **loopback-only** Compose override with `KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1`. This binds the web service exclusively to `127.0.0.1:18080` on the target VPS and leaves 80/443 and shared-edge sites untouched. It is not a public deployment.
