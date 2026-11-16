@@ -140,28 +140,74 @@ Pull-request runs include their PR/branch label; manual release runs show the se
 
 **Operating state:** [stable v0.1.0](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0) is published on main, reusing the signed deployed RC.10 digest, without a new image build. This naming-only workstream does not redeploy that image, modify shared-edge runtime or make product changes. External provider names, immutability and signed-evidence authority remain unchanged.
 
-## Explicit Website release request branches — #122
+## Explicit Website release request branches — #122, revised by #195
 
-Website RC and UAT use deliberate `kaori/rc-request` and `kaori/uat-request` branch pushes.
-Ordinary staging pushes only run Full Admission and never publish or deploy.
-The existing Release Candidate and Release Deployment workflows retain manual dispatch.
+The accepted **single active public Website** UAT contract is in [#129](https://github.com/OXY7O/kaori-website/issues/129) and the reviewed [#195](https://github.com/OXY7O/kaori-website/issues/195) decision.
+This section supersedes #122's earlier *private-only* request-branch behavior, **not**
+its signed/exact-source security requirements or stable/main release boundaries.
+Ordinary staging pushes run Full Admission only: they do **not** publish or deploy.
+The existing Release Candidate and Release Deployment workflows remain authoritative;
+there is no parallel public Website project or new deployment workflow.
 
-**RC request:** The operator advances `kaori/rc-request` to the current admitted staging SHA.
-The publisher checks exact source and Full Admission before building a signed immutable image.
-It resolves the next patch RC from Website stable release tags, not `package.json`.
-Already published same-source RCs are not rebuilt; incomplete reserved tags fail closed.
+**RC request:** Advance `kaori/rc-request` by non-force fast-forward to the current
+admitted staging SHA. The canonical publisher requires exact-source 4/4 admission,
+unique signed immutable prerelease with Trivy, SBOM, provenance and signature.
+A same-source signed RC is never overwritten.
 
-**UAT request:** Only after signed RC publication, advance `kaori/uat-request` to that SHA.
-The deploy workflow requires exactly one prerelease and matching tag/source authority.
-It also checks successful signed publisher evidence and the source's merged staging PR.
-It retains the existing digest, SSH trust, Compose verification and rollback controls.
-The request-branch path always disables public-edge attachment; Human UAT remains separate.
+**Public UAT request:** After RC publication, record **release-specific public UAT
+approval** in a Website GitHub issue, containing these three exact standalone lines:
 
-**Manual fallback:** Dispatch existing workflows on `kaori/staging` with the approved tag,
-authorization reference and appropriate edge flag. A manual release does not waive admission.
-For failure or stale request, reconcile the Git refs and evidence before a new request;
-never overwrite an immutable tag or force an invalid branch SHA.
+```text
+Public UAT authorization: APPROVED
+Source SHA: <40-character admitted staging SHA>
+RC tag: <signed vX.Y.Z-rc.N>
+```
 
-This work is scoped by [Website #122](https://github.com/OXY7O/kaori-website/issues/122)
-and [KAORI #4201](https://github.com/OXY7O/KAORI/issues/4201).
+The issue must be open, specifically approve replacement of the existing
+`https://kaori.cloud` Website slot, identify the prior signed rollback digest,
+confirm the parent rights/publication boundary, and be accepted by the authorized
+maintainer. Before moving the request branch, an authorized repository operator
+must set GitHub **Actions repository variables**:
+
+| Variable | Required value |
+| --- | --- |
+| `KAORI_WEBSITE_PUBLIC_UAT_APPROVED_SHA` | The *exact* admitted staging Git SHA |
+| `KAORI_WEBSITE_PUBLIC_UAT_APPROVED_TAG` | The *exact* published signed RC tag |
+| `KAORI_WEBSITE_PUBLIC_UAT_APPROVAL_ISSUE` | Numeric issue number that records explicit public UAT approval |
+
+These variables are **manually configured release controls**, not a claim that
+branch protection or GitHub issue authorship automatically proves human approval.
+Treat issue text and variable edits as privileged release authority; review them
+before authorizing the request branch. Never set a wildcard, reusable approval,
+or use a merged source PR as proof of public cutover approval.
+
+Only then advance `kaori/uat-request` by **non-force fast-forward** to the
+same admitted SHA. The workflow requires exactly one matching signed prerelease,
+matching tag/source, successful publisher, merged staging PR, matching **all
+three** approval variables and open approval-issue content. A missing, stale or
+mismatched approval **BLOCKS before SSH**; it does not fall back to private UAT.
+The existing signed image is installed into the **single public** `kaori-website`
+Compose project, with pinned host trust, previous-digest release receipt, existing
+edge registration and `edge-public` reattachment. Post-deploy public
+`https://kaori.cloud` version-footer and Website/App/Docs HTTPS readiness must
+pass, followed by a separate live **Human UAT** decision. No new DNS/TLS route.
+
+**Manual fallback:** Existing `workflow_dispatch` on `kaori/staging` retains
+`candidate_tag`, `approval_reference` and explicit
+`publish_existing_edge` selection. This remains the manual emergency/private
+inspection path with separate authorization and does not bypass the RC, rollback
+or Human Acceptance gates.
+
+**Request branch lifecycle:** Set per-release approval **before** moving
+`uat-request`; GitHub pushes of the same SHA do not retrigger workflows.
+Rotate/clear stale approval variables after completing or rejecting that RC.
+New source/staging SHA requires a newly signed candidate, new approval issue
+and new variables. Never force-move a request branch or overwrite a signed tag.
+Historical RC.8 private UAT [#194](https://github.com/OXY7O/kaori-website/issues/194)
+remains an accepted, immutable **pre-#195** event—not an authorization to
+replace public RC.7.
+
+This Website-specific decision is linked to [#122](https://github.com/OXY7O/kaori-website/issues/122),
+[#129](https://github.com/OXY7O/kaori-website/issues/129), and cross-repo policy
+[KAORI #4201](https://github.com/OXY7O/KAORI/issues/4201).
 Stable/production automation remains #119 and admission caching remains #118.
