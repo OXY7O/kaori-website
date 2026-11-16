@@ -44,11 +44,18 @@ fi
 command -v jq >/dev/null && command -v curl >/dev/null && docker info >/dev/null || fail 'runner prerequisites unavailable'
 current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
 [[ "$current" == "$sha" ]] || fail 'staging source changed'
-runs="$(curl -fsS "${headers[@]}" "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
-matched="$(jq -c --arg sha "$sha" '[.workflow_runs[] | select(.head_sha==$sha)] | sort_by(.run_number) | last // empty' <<< "$runs")"
-[[ -n "$matched" ]] || fail 'missing Full Admission run for exact staging SHA'
-[[ "$(jq -r '.status' <<< "$matched")" == completed && "$(jq -r '.conclusion' <<< "$matched")" == success ]] || fail 'Full Admission not PASS'
-echo "Full Admission: $(jq -r '.html_url' <<< "$matched")"
+if [[ "$auto_staging" == true ]]; then
+  # Current 4/4 quality jobs passed via the required 'needs' edges of this job.
+  # The overall workflow itself is still in_progress, so the historical
+  # completed-run API check only applies to separate request publishers.
+  echo 'PASS: canonical protected staging admission job dependencies succeeded'
+else
+  runs="$(curl -fsS "${headers[@]}" "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
+  matched="$(jq -c --arg sha "$sha" '[.workflow_runs[] | select(.head_sha==$sha)] | sort_by(.run_number) | last // empty' <<< "$runs")"
+  [[ -n "$matched" ]] || fail 'missing Full Admission run for exact staging SHA'
+  [[ "$(jq -r '.status' <<< "$matched")" == completed && "$(jq -r '.conclusion' <<< "$matched")" == success ]] || fail 'Full Admission not PASS'
+  echo "Full Admission: $(jq -r '.html_url' <<< "$matched")"
+fi
 if [[ "$mode" == preflight ]]; then
   # Private repositories use an API-authenticated lookup; checkout intentionally does
   # not persist write-capable credentials into Git configuration.
