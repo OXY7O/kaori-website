@@ -140,7 +140,7 @@ Pull-request runs include their PR/branch label; manual release runs show the se
 
 **Operating state:** [stable v0.1.0](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0) is published on main, reusing the signed deployed RC.10 digest, without a new image build. This naming-only workstream does not redeploy that image, modify shared-edge runtime or make product changes. External provider names, immutability and signed-evidence authority remain unchanged.
 
-## Explicit Website release request branches — #122
+## Explicit Website release request branches — #122 / #195
 
 Website RC and UAT use deliberate `kaori/rc-request` and `kaori/uat-request` branch pushes.
 Ordinary staging pushes only run Full Admission and never publish or deploy.
@@ -151,17 +151,24 @@ The publisher checks exact source and Full Admission before building a signed im
 It resolves the next patch RC from Website stable release tags, not `package.json`.
 Already published same-source RCs are not rebuilt; incomplete reserved tags fail closed.
 
-**UAT request:** Only after signed RC publication, advance `kaori/uat-request` to that SHA.
-The deploy workflow requires exactly one prerelease and matching tag/source authority.
-It also checks successful signed publisher evidence and the source's merged staging PR.
-It retains the existing digest, SSH trust, Compose verification and rollback controls.
-The request-branch path always disables public-edge attachment; Human UAT remains separate.
+**Public UAT request (#195):** Only after a signed RC and separate release-specific
+public-cutover approval, advance `kaori/uat-request` to that exact admitted SHA.
+The deploy workflow requires one matching signed prerelease, successful publisher,
+merged staging PR, and exact approved SHA/tag/issue from maintainer-controlled
+GitHub Actions variables. The open approval issue must explicitly contain
+`Public UAT authorization: APPROVED`, `Source SHA: <sha>` and `RC tag: <tag>`.
+Missing or stale approval **blocks before SSH** instead of deploying privately.
+The approved request uses the existing public `kaori-website` Compose project,
+signed digest, rollback receipt, shared-edge preflight and `https://kaori.cloud`
+with App/Docs readiness. Live Human UAT remains separate from CI success.
+The exact operator procedure and three approval variable names are in
+[Deployment](DEPLOYMENT.md#current-approved-public-uat-request--195).
 
 **Manual fallback:** Dispatch existing workflows on `kaori/staging` with the approved tag,
 authorization reference and appropriate edge flag. A manual release does not waive admission.
 For failure or stale request, reconcile the Git refs and evidence before a new request;
 never overwrite an immutable tag or force an invalid branch SHA.
 
-This work is scoped by [Website #122](https://github.com/OXY7O/kaori-website/issues/122)
+This request workflow originated in [Website #122](https://github.com/OXY7O/kaori-website/issues/122) and its public UAT revision [#195](https://github.com/OXY7O/kaori-website/issues/195)
 and [KAORI #4201](https://github.com/OXY7O/KAORI/issues/4201).
 Stable/production automation remains #119 and admission caching remains #118.

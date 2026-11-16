@@ -80,18 +80,25 @@ Do not rebuild or modify a signed digest merely to change the footer.
 
 Existing Release Candidate and Release Deployment workflows require exact
 admitted staging source, immutable signed images, security evidence and approval.
-Private staging/UAT and public-edge attachment are distinct operations.
+Private manual inspection and the approved request-branch public UAT are distinct;
+the latter requires exact per-RC cutover authority, not merely an admitted build.
 Recurring stable auto-deployment is governed separately by #119.
 
-## Request-triggered Website RC and UAT — #122
+## Request-triggered Website RC and public UAT — #122 / #195
 
-KAORI Website now supports the two **deliberate** request branch events:
-`kaori/rc-request` for an admitted, source-pinned signed RC and
-`kaori/uat-request` for a separately approved private UAT deployment.
-They do **not** publish on an ordinary `kaori/staging` push. A UAT request
-without an actual matching published RC returns BLOCK before SSH deployment;
-the observed Release Deployment #41533645908 failure is the historical
-missing-RC example. Request-branch UAT cannot reattach the public edge.
+The accepted [#195](https://github.com/OXY7O/kaori-website/issues/195)
+contract revises #122's **private-only** request-branch implementation:
+`kaori/rc-request` still produces an admitted, source-pinned signed RC,
+but `kaori/uat-request` now targets the **existing single public Website**
+at `https://kaori.cloud` after **explicit release-specific approval**.
+The request must match exact source SHA, signed prerelease tag, publisher,
+merged staging PR, approval issue content and maintainer-controlled Actions
+variables; missing/stale approval blocks before SSH. It reuses the current
+public Compose/edge/rollback adapter; no second public slot or ordinary
+staging-push deployment is allowed. Release acceptance requires the actual
+Website/App/Docs public HTTPS results and separate Human UAT.
+The older private RC.8 [#194](https://github.com/OXY7O/kaori-website/issues/194)
+remains historical evidence, not public cutover authority.
 
 Always preserve the signed candidate's source SHA, immutable registry digest,
 SBOM/provenance, release tag, successful publisher run, deployment receipt,

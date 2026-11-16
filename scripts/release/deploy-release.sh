@@ -5,7 +5,16 @@ mode="${1:?expected preflight or deploy}"
 fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 if [[ "$GITHUB_EVENT_NAME" == push ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/uat-request ]] || fail 'push UAT request must use kaori/uat-request'
-  [[ "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" == 0 ]] || fail 'request branch may deploy privately only'
+  [[ "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" == 1 ]] ||
+    fail 'public UAT request requires explicit approved existing-edge attachment'
+  [[ -n "${PUBLIC_UAT_APPROVED_SHA:-}" && "$PUBLIC_UAT_APPROVED_SHA" == "${ACCEPTED_SHA:-}" ]] ||
+    fail 'public UAT request approval SHA missing or stale'
+  [[ -n "${PUBLIC_UAT_APPROVED_TAG:-}" && "$PUBLIC_UAT_APPROVED_TAG" == "${RC_TAG:-}" ]] ||
+    fail 'public UAT request approval tag missing or stale'
+  [[ "${PUBLIC_UAT_APPROVAL_ISSUE:-}" =~ ^[1-9][0-9]*$ ]] ||
+    fail 'public UAT request approval issue missing'
+  [[ "${APPROVAL_REF:-}" == "https://github.com/OXY7O/kaori-website/issues/$PUBLIC_UAT_APPROVAL_ISSUE" ]] ||
+    fail 'public UAT request approval reference mismatch'
 elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual UAT dispatch must use kaori/staging'
 else
@@ -49,7 +58,11 @@ image_ref="$REGISTRY_IMAGE@$digest"
 echo "Accepted RC $RC_TAG: source $ACCEPTED_SHA; digest $digest"
 if [[ "$mode" == preflight ]]; then
   echo 'PASS: source, immutable prerelease evidence and required credential names are present'
-  echo 'NOTE: approval_reference is a required manual audit pointer, not an automated reviewer/branch-protection gate'
+  if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+    echo 'PASS: request-branch public UAT matched exact approval SHA, tag and issue'
+  else
+    echo 'NOTE: manual approval_reference is an audit pointer, not an automated reviewer/branch-protection gate'
+  fi
   exit 0
 fi
 umask 077
@@ -80,15 +93,12 @@ setsid -w ssh-add "$key_file" </dev/null >/dev/null
 target="$WEBSITE_SSH_USER@$WEBSITE_HOST"
 ssh_opts=(-p "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
 scp_opts=(-P "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
-if [[ "$GITHUB_EVENT_NAME" == push ]]; then
-  runtime_env=uat
-  remote_release="$WEBSITE_DEPLOY_ROOT/uat/releases/$ACCEPTED_SHA"
-  remote_state_dir="$WEBSITE_DEPLOY_ROOT/uat/deploy-state"
-else
-  runtime_env=production
-  remote_release="$WEBSITE_DEPLOY_ROOT/releases/$ACCEPTED_SHA"
-  remote_state_dir=/var/lib/kaori-website/deploy-state
-fi
+# The approved request branch and manual fallback select the one existing public
+# Compose project when edge=1. Manual edge=0 behavior remains guarded below.
+# The older isolated UAT project is left untouched for separately scoped cleanup.
+runtime_env=production
+remote_release="$WEBSITE_DEPLOY_ROOT/releases/$ACCEPTED_SHA"
+remote_state_dir=/var/lib/kaori-website/deploy-state
 {
   printf 'set -Eeuo pipefail\n'
   printf 'deploy_root=%q\nremote_release=%q\nremote_state_dir=%q\nruntime_env=%q\n' "$WEBSITE_DEPLOY_ROOT" "$remote_release" "$remote_state_dir" "$runtime_env"
@@ -179,7 +189,8 @@ else
     fi
   fi
 fi
-# UAT and production use separate Compose project, release state and private port.
+# Reuse the existing public Compose identity, release receipt and loopback port.
+# Historical private-UAT-specific checks remain for prior operator evidence.
 export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1
 bash "$remote_release/server/deploy.sh" "$image_ref" "$source_sha" "$release_tag"
 if [[ "$runtime_env" == uat ]]; then
