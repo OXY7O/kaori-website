@@ -82,6 +82,43 @@ test("branch request blocks unauthorized public cutover before SSH", () => {
   }
 });
 
+test("issue selector rejects stale and untrusted public UAT approvals", () => {
+  const filter = workflow.match(
+    /page_matches="\$\(jq -c --arg sha "\$accepted" --arg tag "\$tag" '([\s\S]*?)' <<<"\$issues"\)"/,
+  )?.[1];
+  assert.ok(filter);
+  const approved = {
+    number: 198,
+    title: "ops(release): approved Website public UAT",
+    state: "open",
+    author_association: "MEMBER",
+    labels: [{ name: "area:platform" }],
+    body: [
+      "Public UAT authorization: APPROVED",
+      "Source SHA: " + sha,
+      "RC tag: " + tag,
+    ].join("\n"),
+  };
+  const matches = (issues) => {
+    const result = spawnSync(
+      "jq",
+      ["-c", "--arg", "sha", sha, "--arg", "tag", tag, filter],
+      { input: JSON.stringify(issues), encoding: "utf8" },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    return JSON.parse(result.stdout.trim());
+  };
+  assert.deepEqual(matches([approved]), [198]);
+  assert.deepEqual(matches([]), []);
+  assert.deepEqual(matches([{ ...approved, state: "closed" }]), []);
+  assert.deepEqual(matches([{ ...approved, author_association: "NONE" }]), []);
+  assert.deepEqual(matches([{ ...approved, pull_request: {} }]), []);
+  assert.deepEqual(matches([{ ...approved, labels: [] }]), []);
+  assert.deepEqual(matches([{ ...approved, body: "RC tag: " + tag }]), []);
+  assert.deepEqual(matches([{ ...approved, body: approved.body.replace(sha, "b".repeat(40)) }]), []);
+  assert.deepEqual(matches([approved, { ...approved, number: 199 }]), [198, 199]);
+});
+
 test("approved request selects existing single public slot, not parallel UAT", () => {
   assert.match(
     adapter,
