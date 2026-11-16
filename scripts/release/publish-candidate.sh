@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-mode="${1:?expected preflight or publish}"
-[[ "$mode" == preflight || "$mode" == publish ]] || { echo 'BLOCK: invalid RC operation' >&2; exit 1; }
+mode="${1:?expected resolve, preflight or publish}"
+[[ "$mode" == resolve || "$mode" == preflight || "$mode" == publish ]] || { echo 'BLOCK: invalid RC operation' >&2; exit 1; }
 fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 repo="${GITHUB_REPOSITORY:?}"
 sha="${ACCEPTED_SHA:?}"
-tag="${RC_TAG:?}"
+tag="${RC_TAG:-}"
 host="${REGISTRY_HOST:-}"
 image="${REGISTRY_IMAGE:-}"
 api="https://api.github.com/repos/$repo"
 headers=(-H "Authorization: Bearer ${GH_TOKEN:?}" -H 'Accept: application/vnd.github+json')
-if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging && "$(printenv KAORI_WEBSITE_STAGING_AUTO || true)" == 1 ]]; then
+  : # Canonical 4/4 Full Admission DAG must be verified by calling job.
+elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/rc-request ]] || fail 'push RC request must use kaori/rc-request'
 elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual RC dispatch must use kaori/staging'
