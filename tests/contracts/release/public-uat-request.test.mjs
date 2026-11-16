@@ -68,10 +68,16 @@ test("website reuses uat environment without per-release variable duplication", 
   assert.doesNotMatch(workflow + adapter, /PUBLIC_UAT_APPROVED_TAG/);
   assert.doesNotMatch(workflow + adapter, /PUBLIC_UAT_APPROVAL_ISSUE/);
   assert.match(workflow, /Public UAT authorization: APPROVED/);
-  assert.match(workflow, /expected exactly one trusted open public UAT release approval issue/);
+  assert.match(
+    workflow,
+    /expected exactly one trusted open public UAT release approval issue/,
+  );
   assert.match(workflow, /public UAT approval issue discovery failed/);
   assert.match(workflow, /public UAT approval list exceeds bounded pages/);
-  assert.match(workflow, /approval="https:\/\/github\.com\/\$GITHUB_REPOSITORY\/issues\/\$approved_number"/);
+  assert.match(
+    workflow,
+    /approval="https:\/\/github\.com\/\$GITHUB_REPOSITORY\/issues\/\$approved_number"/,
+  );
   assert.match(workflow, /edge=1/);
 });
 
@@ -87,39 +93,108 @@ test("one trusted open exact SHA and tag release issue authorizes public UAT", (
   );
 });
 
-test("stale, missing and untrusted public approval issues are not accepted", () => {
+function issueBody(
+  marker = "Public UAT authorization: APPROVED",
+  source = sha,
+  version = tag,
+) {
+  return [marker, "Source SHA: " + source, "RC tag: " + version].join("\n");
+}
+
+test("stale, missing and untrusted public approval issues are rejected", () => {
   const cases = [
-    ["missing issue", []],
-    ["closed", [approvedIssue({ state: "closed" })]],
-    ["PR, not issue", [approvedIssue({ pull_request: { url: "https://api.github.com/pulls/198" } })]],
-    ["untrusted author", [approvedIssue({ author_association: "NONE" })]],
-    ["wrong area label", [approvedIssue({ labels: [{ name: "documentation" }] })]],
-    ["wrong issue type", [approvedIssue({ title: "misc: unreviewed request" })]],
-    ["stale source SHA", [approvedIssue({ body: "Public UAT authorization: APPROVED\nSource SHA: " + "b".repeat(40) + "\nRC tag: " + tag })]],
-    ["wrong signed tag", [approvedIssue({ body: "Public UAT authorization: APPROVED\nSource SHA: " + sha + "\nRC tag: v0.1.2-rc.8" })]],
-    ["no approval", [approvedIssue({ body: "Public UAT authorization: PENDING\nSource SHA: " + sha + "\nRC tag: " + tag })]],
-    ["only quoted approval", [approvedIssue({ body: "> Public UAT authorization: APPROVED\nSource SHA: " + sha + "\nRC tag: " + tag })]],
-    ["ambiguous duplicate", [approvedIssue(), approvedIssue({ number: 199 })]],
+    { name: "missing issue", issues: [] },
+    { name: "closed", issues: [approvedIssue({ state: "closed" })] },
+    {
+      name: "PR, not issue",
+      issues: [approvedIssue({ pull_request: { url: "https://api.github.com/pulls/198" } })],
+    },
+    {
+      name: "untrusted author",
+      issues: [approvedIssue({ author_association: "NONE" })],
+    },
+    {
+      name: "wrong area label",
+      issues: [approvedIssue({ labels: [{ name: "documentation" }] })],
+    },
+    {
+      name: "wrong issue type",
+      issues: [approvedIssue({ title: "misc: unreviewed request" })],
+    },
+    {
+      name: "stale source SHA",
+      issues: [approvedIssue({ body: issueBody(undefined, "b".repeat(40)) })],
+    },
+    {
+      name: "wrong signed tag",
+      issues: [approvedIssue({ body: issueBody(undefined, sha, "v0.1.2-rc.8") })],
+    },
+    {
+      name: "no approval",
+      issues: [
+        approvedIssue({
+          body: issueBody("Public UAT authorization: PENDING"),
+        }),
+      ],
+    },
+    {
+      name: "only quoted approval",
+      issues: [
+        approvedIssue({
+          body: issueBody("> Public UAT authorization: APPROVED"),
+        }),
+      ],
+    },
+    {
+      name: "ambiguous duplicate",
+      issues: [approvedIssue(), approvedIssue({ number: 199 })],
+    },
   ];
-  for (const [name, issues] of cases) {
-    const results = resolveIssues(issues);
+
+  for (const { name, issues } of cases) {
+    const matches = resolveIssues(issues);
     if (name === "ambiguous duplicate") {
-      assert.notEqual(results.length, 1, name);
+      assert.notEqual(matches.length, 1, name);
     } else {
-      assert.deepEqual(results, [], name);
+      assert.deepEqual(matches, [], name);
     }
   }
 });
 
-test("push adapter blocks wrong branch, no public edge and invalid issue reference before SSH", () => {
+test("push adapter rejects unauthorized requests before SSH", () => {
   const cases = [
-    ["wrong branch", { GITHUB_REF: "refs/heads/feature/other" }, "push UAT request must use kaori/uat-request"],
-    ["no edge", { KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "0" }, "public UAT request requires explicit approved existing-edge attachment"],
-    ["missing issue", { APPROVAL_REF: "" }, "public UAT request requires exact approved issue reference"],
-    ["PR approval", { APPROVAL_REF: "https://github.com/OXY7O/kaori-website/pull/197" }, "public UAT request requires exact approved issue reference"],
-    ["cross-repo issue", { APPROVAL_REF: "https://github.com/OXY7O/KAORI/issues/198" }, "public UAT request requires exact approved issue reference"],
+    {
+      name: "wrong branch",
+      overrides: { GITHUB_REF: "refs/heads/feature/other" },
+      error: "push UAT request must use kaori/uat-request",
+    },
+    {
+      name: "no edge",
+      overrides: { KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "0" },
+      error: "public UAT request requires explicit approved existing-edge attachment",
+    },
+    {
+      name: "missing issue",
+      overrides: { APPROVAL_REF: "" },
+      error: "public UAT request requires exact approved issue reference",
+    },
+    {
+      name: "PR approval",
+      overrides: {
+        APPROVAL_REF: "https://github.com/OXY7O/kaori-website/pull/197",
+      },
+      error: "public UAT request requires exact approved issue reference",
+    },
+    {
+      name: "cross-repo issue",
+      overrides: {
+        APPROVAL_REF: "https://github.com/OXY7O/KAORI/issues/198",
+      },
+      error: "public UAT request requires exact approved issue reference",
+    },
   ];
-  for (const [name, overrides, error] of cases) {
+
+  for (const { name, overrides, error } of cases) {
     const result = preflight(overrides);
     assert.notEqual(result.status, 0, name);
     assert.ok(result.stderr.includes("BLOCK: " + error), name);
@@ -131,7 +206,7 @@ test("push adapter blocks wrong branch, no public edge and invalid issue referen
   }
 });
 
-test("approved public request preserves existing single-slot and rollback contracts", () => {
+test("approved request preserves existing public slot and rollback", () => {
   assert.match(
     adapter,
     /runtime_env=production\nremote_release="\$WEBSITE_DEPLOY_ROOT\/releases\/\$ACCEPTED_SHA"/,
