@@ -91,12 +91,17 @@ contract revises #122's **private-only** request-branch implementation:
 `kaori/rc-request` still produces an admitted, source-pinned signed RC,
 but `kaori/uat-request` now targets the **existing single public Website**
 at `https://kaori.cloud` after **explicit release-specific approval**.
-The request must match exact source SHA, signed prerelease tag, publisher,
-merged staging PR, approval issue content and maintainer-controlled Actions
-variables; missing/stale approval blocks before SSH. It reuses the current
-public Compose/edge/rollback adapter; no second public slot or ordinary
-staging-push deployment is allowed. Release acceptance requires the actual
-Website/App/Docs public HTTPS results and separate Human UAT.
+The request must match exact source SHA, signed prerelease tag,
+successful publisher, merged staging PR, and **one trusted open approval
+issue** with exact SHA and RC tag. The workflow reads the issue directly;
+no repeated per-RC repository variables are required. Missing, stale,
+ambiguous or untrusted approval blocks before SSH. The `uat` environment
+matches KAORI App's release boundary; any required reviewers and branch
+restrictions must be configured in GitHub rather than assumed.
+The request reuses the existing public Compose/edge/rollback adapter;
+no second public slot or ordinary staging-push deployment is allowed.
+Release acceptance still requires actual Website/App/Docs public HTTPS
+verification and separate Human UAT.
 The older private RC.8 [#194](https://github.com/OXY7O/kaori-website/issues/194)
 remains historical evidence, not public cutover authority.
 
