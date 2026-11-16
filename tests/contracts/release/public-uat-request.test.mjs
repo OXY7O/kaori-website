@@ -143,14 +143,14 @@ test("admitted protected staging is the only automatic signing trigger", () => {
   assert.match(admission, /KAORI_WEBSITE_AUTO_STAGING_ENABLED == 'true'/);
   assert.match(admission, /environment:\n      name: staging/);
   assert.match(admission, /group: kaori-website-release-deploy/);
-  assert.match(admission, /scripts\/release\/publish-candidate\.sh resolve/);
+  assert.match(admission, /Select unique signed candidate or verify existing release/);
   assert.match(admission, /scripts\/release\/deploy-release\.sh deploy/);
-  assert.match(publisher, /mode" == resolve/);
+  assert.match(admission, /should_publish=true/);
   assert.match(
     publisher,
     /automatic staging RC requires canonical Full Admission workflow identity/,
   );
-  assert.match(publisher, /same-source prerelease metadata differs/);
+  assert.match(admission, /existing RC source mismatch/);
   assert.match(adapter, /staging auto-deploy requires existing single public edge/);
   assert.match(adapter, /staging auto-deploy authority must match approved workstream/);
 });
