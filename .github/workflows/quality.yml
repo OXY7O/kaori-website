@@ -115,6 +115,8 @@ jobs:
           set -Eeuo pipefail
           test -s dist/index.html
           test -s dist/branding/kaori-logo.svg
+          test -s dist/licenses/inter/OFL-1.1.txt
+          cmp node_modules/@fontsource-variable/inter/LICENSE dist/licenses/inter/OFL-1.1.txt
           grep -qi 'kaori' dist/index.html
           ! grep -REn 'https://(cdn\.jsdelivr\.net|fonts\.googleapis\.com|unpkg\.com)' dist/ || { echo 'Unexpected public CDN dependency' >&2; exit 1; }
       - name: Record admission evidence
