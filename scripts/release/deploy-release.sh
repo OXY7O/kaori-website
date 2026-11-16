@@ -3,7 +3,15 @@ set -Eeuo pipefail
 mode="${1:?expected preflight or deploy}"
 [[ "$mode" == preflight || "$mode" == deploy ]] || { echo 'BLOCK: unsupported operation' >&2; exit 1; }
 fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
-if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging &&
+      "$(printenv KAORI_WEBSITE_STAGING_AUTO || true)" == 1 ]]; then
+  [[ "$GITHUB_WORKFLOW_REF" == "$GITHUB_REPOSITORY/.github/workflows/quality.yml@refs/heads/kaori/staging" ]] ||
+    fail 'staging auto-deploy must originate from canonical admission workflow'
+  [[ "$(printenv KAORI_WEBSITE_ATTACH_EXISTING_EDGE || true)" == 1 ]] ||
+    fail 'staging auto-deploy requires existing single public edge'
+  [[ "$(printenv APPROVAL_REF || true)" == https://github.com/OXY7O/kaori-website/issues/202 ]] ||
+    fail 'staging auto-deploy authority must match approved workstream'
+elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/uat-request ]] || fail 'push UAT request must use kaori/uat-request'
   [[ "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" == 1 ]] ||
     fail 'public UAT request requires explicit approved existing-edge attachment'
@@ -58,7 +66,9 @@ image_ref="$REGISTRY_IMAGE@$digest"
 echo "Accepted RC $RC_TAG: source $ACCEPTED_SHA; digest $digest"
 if [[ "$mode" == preflight ]]; then
   echo 'PASS: source, immutable prerelease evidence and required credential names are present'
-  if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+  if [[ "$GITHUB_REF" == refs/heads/kaori/staging ]]; then
+    echo 'PASS: authorized protected staging auto-deployment of signed public RC'
+  elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
     echo 'PASS: request-branch public UAT matched exact approval SHA, tag and issue'
   else
     echo 'NOTE: manual approval_reference is an audit pointer, not an automated reviewer/branch-protection gate'
