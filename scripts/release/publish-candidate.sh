@@ -12,23 +12,24 @@ image="${REGISTRY_IMAGE:-}"
 api="https://api.github.com/repos/$repo"
 headers=(-H "Authorization: Bearer ${GH_TOKEN:?}" -H 'Accept: application/vnd.github+json')
 
-# Only protected staging's canonical 4/4 admission job DAG can auto-publish.
-auto_staging=false
+# Exact-source automatic RC selection, from the same source-locked signer.
+if [[ "$mode" == resolve ]]; then
+  [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging ]] ||
+    fail 'automatic RC resolution must target protected staging push'
+  [[ "$(printenv KAORI_WEBSITE_STAGING_AUTO || true)" == 1 ]] ||
+    fail 'automatic RC resolution is not enabled'
+  [[ "$GITHUB_WORKFLOW_REF" == "$repo/.github/workflows/quality.yml@refs/heads/kaori/staging" ]] ||
+    fail 'RC resolver requires canonical Full Admission workflow identity'
+  [[ -n "$(printenv GITHUB_OUTPUT || true)" ]] || fail 'RC resolver output unavailable'
+  [[ "$(git rev-parse HEAD)" == "$sha" ]] || fail 'RC resolver checkout SHA mismatch'
+  current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
+  [[ "$current" == "$sha" ]] || fail 'staging SHA changed before RC selection'
+  already="$(git tag --points-at "$sha" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*auto_staging=false
 if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging &&
       "$(printenv KAORI_WEBSITE_STAGING_AUTO || true)" == 1 ]]; then
   [[ "$GITHUB_WORKFLOW_REF" == "$repo/.github/workflows/quality.yml@refs/heads/kaori/staging" ]] ||
     fail 'automatic staging RC requires canonical Full Admission workflow identity'
   auto_staging=true
-fi
-
-if [[ "$mode" == resolve ]]; then
-  [[ "$auto_staging" == true ]] || fail 'RC resolve requires canonical admitted staging source'
-  [[ -n "$(printenv GITHUB_OUTPUT || true)" ]] || fail 'RC resolve requires job outputs'
-  [[ "$(git rev-parse HEAD)" == "$sha" ]] || fail 'RC resolver checkout differs from requested source'
-  current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
-  [[ "$current" == "$sha" ]] || fail 'staging moved before release resolution'
-  existing="$(git tag --points-at "$sha" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging && "$(printenv KAORI_WEBSITE_STAGING_AUTO || true)" == 1 ]]; then
-  : # Canonical 4/4 Full Admission DAG must be verified by calling job.
 elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/rc-request ]] || fail 'push RC request must use kaori/rc-request'
 elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
@@ -45,10 +46,9 @@ command -v jq >/dev/null && command -v curl >/dev/null && docker info >/dev/null
 current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
 [[ "$current" == "$sha" ]] || fail 'staging source changed'
 if [[ "$auto_staging" == true ]]; then
-  # Current 4/4 quality jobs passed via the required 'needs' edges of this job.
-  # The overall workflow itself is still in_progress, so the historical
-  # completed-run API check only applies to separate request publishers.
-  echo 'PASS: canonical protected staging admission job dependencies succeeded'
+  # This publisher job can only run with 4/4 required needs success.
+  # The same workflow run remains in_progress until this job finishes.
+  echo 'PASS: canonical four-job Full Admission dependencies succeeded'
 else
   runs="$(curl -fsS "${headers[@]}" "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
   matched="$(jq -c --arg sha "$sha" '[.workflow_runs[] | select(.head_sha==$sha)] | sort_by(.run_number) | last // empty' <<< "$runs")"
@@ -173,23 +173,26 @@ jq -n --arg tag "$tag" --arg sha "$sha" --arg digest "$digest" \
     -X POST --data-binary @- "$api/releases" >/dev/null
 printf 'PASS: candidate %s built from %s and published at %s; release verification pending\n' "$tag" "$sha" "$ref"
  || true)"
-  if [[ -n "$existing" ]]; then
-    [[ "$(printf '%s\n' "$existing" | wc -l)" -eq 1 ]] ||
-      fail 'ambiguous same-source signed prerelease'
-    release="$(curl -fsS "${headers[@]}" "$api/releases/tags/$existing")" ||
-      fail 'same-source tag exists without published RC'
-    [[ "$(jq -r '.prerelease' <<<"$release")" == true &&
-       "$(jq -r '.target_commitish' <<<"$release")" == "$sha" ]] ||
-      fail 'same-source published prerelease identity differs'
-    jq -er '.body | contains("Immutable digest: sha256:")' <<<"$release" >/dev/null ||
-      fail 'published prerelease is missing immutable digest'
-    printf 'tag=%s\nshould_publish=false\n' "$existing" >> "$GITHUB_OUTPUT"
-    echo "PASS: reuse previously published signed RC $existing"
+  if [[ -n "$already" ]]; then
+    [[ "$(printf '%s\n' "$already" | wc -l)" -eq 1 ]] || fail 'ambiguous signed RC tags on same SHA'
+    published="$(curl -fsS "${headers[@]}" "$api/releases/tags/$already")" ||
+      fail 'RC tag exists without complete release evidence'
+    [[ "$(jq -r '.prerelease' <<<"$published")" == true &&
+       "$(jq -r '.target_commitish' <<<"$published")" == "$sha" ]] ||
+      fail 'same-source prerelease metadata differs'
+    jq -er '.body | contains("Immutable digest: sha256:")' <<<"$published" >/dev/null ||
+      fail 'same-source RC immutable digest evidence missing'
+    printf 'tag=%s\nshould_publish=false\n' "$already" >> "$GITHUB_OUTPUT"
+    echo "PASS: signed RC $already already published for exact staging"
     exit 0
   fi
-  stable="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname |
-    grep -E '^v[0-9]+\.[0-9]+\.[0-9]+if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging && "$(printenv KAORI_WEBSITE_STAGING_AUTO || true)" == 1 ]]; then
-  : # Canonical 4/4 Full Admission DAG must be verified by calling job.
+  base="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname |
+    grep -E '^v[0-9]+\.[0-9]+\.[0-9]+auto_staging=false
+if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging &&
+      "$(printenv KAORI_WEBSITE_STAGING_AUTO || true)" == 1 ]]; then
+  [[ "$GITHUB_WORKFLOW_REF" == "$repo/.github/workflows/quality.yml@refs/heads/kaori/staging" ]] ||
+    fail 'automatic staging RC requires canonical Full Admission workflow identity'
+  auto_staging=true
 elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/rc-request ]] || fail 'push RC request must use kaori/rc-request'
 elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
@@ -205,11 +208,17 @@ fi
 command -v jq >/dev/null && command -v curl >/dev/null && docker info >/dev/null || fail 'runner prerequisites unavailable'
 current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
 [[ "$current" == "$sha" ]] || fail 'staging source changed'
-runs="$(curl -fsS "${headers[@]}" "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
-matched="$(jq -c --arg sha "$sha" '[.workflow_runs[] | select(.head_sha==$sha)] | sort_by(.run_number) | last // empty' <<< "$runs")"
-[[ -n "$matched" ]] || fail 'missing Full Admission run for exact staging SHA'
-[[ "$(jq -r '.status' <<< "$matched")" == completed && "$(jq -r '.conclusion' <<< "$matched")" == success ]] || fail 'Full Admission not PASS'
-echo "Full Admission: $(jq -r '.html_url' <<< "$matched")"
+if [[ "$auto_staging" == true ]]; then
+  # This publisher job can only run with 4/4 required needs success.
+  # The same workflow run remains in_progress until this job finishes.
+  echo 'PASS: canonical four-job Full Admission dependencies succeeded'
+else
+  runs="$(curl -fsS "${headers[@]}" "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
+  matched="$(jq -c --arg sha "$sha" '[.workflow_runs[] | select(.head_sha==$sha)] | sort_by(.run_number) | last // empty' <<< "$runs")"
+  [[ -n "$matched" ]] || fail 'missing Full Admission run for exact staging SHA'
+  [[ "$(jq -r '.status' <<< "$matched")" == completed && "$(jq -r '.conclusion' <<< "$matched")" == success ]] || fail 'Full Admission not PASS'
+  echo "Full Admission: $(jq -r '.html_url' <<< "$matched")"
+fi
 if [[ "$mode" == preflight ]]; then
   # Private repositories use an API-authenticated lookup; checkout intentionally does
   # not persist write-capable credentials into Git configuration.
@@ -327,8 +336,8 @@ jq -n --arg tag "$tag" --arg sha "$sha" --arg digest "$digest" \
     -X POST --data-binary @- "$api/releases" >/dev/null
 printf 'PASS: candidate %s built from %s and published at %s; release verification pending\n' "$tag" "$sha" "$ref"
  | head -n1 || true)"
-  [[ -n "$stable" ]] || fail 'stable version baseline missing'
-  version="$(printf '%s' "$stable" | sed 's/^v//' | awk -F. '{printf "%d.%d.%d", $1, $2, $3 + 1}')"
+  [[ -n "$base" ]] || fail 'stable SemVer base tag unavailable'
+  version="$(printf '%s' "$base" | sed 's/^v//' | awk -F. '{printf "%d.%d.%d", $1, $2, $3 + 1}')"
   highest=0
   while IFS= read -r used; do
     [[ -n "$used" ]] || continue
@@ -336,15 +345,19 @@ printf 'PASS: candidate %s built from %s and published at %s; release verificati
     [[ "$suffix" =~ ^[1-9][0-9]*$ ]] || continue
     if (( 10#$suffix > highest )); then highest=$((10#$suffix)); fi
   done < <(git tag --list "v$version-rc.*")
-  next="v$version-rc.$((highest + 1))"
-  status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/git/ref/tags/$next")"
-  [[ "$status" == 404 ]] || fail 'next RC tag reserved or GitHub lookup failed'
-  printf 'tag=%s\nshould_publish=true\n' "$next" >> "$GITHUB_OUTPUT"
-  echo "PASS: next signed RC $next from source $sha"
+  chosen="v$version-rc.$((highest + 1))"
+  status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/git/ref/tags/$chosen")"
+  [[ "$status" == 404 ]] || fail 'next RC tag already reserved or lookup failed'
+  printf 'tag=%s\nshould_publish=true\n' "$chosen" >> "$GITHUB_OUTPUT"
+  echo "PASS: selected immutable candidate $chosen for $sha"
   exit 0
 fi
-if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging && "$(printenv KAORI_WEBSITE_STAGING_AUTO || true)" == 1 ]]; then
-  : # Canonical 4/4 Full Admission DAG must be verified by calling job.
+auto_staging=false
+if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging &&
+      "$(printenv KAORI_WEBSITE_STAGING_AUTO || true)" == 1 ]]; then
+  [[ "$GITHUB_WORKFLOW_REF" == "$repo/.github/workflows/quality.yml@refs/heads/kaori/staging" ]] ||
+    fail 'automatic staging RC requires canonical Full Admission workflow identity'
+  auto_staging=true
 elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/rc-request ]] || fail 'push RC request must use kaori/rc-request'
 elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
@@ -360,11 +373,17 @@ fi
 command -v jq >/dev/null && command -v curl >/dev/null && docker info >/dev/null || fail 'runner prerequisites unavailable'
 current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
 [[ "$current" == "$sha" ]] || fail 'staging source changed'
-runs="$(curl -fsS "${headers[@]}" "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
-matched="$(jq -c --arg sha "$sha" '[.workflow_runs[] | select(.head_sha==$sha)] | sort_by(.run_number) | last // empty' <<< "$runs")"
-[[ -n "$matched" ]] || fail 'missing Full Admission run for exact staging SHA'
-[[ "$(jq -r '.status' <<< "$matched")" == completed && "$(jq -r '.conclusion' <<< "$matched")" == success ]] || fail 'Full Admission not PASS'
-echo "Full Admission: $(jq -r '.html_url' <<< "$matched")"
+if [[ "$auto_staging" == true ]]; then
+  # This publisher job can only run with 4/4 required needs success.
+  # The same workflow run remains in_progress until this job finishes.
+  echo 'PASS: canonical four-job Full Admission dependencies succeeded'
+else
+  runs="$(curl -fsS "${headers[@]}" "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
+  matched="$(jq -c --arg sha "$sha" '[.workflow_runs[] | select(.head_sha==$sha)] | sort_by(.run_number) | last // empty' <<< "$runs")"
+  [[ -n "$matched" ]] || fail 'missing Full Admission run for exact staging SHA'
+  [[ "$(jq -r '.status' <<< "$matched")" == completed && "$(jq -r '.conclusion' <<< "$matched")" == success ]] || fail 'Full Admission not PASS'
+  echo "Full Admission: $(jq -r '.html_url' <<< "$matched")"
+fi
 if [[ "$mode" == preflight ]]; then
   # Private repositories use an API-authenticated lookup; checkout intentionally does
   # not persist write-capable credentials into Git configuration.
