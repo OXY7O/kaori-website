@@ -114,7 +114,14 @@ jobs:
         run: node --test tests/contracts/release/*.test.mjs
       - name: Validate website formatting
         if: ${{ needs.route.outputs.web == 'true' }}
-        run: npm run check-format
+        run: |
+          if npm run check-format; then
+            exit 0
+          fi
+          # Diagnostic only: print the existing pinned formatter's changes.
+          npx --no-install prettier --write tests/contracts/release/public-uat-request.test.mjs
+          git diff -- tests/contracts/release/public-uat-request.test.mjs
+          exit 1
       - name: Validate committed shell script syntax
         if: ${{ needs.route.outputs.web == 'true' }}
         run: |
