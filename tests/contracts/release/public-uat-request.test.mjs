@@ -43,37 +43,82 @@ test("public request route requires release-scoped GitHub authorization", () => 
   assert.match(workflow, /Source SHA: \$accepted/);
   assert.match(workflow, /RC tag: \$tag/);
   assert.match(workflow, /\[\[ "\$\(jq -r '\.state' <<<"\$issue"\)" == open \]\]/);
-  assert.match(workflow, /approval="https:\/\/github\.com\/\$GITHUB_REPOSITORY\/issues\/\$PUBLIC_UAT_APPROVAL_ISSUE"/);
+  assert.match(
+    workflow,
+    /approval="https:\/\/github\.com\/\$GITHUB_REPOSITORY\/issues\/\$PUBLIC_UAT_APPROVAL_ISSUE"/,
+  );
   assert.match(workflow, /edge=1/);
-  assert.doesNotMatch(workflow, /approval="https:\/\/github\.com\/\$GITHUB_REPOSITORY\/pull\/\$number"\s*edge=1/);
+  assert.doesNotMatch(
+    workflow,
+    /approval="https:\/\/github\.com\/\$GITHUB_REPOSITORY\/pull\/\$number"\s*edge=1/,
+  );
 });
 
 test("branch request blocks unapproved and stale public cutover before SSH", () => {
-  for (const [name, overrides, expected] of [
-    ["no public edge", { KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "0" }, /BLOCK: public UAT request requires explicit approved existing-edge attachment/],
-    ["missing SHA", { PUBLIC_UAT_APPROVED_SHA: "" }, /BLOCK: public UAT request approval SHA missing or stale/],
-    ["stale SHA", { PUBLIC_UAT_APPROVED_SHA: "b".repeat(40) }, /BLOCK: public UAT request approval SHA missing or stale/],
-    ["wrong RC", { PUBLIC_UAT_APPROVED_TAG: "v0.1.2-rc.8" }, /BLOCK: public UAT request approval tag missing or stale/],
-    ["missing issue", { PUBLIC_UAT_APPROVAL_ISSUE: "" }, /BLOCK: public UAT request approval issue missing/],
-    ["wrong reference", { APPROVAL_REF: "https://github.com/OXY7O/kaori-website/pull/193" }, /BLOCK: public UAT request approval reference mismatch/],
-    ["wrong ref", { GITHUB_REF: "refs/heads/feature/other" }, /BLOCK: push UAT request must use kaori\/uat-request/],
-  ]) {
+  const cases = [
+    {
+      name: "no public edge",
+      overrides: { KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "0" },
+      error: "public UAT request requires explicit approved existing-edge attachment",
+    },
+    {
+      name: "missing SHA",
+      overrides: { PUBLIC_UAT_APPROVED_SHA: "" },
+      error: "public UAT request approval SHA missing or stale",
+    },
+    {
+      name: "stale SHA",
+      overrides: { PUBLIC_UAT_APPROVED_SHA: "b".repeat(40) },
+      error: "public UAT request approval SHA missing or stale",
+    },
+    {
+      name: "wrong RC",
+      overrides: { PUBLIC_UAT_APPROVED_TAG: "v0.1.2-rc.8" },
+      error: "public UAT request approval tag missing or stale",
+    },
+    {
+      name: "missing issue",
+      overrides: { PUBLIC_UAT_APPROVAL_ISSUE: "" },
+      error: "public UAT request approval issue missing",
+    },
+    {
+      name: "wrong reference",
+      overrides: { APPROVAL_REF: "https://github.com/OXY7O/kaori-website/pull/193" },
+      error: "public UAT request approval reference mismatch",
+    },
+    {
+      name: "wrong ref",
+      overrides: { GITHUB_REF: "refs/heads/feature/other" },
+      error: "push UAT request must use kaori/uat-request",
+    },
+  ];
+  for (const { name, overrides, error } of cases) {
     const result = preflight(overrides);
     assert.notEqual(result.status, 0, name);
-    assert.match(result.stderr, expected, name);
-    assert.doesNotMatch(result.stdout + result.stderr, /Accepted RC|ssh-agent|Release container deployed/, name);
+    assert.ok(result.stderr.includes("BLOCK: " + error), name);
+    assert.doesNotMatch(
+      result.stdout + result.stderr,
+      /Accepted RC|ssh-agent|Release container deployed/,
+      name,
+    );
   }
 });
 
 test("approved request selects existing single public slot, not parallel UAT", () => {
-  assert.match(adapter, /runtime_env=production\nremote_release="\$WEBSITE_DEPLOY_ROOT\/releases\/\$ACCEPTED_SHA"/);
+  assert.match(
+    adapter,
+    /runtime_env=production\nremote_release="\$WEBSITE_DEPLOY_ROOT\/releases\/\$ACCEPTED_SHA"/,
+  );
   assert.match(adapter, /remote_state_dir=\/var\/lib\/kaori-website\/deploy-state/);
   assert.match(adapter, /reattach-existing-site\.sh" preflight/);
   assert.match(adapter, /reattach-existing-site\.sh" attach/);
   assert.match(adapter, /export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1/);
   assert.match(adapter, /if \[\[ "\$attach_existing_edge" == 1 \]\]/);
   assert.match(deploy, /previous-release\.env/);
-  assert.doesNotMatch(adapter, /if \[\[ "\$GITHUB_EVENT_NAME" == push \]\]; then\s+runtime_env=uat/);
+  assert.doesNotMatch(
+    adapter,
+    /if \[\[ "\$GITHUB_EVENT_NAME" == push \]\]; then\s+runtime_env=uat/,
+  );
 });
 
 test("manual deployment inputs remain explicit and staging-bound", () => {
