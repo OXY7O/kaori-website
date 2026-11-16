@@ -117,6 +117,10 @@ jobs:
           test -s dist/branding/kaori-logo.svg
           test -s dist/licenses/inter/OFL-1.1.txt
           cmp node_modules/@fontsource-variable/inter/LICENSE dist/licenses/inter/OFL-1.1.txt
+          test -s dist/licenses/lucide/LICENSE.txt
+          grep -Fq 'ISC License' dist/licenses/lucide/LICENSE.txt
+          grep -Fq 'The MIT License (MIT) (for the icons listed above)' dist/licenses/lucide/LICENSE.txt
+          grep -Fq 'Copyright (c) 2013-present Cole Bemis' dist/licenses/lucide/LICENSE.txt
           grep -qi 'kaori' dist/index.html
           ! grep -REn 'https://(cdn\.jsdelivr\.net|fonts\.googleapis\.com|unpkg\.com)' dist/ || { echo 'Unexpected public CDN dependency' >&2; exit 1; }
       - name: Record admission evidence
