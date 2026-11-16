@@ -23,7 +23,7 @@ permissions:
 
 concurrency:
   group: kaori-website-admission-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && vars.KAORI_WEBSITE_AUTO_STAGING_ENABLED != 'true' }}
 
 env:
   KAORI_WEBSITE_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
