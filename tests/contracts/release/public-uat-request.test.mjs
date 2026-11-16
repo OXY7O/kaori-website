@@ -93,18 +93,13 @@ test("issue selector rejects stale and untrusted public UAT approvals", () => {
     state: "open",
     author_association: "MEMBER",
     labels: [{ name: "area:platform" }],
-    body: [
-      "Public UAT authorization: APPROVED",
-      "Source SHA: " + sha,
-      "RC tag: " + tag,
-    ].join("\n"),
+    body: ["Public UAT authorization: APPROVED", "Source SHA: " + sha, "RC tag: " + tag].join("\n"),
   };
   const matches = (issues) => {
-    const result = spawnSync(
-      "jq",
-      ["-c", "--arg", "sha", sha, "--arg", "tag", tag, filter],
-      { input: JSON.stringify(issues), encoding: "utf8" },
-    );
+    const result = spawnSync("jq", ["-c", "--arg", "sha", sha, "--arg", "tag", tag, filter], {
+      input: JSON.stringify(issues),
+      encoding: "utf8",
+    });
     assert.equal(result.status, 0, result.stderr);
     return JSON.parse(result.stdout.trim());
   };
@@ -115,7 +110,10 @@ test("issue selector rejects stale and untrusted public UAT approvals", () => {
   assert.deepEqual(matches([{ ...approved, pull_request: {} }]), []);
   assert.deepEqual(matches([{ ...approved, labels: [] }]), []);
   assert.deepEqual(matches([{ ...approved, body: "RC tag: " + tag }]), []);
-  assert.deepEqual(matches([{ ...approved, body: approved.body.replace(sha, "b".repeat(40)) }]), []);
+  assert.deepEqual(
+    matches([{ ...approved, body: approved.body.replace(sha, "b".repeat(40)) }]),
+    [],
+  );
   assert.deepEqual(matches([approved, { ...approved, number: 199 }]), [198, 199]);
 });
 
