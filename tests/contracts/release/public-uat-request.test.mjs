@@ -143,7 +143,7 @@ test("admitted protected staging is the only automatic signing trigger", () => {
   assert.match(admission, /scripts\/release\/publish-candidate\.sh resolve/);
   assert.match(admission, /scripts\/release\/deploy-release\.sh deploy/);
   assert.match(publisher, /mode" == resolve/);
-  assert.match(publisher, /automatic RC requires canonical Full Admission workflow identity/);
+  assert.match(publisher, /automatic staging RC requires canonical Full Admission workflow identity/);
   assert.match(publisher, /same-source published prerelease identity differs/);
   assert.match(adapter, /staging auto-deploy requires existing single public edge/);
   assert.match(adapter, /staging auto-deploy authority must match approved workstream/);
