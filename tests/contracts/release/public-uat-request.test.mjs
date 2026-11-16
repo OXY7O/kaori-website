@@ -6,6 +6,7 @@ import test from "node:test";
 
 const workflow = readFileSync(".github/workflows/deploy-staging-host.yml", "utf8");
 const adapter = readFileSync("scripts/release/deploy-release.sh", "utf8");
+const deploy = readFileSync("deploy/server/deploy.sh", "utf8");
 const sha = "a".repeat(40);
 const tag = "v0.1.2-rc.9";
 const issue = "195";
@@ -71,7 +72,7 @@ test("approved request selects existing single public slot, not parallel UAT", (
   assert.match(adapter, /reattach-existing-site\.sh" attach/);
   assert.match(adapter, /export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1/);
   assert.match(adapter, /if \[\[ "\$attach_existing_edge" == 1 \]\]/);
-  assert.match(adapter, /previous-release\.env/);
+  assert.match(deploy, /previous-release\.env/);
   assert.doesNotMatch(adapter, /if \[\[ "\$GITHUB_EVENT_NAME" == push \]\]; then\s+runtime_env=uat/);
 });
 
