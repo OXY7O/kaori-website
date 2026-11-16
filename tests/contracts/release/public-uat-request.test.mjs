@@ -33,10 +33,7 @@ test("public request route requires a trusted exact release issue", () => {
   assert.match(workflow, /environment: uat/);
   assert.match(workflow, /issues: read/);
   assert.match(workflow, /public UAT approval issue discovery failed/);
-  assert.match(
-    workflow,
-    /expected exactly one trusted open public UAT release approval issue/,
-  );
+  assert.match(workflow, /expected exactly one trusted open public UAT release approval issue/);
   assert.match(workflow, /Public UAT authorization: APPROVED/);
   assert.match(workflow, /Source SHA: /);
   assert.match(workflow, /RC tag: /);
