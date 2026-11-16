@@ -225,7 +225,6 @@ jobs:
         shell: bash
         run: bash scripts/release/promote-stable.sh
 
-
   staging-rc-publish:
     name: Publish Accepted Staging RC
     needs: [promotion-source, full-admission, container-admission, browser-evidence]
