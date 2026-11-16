@@ -119,16 +119,19 @@ Historical private UAT runbooks and RC.8 records below remain valid
    `RC tag: <tag>`, plus the intended one-slot replacement and previous
    signed rollback identity. Approval is a real maintainer decision, not a
    PR merge or an implicit result of CI PASS.
-2. Before moving `kaori/uat-request`, set the three release-scoped repository
-   Actions variables `KAORI_WEBSITE_PUBLIC_UAT_APPROVED_SHA`,
-   `KAORI_WEBSITE_PUBLIC_UAT_APPROVED_TAG`, and
-   `KAORI_WEBSITE_PUBLIC_UAT_APPROVAL_ISSUE` to those exact values. Check the
-   issue and variable setter are authorized. Missing or stale values fail
-   closed before the pinned SSH boundary.
+2. Verify the approval is a trusted, open **Website release-operations
+   issue**, with the exact approved SHA and signed RC tag on complete
+   standalone lines. The canonical request workflow discovers this issue
+   directly through GitHub's read-only API; no per-release repository
+   variables are needed. Missing, stale, ambiguous or untrusted approval
+   fails closed before the pinned SSH boundary. The deployment job uses
+   the `uat` environment; an authorized repository administrator must
+   check its required reviewers and branch rules rather than assuming
+   an environment name alone guarantees a human approval.
 3. Non-force fast-forward `kaori/uat-request` to that accepted SHA.
    The existing Release Deployment workflow verifies the exact source,
    one signed RC, successful publisher, merged staging PR and the recorded
-   approval. It uses **the existing** public `kaori-website` Compose project,
+   approval issue. It uses **the existing** public `kaori-website` Compose project,
    its release receipts in `/var/lib/kaori-website/deploy-state`, the existing
    loopback `127.0.0.1:18080`, and `edge-public` registration. It does
    **not** use `kaori-website-uat` as the normal request-branch target.
@@ -141,10 +144,11 @@ Historical private UAT runbooks and RC.8 records below remain valid
    PASS/FAIL**. Never conflate successful GitHub Actions with acceptance.
    A failed public replacement follows the existing scoped rollback and
    shared-edge recovery instructions, not a fresh image build or new edge.
-5. Rotate/clear the per-RC approval variables after completion. Stable/main
-   promotion, source relicensing, repository rights clearance, DNS/TLS
-   ownership changes and cleanup of the older private UAT project remain
-   separate approved workstreams.
+5. Record the exact approval issue, signed digest, deployment receipt and
+   Human UAT outcome; close release-scoped approval only after acceptance.
+   Stable/main promotion, source relicensing, repository rights clearance,
+   DNS/TLS ownership changes and cleanup of the older private UAT project
+   remain separate approved workstreams.
 
 **Critical historical exception:** Signed RC.8 was deployed privately under
 [#194](https://github.com/OXY7O/kaori-website/issues/194) before this behavior
