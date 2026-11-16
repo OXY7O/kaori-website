@@ -136,14 +136,20 @@ test("manual deployment inputs remain explicit and staging-bound", () => {
 test("admitted protected staging is the only automatic signing trigger", () => {
   assert.match(admission, /staging-rc-publish:/);
   assert.match(admission, /staging-rc-deploy:/);
-  assert.match(admission, /needs: \[promotion-source, full-admission, container-admission, browser-evidence\]/);
+  assert.match(
+    admission,
+    /needs: \[promotion-source, full-admission, container-admission, browser-evidence\]/,
+  );
   assert.match(admission, /KAORI_WEBSITE_AUTO_STAGING_ENABLED == 'true'/);
   assert.match(admission, /environment:\n      name: staging/);
   assert.match(admission, /group: kaori-website-release-deploy/);
   assert.match(admission, /scripts\/release\/publish-candidate\.sh resolve/);
   assert.match(admission, /scripts\/release\/deploy-release\.sh deploy/);
   assert.match(publisher, /mode" == resolve/);
-  assert.match(publisher, /automatic staging RC requires canonical Full Admission workflow identity/);
+  assert.match(
+    publisher,
+    /automatic staging RC requires canonical Full Admission workflow identity/,
+  );
   assert.match(publisher, /same-source published prerelease identity differs/);
   assert.match(adapter, /staging auto-deploy requires existing single public edge/);
   assert.match(adapter, /staging auto-deploy authority must match approved workstream/);
@@ -158,7 +164,8 @@ test("automatic staging adapter rejects wrong provenance before SSH", () => {
       GITHUB_REF: "refs/heads/kaori/staging",
       KAORI_WEBSITE_STAGING_AUTO: "1",
       GITHUB_REPOSITORY: "OXY7O/kaori-website",
-      GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/kaori/staging",
+      GITHUB_WORKFLOW_REF:
+        "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/kaori/staging",
       KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "0",
       APPROVAL_REF: "https://github.com/OXY7O/kaori-website/issues/202",
     },
