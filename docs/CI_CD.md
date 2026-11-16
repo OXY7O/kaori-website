@@ -169,11 +169,10 @@ confirm the parent rights/publication boundary, and be accepted by the authorize
 maintainer. Before moving the request branch, an authorized repository operator
 must set GitHub **Actions repository variables**:
 
-| Variable                                  | Required value                                                 |
-| ----------------------------------------- | -------------------------------------------------------------- |
-| `KAORI_WEBSITE_PUBLIC_UAT_APPROVED_SHA`   | The *exact* admitted staging Git SHA                           |
-| `KAORI_WEBSITE_PUBLIC_UAT_APPROVED_TAG`   | The *exact* published signed RC tag                            |
-| `KAORI_WEBSITE_PUBLIC_UAT_APPROVAL_ISSUE` | Numeric issue number that records explicit public UAT approval |
+- `KAORI_WEBSITE_PUBLIC_UAT_APPROVED_SHA`: exact admitted staging Git SHA.
+- `KAORI_WEBSITE_PUBLIC_UAT_APPROVED_TAG`: exact published signed RC tag.
+- `KAORI_WEBSITE_PUBLIC_UAT_APPROVAL_ISSUE`: numeric Website issue number
+  recording the explicit public UAT approval.
 
 These variables are **manually configured release controls**, not a claim that
 branch protection or GitHub issue authorship automatically proves human approval.
