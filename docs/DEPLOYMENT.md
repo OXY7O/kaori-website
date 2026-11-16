@@ -124,7 +124,7 @@ a separate documented acceptance step.
 permits \`kaori/staging\`, required reviewers are disabled for automatic
 staging, allowed self-hosted runner and scoped secret names are correct,
 the current public digest/rollback are healthy, and KAORI #4212 has an
-explicitly accepted *ongoing* publication/rights boundary. With the
+explicitly accepted _ongoing_ publication/rights boundary. With the
 activation flag absent/false this proposed flow **does not publish or deploy**.
 Legacy RC/Deployment manual workflows remain available for separately
 approved recovery until replacement evidence is accepted. If a newer staging
