@@ -1,4 +1,4 @@
-FROM node:22.23.2-bookworm-slim
+FROM node:26.13.1-bookworm-slim
 
 ARG DEBIAN_FRONTEND=noninteractive
 
