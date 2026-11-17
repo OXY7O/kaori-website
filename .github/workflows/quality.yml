@@ -200,27 +200,51 @@ jobs:
           chown -R "$owner" "$GITHUB_WORKSPACE"
 
   stable-publication:
-    name: Publish Accepted Stable Release
+    name: Publish Human Accepted Stable Release
     needs: [promotion-source, full-admission, container-admission, browser-evidence]
     if: >-
-      ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[KAORI_WEBSITE_STABLE_RELEASE_94]') }}
+      ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED == 'true' }}
     runs-on: [self-hosted, linux, x64, platform-ci]
-    timeout-minutes: 20
+    environment:
+      name: production
+      url: https://kaori.cloud
+    # Same physical slot as signed staging RC, so no overlapping mutation.
+    concurrency:
+      group: kaori-website-release-deploy
+      cancel-in-progress: false
+    timeout-minutes: 80
     permissions:
       contents: write
+      actions: read
     env:
       GH_TOKEN: ${{ github.token }}
-      STABLE_TAG: v0.1.1
-      ACCEPTED_RC_TAG: v0.1.1-rc.3
-      ACCEPTED_RC_SHA: f3260718ccb37a77738fa53f6ea6838863ab46a6
-      ACCEPTED_DIGEST: sha256:4f0d1dbd583a7791978295388e29602d9c2c88ae12645fd7e22520a2b65e15c0
+      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
+      WEBSITE_HOST: ${{ vars.KAORI_WEBSITE_HOST }}
+      WEBSITE_SSH_PORT: ${{ vars.KAORI_WEBSITE_HOST_PORT }}
+      WEBSITE_SSH_USER: ${{ vars.KAORI_WEBSITE_HOST_USER }}
+      WEBSITE_DEPLOY_ROOT: ${{ vars.KAORI_WEBSITE_HOST_DEPLOY_ROOT }}
+      WEBSITE_SSH_KEY: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY }}
+      WEBSITE_SSH_PASSPHRASE: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PASSPHRASE }}
+      WEBSITE_KNOWN_HOSTS: ${{ secrets.KAORI_WEBSITE_HOST_KNOWN_HOSTS }}
     steps:
-      - name: Checkout exact admitted main commit
+      - name: Checkout exact approved main with full promotion lineage
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
+          fetch-tags: true
           persist-credentials: false
-      - name: Verify candidate and publish immutable stable release
+      - name: Verify exact promotion, independent Human UAT and signed RC
         shell: bash
-        run: bash scripts/release/promote-stable.sh
+        run: bash scripts/release/promote-stable.sh preflight
+      - name: Reverify accepted OCI digest and running public slot, publish stable without rebuild
+        shell: bash
+        run: bash scripts/release/promote-stable.sh publish
+      - name: Record production Environment acceptance boundary
+        shell: bash
+        run: |
+          printf 'Approved production Environment run: %s\n' "$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Same public Website slot; no image rebuild or automatic host mutation\n' >> "$GITHUB_STEP_SUMMARY"
