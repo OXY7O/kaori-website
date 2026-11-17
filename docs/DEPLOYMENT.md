@@ -124,18 +124,18 @@ does not split until separate infrastructure becomes available; GitHub
 `staging` and `production` are logical **governance** Environments, not
 additional hostnames or Compose projects.
 
-After independently reviewed PR #205 was merged, the exact staging source passed all four admission jobs in run #44006999386. The existing `quality.yml` retains those four required jobs. Its new RC publication and deploy jobs both SKIPPED on that run. The optional admitted staging
+After independently reviewed PR #205 was merged, the exact staging source passed all four admission jobs in run #44006999386. The existing \`quality.yml\` retains those four required jobs. Its new RC publication and deploy jobs both SKIPPED on that run. The optional admitted staging
 publisher/deployer becomes active **only** after a repository administrator
-configures and authorizes `KAORI_WEBSITE_AUTO_STAGING_ENABLED=true`. It
+configures and authorizes \`KAORI_WEBSITE_AUTO_STAGING_ENABLED=true\`. It
 then selects a unique signed RC, builds/scans/signs, commits evidence and
-deploys the immutable digest to the existing `kaori-website` project,
+deploys the immutable digest to the existing \`kaori-website\` project,
 reusing the same shared-edge registration, rollback receipt and readiness
 checks as the approved RC.9 public deployment. Deployment claims must come
 from actual GitHub Actions plus host evidence. Human Visual UAT remains
 a separate documented acceptance step.
 
-**Before enabling:** verify GitHub Environment `staging` exists and only
-permits `kaori/staging`, required reviewers are disabled for automatic
+**Before enabling:** verify GitHub Environment \`staging\` exists and only
+permits \`kaori/staging\`, required reviewers are disabled for automatic
 staging, allowed self-hosted runner and scoped secret names are correct,
 the current public digest/rollback are healthy, and KAORI #4212 has an
 explicitly accepted _ongoing_ publication/rights boundary. With the activation control absent/false the code **does not publish or deploy**. No successful automatic public rollout has been evidenced since the source merge; operator-reported variable settings require independent GitHub Settings verification.
