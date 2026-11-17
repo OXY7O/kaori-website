@@ -274,13 +274,22 @@ the single line:
 
 `KAORI_WEBSITE_UAT_ACCEPTED:<40-char-staging-SHA>:<vX.Y.Z-rc.N>:<sha256:digest>`
 
-The production job **derives** the RC SHA from the exact merged promotion PR,
-reads this authorized evidence, verifies independent PR approval, same-source
-GitHub prerelease + immutable digest, unchanged Website build inputs, the
+The production job derives **two different SHA identities**: the independently
+reviewed staging **promotion head** from the merged `kaori/staging` → `main`
+PR, and the previously Human Accepted signed **RC source** from the existing
+trusted, immutable Human UAT comment. It requires the accepted RC SHA to be an
+ancestor of the reviewed promotion head and current `main`, then verifies that
+**all runtime/build inputs** (`Dockerfile`, `.dockerignore`, `package.json`,
+`package-lock.json`, `astro.config.mjs`, `tsconfig.json`, `src`, `public`,
+`deploy`) have not changed since that RC source. Source-only release governance
+or documentation commits after Human UAT need **no additional RC/UAT**; any
+shipped-input drift fails closed and needs a newly accepted signed candidate.
+The reviewer must approve the *current promotion head*; the previously signed
+RC source remains subject to exact GitHub prerelease/tag, immutable digest,
 pinned Cosign issuer/approved workflow identity and signed SPDX/SLSA attestations.
 No manual release tag, `workflow_dispatch`, per-RC repository variable or
 secondary release branch is needed for production. The UAT approval comment is
-the existing required human decision/evidence, not another dispatch step.
+the existing human decision, not another dispatch or repeated approval.
 
 The stable SemVer `vX.Y.Z` is derived from accepted
 `vX.Y.Z-rc.N`. After GitHub Environment approval, a restricted
@@ -296,13 +305,24 @@ runs accept only an exactly matching pre-existing stable release.
 
 ### Activation and migration guard
 
-Production source PR #206 was approved and merged to staging on 2026-11-17. Activation remains HOLD until staging auto-RC
-[#202](https://github.com/OXY7O/kaori-website/issues/202) actually publishes an authorized signed RC,
-Human UAT is actually accepted, protected environment reviewer and branch
-rules and the real reviewer gate are independently verified, current public rollback receipts are
-confirmed, and the outdated dependency assumptions in [#119](https://github.com/OXY7O/kaori-website/issues/119)
-are reconciled with the approved Docs baseline. Recurring public publication rights under [KAORI #4939](https://github.com/OXY7O/KAORI/issues/4939) remain NO-GO; broad rights/relicensing audit
-[KAORI #4212](https://github.com/OXY7O/KAORI/issues/4212) remains separate.
+**2026-11-17 exact candidate checkpoint:** signed `v0.1.2-rc.10` is
+already published, deployed to the sole public Website slot and **explicitly
+Human Accepted** by the maintainer, recorded at
+[Website #202](https://github.com/OXY7O/kaori-website/issues/202#issuecomment-6939870730).
+The actual public Inter OFL-1.1 and Lucide/Feather ISC+MIT notices were
+byte-verified on the exact live RC.10 OCI by the authorized host operator;
+remediation issues [#190](https://github.com/OXY7O/kaori-website/issues/190)
+and [#192](https://github.com/OXY7O/kaori-website/issues/192) are CLOSED.
+Later staging merges #209 and #207 only changed source governance/runbooks;
+the signed RC.10 digest and Human UAT do **not** need to be repeated. Promotion
+still requires this issue's #210 reviewed lineage correction, an independently
+reviewed `kaori/staging` → `main` PR, verified existing public immutable rollback
+receipt, actual protected production Environment reviewer gate, and scoped
+publication operations decision [KAORI #4939](https://github.com/OXY7O/KAORI/issues/4939).
+The existing #119 historical Docs dependency must be reconciled before
+activation. Future *new* automatic RC publication remains OFF/NO-GO under
+#4939; broad source/brand relicensing [KAORI #4212](https://github.com/OXY7O/KAORI/issues/4212) remains separate.
+No approval or UAT of the already accepted RC.10 should be requested again.
 Changing environment-scoped host configuration for a future dedicated server
 does not change the release promotion semantics; authoritative DNS/TLS stays
 with the existing shared-edge/provider operating procedure.
