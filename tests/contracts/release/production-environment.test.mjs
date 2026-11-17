@@ -32,7 +32,10 @@ test("only main with a production environment may publish same-digest stable", (
   assert.match(fullAdmission, /name: production\n      url: https:\/\/kaori\.cloud/);
   assert.match(fullAdmission, /KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED == 'true'/);
   assert.match(fullAdmission, /group: kaori-website-release-deploy/);
-  assert.match(fullAdmission, /needs: \[promotion-source, full-admission, container-admission, browser-evidence\]/);
+  assert.match(
+    fullAdmission,
+    /needs: \[promotion-source, full-admission, container-admission, browser-evidence\]/,
+  );
   assert.match(fullAdmission, /scripts\/release\/promote-stable\.sh preflight/);
   assert.match(fullAdmission, /scripts\/release\/promote-stable\.sh publish/);
   assert.doesNotMatch(fullAdmission, /KAORI_WEBSITE_STABLE_RELEASE_94/);
@@ -49,7 +52,7 @@ test("publication depends on merged staging promotion, trusted Human UAT and imm
     "git diff --quiet",
     "Trivy security and signed SBOM/provenance: PASS",
     "cosign/cosign:v3.1.3 verify",
-    "--type \"$kind\"",
+    '--type "$kind"',
     "KAORI_WEBSITE_IMAGE=$expected_image",
     "KAORI_WEBSITE_SOURCE_SHA=$expected_sha",
     "KAORI_WEBSITE_VERSION=$expected_rc",
@@ -69,16 +72,23 @@ test("invalid production workflow identity fails before API, SSH and release mut
     [{ GITHUB_REPOSITORY: "OXY7O/KAORI" }, "only main push can publish stable"],
     [
       {
-        GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/kaori/staging",
+        GITHUB_WORKFLOW_REF:
+          "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/kaori/staging",
       },
       "canonical main Full Admission workflow identity required",
     ],
-    [{ REGISTRY_IMAGE: "docker.io/example/kaori-app" }, "dedicated Website image authority missing"],
+    [
+      { REGISTRY_IMAGE: "docker.io/example/kaori-app" },
+      "dedicated Website image authority missing",
+    ],
   ];
   for (const [overrides, message] of cases) {
     const result = rejectPreflight(overrides);
     assert.notEqual(result.status, 0);
     assert.ok(result.stderr.includes("BLOCK: " + message), result.stderr);
-    assert.doesNotMatch(result.stdout + result.stderr, /curl|docker run|ssh-agent|stable release published/i);
+    assert.doesNotMatch(
+      result.stdout + result.stderr,
+      /curl|docker run|ssh-agent|stable release published/i,
+    );
   }
 });
