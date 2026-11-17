@@ -1,5 +1,17 @@
 # KAORI Website CI/CD
 
+**Release-train transition (#201–#204, 2026-11-17):** This public repository
+uses two logical GitHub Environments (`staging` and `production`) with a
+single shared public `kaori.cloud` Website slot. PR #205 is independently
+approved but not yet merged; PR #206 is draft. These workflows are proposed,
+not live automated deployments. The maintainer reports creating both
+Environments with variables/secrets; reviewer, branch-policy and no-bypass
+rules still require administrator readback and an observed approval run.
+Keep both one-time repository activation switches false/absent until their
+issue-specific release and rights gates are explicitly accepted. Signed
+RC.9 Human UAT PASS applies only to its original source SHA, not a future RC.
+
+
 **Authority:** This website follows `OXY7O/KAORI/docs/engineering/KAORI_DELIVERY_WORKFLOW.md` and `docs/setup/GITHUB_ACTIONS_CI_CD.md`, with domain-appropriate website validation.
 
 ## Runner ownership
@@ -82,7 +94,18 @@ Dependabot **security updates** are independently active and generated [bot PR #
 
 **Verified GitHub branch settings (2026-11-08):** the public repository's `main` and `kaori/staging` are protected with active branch-safety ruleset **#26685572** (no deletion/non-fast-forward) and PR-only ruleset **#26685631** (one independent approval, stale-dismissal and resolved review conversations; no bypass). Staging ruleset **#26685877** requires exact GitHub Actions contexts `Route Checks` and `Website Validation`. Main ruleset **#26786379** requires `Promotion Policy`, `Full Admission`, `Container Admission`, and `Browser Quality Evidence`, all with GitHub Actions integration **15368**. Read-back after subsequent admin changes is still mandatory; neither protected branches nor successful CI substitute for deployed staging/UAT, signed immutable RC, release verification or explicit human acceptance. Native GitHub CodeQL configuration is a separate [security workstream #150](https://github.com/OXY7O/kaori-website/issues/150), not an admission gate in this document.
 
-Use repository-scoped Actions Variables and Secrets for approved release jobs as already configured; GitHub-hosted admission does not use publication credentials. Do not infer that organization/environment secrets or policies are enabled without a verified settings readback. The Developer Check and Full Admission require no custom credentials. The canonical `publish-staging-image.yml` RC publisher and `deploy-staging-host.yml` release deployment use repository-scoped registry and SSH credentials with explicit operator authority and an admitted exact staging SHA. These are **manual** release operations and must not be turned into unconditional push-to-deploy behavior. Both were authored on staging, and the default-branch dispatch limitation is documented below.
+The Developer Check and four Full Admission jobs run without publication
+credentials. The existing manual RC publisher/deployer remain separately
+approved recovery paths with their original credential scope. For the proposed
+automatic path, the privileged jobs explicitly select GitHub Environments:
+`staging` for signed publishing and public deployment, and `production`
+for approved stable metadata promotion. Environment-scoped credentials must
+be independently checked for availability to their intended jobs; a YAML
+`environment:` declaration does not verify GitHub Settings. The activation
+switches `KAORI_WEBSITE_AUTO_STAGING_ENABLED` and
+`KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` are **repository** variables, not
+per-RC/environment approvals. A maintainer-reported setup does not prove
+branch restrictions, protection rules or runner access.
 
 Runner access, GitHub Project custom fields, native relationships, and review metadata still require GitHub-side setup where connector capabilities are absent. **A YAML check cannot substitute for server-enforced branch protection.**
 
@@ -132,18 +155,29 @@ The original issue #23 display-label contract describes the following **four tru
 | `.github/workflows/publish-staging-image.yml` | **Release Candidate**  | Publish Release Candidate                                                              |
 | `.github/workflows/deploy-staging-host.yml`   | **Release Deployment** | Deploy Release Candidate                                                               |
 
-Pull-request runs include their PR/branch label; manual release runs show the selected candidate tag. The stable-publication job is issue-bounded: its previous issue #72 marker was consumed by stable v0.1.0 and its next approved marker [KAORI_WEBSITE_STABLE_RELEASE_94] is gated on explicit v0.1.1 RC.3 Human Acceptance, reviewed staging-to-main PR, and exact-main source, container and browser admission. Ordinary pushes do not publish a stable release.
+Pull-request runs include their PR/branch label; manual release runs show
+the selected candidate tag. **Historical baseline:** the old stable-publication
+job used one-off #72/#94 source markers. PR #206 proposes replacing that
+contract with an accepted, signed RC and protected production Environment
+approval on `main`. Ordinary main pushes publish nothing while the one-time
+production activation switch is disabled; source code is not proof that the
+GitHub reviewer gate is configured.
 
 **Historical entries are expected:** GitHub Actions may continue listing retired `KAORI Website One-Time RC.x ...` workflows that executed before their YAML was removed. Their run metadata and audit evidence are preserved. Do not delete historical runs to hide names, change existing workflow file paths to manipulate history, or imply that historic workflow names remain active.
 
-**Check-context migration:** job display labels changed only, job IDs remain stable. The maintainer should inspect any manually configured GitHub ruleset/branch-protection required-check names, third-party status consumers and GitHub Project automation for references to the old display names. The private repository previously used compensating review procedures; do not assert branch protections are enforced without checking repository settings.
+**Check-context migration:** job display labels changed only, job IDs remain stable. The maintainer should inspect any manually configured GitHub ruleset/branch-protection required-check names, third-party status consumers and GitHub Project automation for references to the old display names. The historical private-repository procedures do not describe this now-public repository; always read back the current branch and Environment protections.
 
 **Operating state:** [stable v0.1.0](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0) is published on main, reusing the signed deployed RC.10 digest, without a new image build. This naming-only workstream does not redeploy that image, modify shared-edge runtime or make product changes. External provider names, immutability and signed-evidence authority remain unchanged.
 
-## Explicit Website release request branches — #122 / #195
+## Legacy Website release request branches — #122 / #195
 
-Website RC and UAT use deliberate `kaori/rc-request` and `kaori/uat-request` branch pushes.
-Until #202 is explicitly activated, staging pushes run only Full Admission.
+The `kaori/rc-request` and `kaori/uat-request` push paths are the
+pre-automation release contract and remain available only as separately
+authorized fallback while #202 is not activated or its live evidence is
+pending. Until #202 is activated, ordinary staging pushes run Full Admission
+without automatic public RC/deployment. After #202 is accepted, the normal
+route is admitted `kaori/staging` push → signed RC → existing public slot,
+not routine request-branch advancement.
 The protected `staging` GitHub Environment may run the automated signed
 release/deployment train only after all four admission jobs have succeeded
 and the one-time `KAORI_WEBSITE_AUTO_STAGING_ENABLED=true` repository control
