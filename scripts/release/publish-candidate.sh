@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-mode="${1:?expected preflight or publish}"
-[[ "$mode" == preflight || "$mode" == publish ]] || { echo 'BLOCK: invalid RC operation' >&2; exit 1; }
+mode="${1:?expected rights, preflight or publish}"
+[[ "$mode" == rights || "$mode" == preflight || "$mode" == publish ]] || { echo 'BLOCK: invalid RC operation' >&2; exit 1; }
 fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 repo="${GITHUB_REPOSITORY:?}"
 sha="${ACCEPTED_SHA:?}"
-tag="${RC_TAG:?}"
 host="${REGISTRY_HOST:-}"
 image="${REGISTRY_IMAGE:-}"
 api="https://api.github.com/repos/$repo"
@@ -24,6 +23,57 @@ elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
 else
   fail 'unsupported RC request event'
 fi
+# KAORI #4939 is recurring-publication authority; a repository activation
+# switch does not convey source-distribution rights. Reuse source-bound
+# independent Human Acceptance evidence (as in the stable release path).
+verify_recurring_publication_rights() {
+  local issue_data comments_data closed_at count
+  local authority="https://api.github.com/repos/OXY7O/KAORI/issues/4939"
+  issue_data="$(curl --fail-with-body -fsS ""${headers[@]}"" "$authority")" ||
+    fail 'recurring publication rights issue unavailable'
+  jq -e '.state == "closed" and .state_reason == "completed" and
+    (.closed_at | type == "string")' <<<"$issue_data" >/dev/null ||
+    fail 'recurring publication rights are not approved in KAORI #4939'
+  closed_at="$(jq -r '.closed_at' <<<"$issue_data")"
+  count="$(jq -r '.comments // -1' <<<"$issue_data")"
+  [[ "$count" =~ ^[0-9]+$ && "$count" -le 100 ]] ||
+    fail 'publication approval comment coverage unavailable'
+  comments_data="$(curl --fail-with-body -fsS ""${headers[@]}"" "$authority/comments?per_page=100")" ||
+    fail 'publication approval reviewer evidence unavailable'
+  # Two source-exact comments must predate final closure. Later edits,
+  # untrusted commenters and different-source approvals cannot pass.
+  jq -e --arg sha "$sha" --arg cutoff "$closed_at" '
+    if type != "array" then false else
+      ([.[] | select(
+        .user.login == "lethisa"
+        and ((.body // "" | split("\n") | index("KAORI_WEBSITE_PUBLICATION_GO:" + $sha)) != null)
+        and .created_at <= $cutoff and .updated_at <= $cutoff
+      )] | length == 1)
+      and ([.[] | select(
+        .user.login == "donibawono"
+        and ((.body // "" | split("\n") | index("KAORI_WEBSITE_PUBLICATION_REVIEWED:" + $sha)) != null)
+        and .created_at <= $cutoff and .updated_at <= $cutoff
+      )] | length == 1)
+      and ([.[] | select(
+        (.user.login == "lethisa" or .user.login == "donibawono")
+        and ((.body // "" | split("\n") | index("KAORI_WEBSITE_PUBLICATION_REVOKED:" + $sha)) != null)
+      )] | length == 0)
+    end
+  ' <<<"$comments_data" >/dev/null ||
+    fail 'approved exact-source publication and independent review evidence missing or revoked'
+  printf 'PASS: KAORI #4939 approved exact staging source %s with independent review\n' "$sha"
+}
+
+if [[ "$mode" == rights && "$auto_staging" != true ]]; then
+  fail 'recurring publication rights mode requires canonical automatic staging identity'
+fi
+if [[ "$auto_staging" == true ]]; then
+  verify_recurring_publication_rights
+fi
+if [[ "$mode" == rights ]]; then
+  exit 0
+fi
+tag="${RC_TAG:?}"
 [[ "$(git rev-parse HEAD)" == "$sha" ]] || fail 'source mismatch'
 [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'candidate must use vX.Y.Z-rc.N'
 [[ -n "$host" && "$image" == "$host/"* && "$host" != *://* ]] || fail 'registry variables missing or inconsistent'
@@ -74,6 +124,7 @@ if docker manifest inspect "$image:$tag" >/dev/null 2>"$error"; then
   fail 'RC registry tag already exists'
 fi
 grep -Eqi 'manifest unknown|no such manifest|not found' "$error" || fail 'registry returned an inconclusive error'
+if [[ "$auto_staging" == true ]]; then verify_recurring_publication_rights; fi
 jq -nc --arg ref "refs/tags/$tag" --arg object "$sha" '{ref:$ref,sha:$object}' |
   curl -fsS "${headers[@]}" -H 'Content-Type: application/json' -X POST \
     --data-binary @- "$api/git/refs" >/dev/null
@@ -149,6 +200,7 @@ for kind in spdxjson slsaprovenance1; do
   test -s "verification-$kind.json"
 done
 sbom_sha="sha256:$(sha256sum website-sbom.spdx.json | awk '{print $1}')"
+if [[ "$auto_staging" == true ]]; then verify_recurring_publication_rights; fi
 jq -n --arg tag "$tag" --arg sha "$sha" --arg digest "$digest" \
   --arg image "$ref" --arg sbom "$sbom_sha" \
   '{tag_name:$tag,target_commitish:$sha,name:("KAORI Website "+$tag),
