@@ -75,9 +75,9 @@ function checkRights(issue = approvedIssue, comments = approvals, overrides = {}
 }
 
 test("both privileged staging jobs recheck rights before RC selection and public mutation", () => {
-  const stagingStart = workflow.indexOf("name: Verify approved source-scoped public publication rights");
+  const stagingStart = workflow.indexOf("Verify approved source-scoped public publication rights");
   const deployStart = workflow.indexOf("name: Reverify recurring publication rights");
-  const mutationStart = workflow.indexOf("name: Reverify rights immediately before any public host");
+  const mutationStart = workflow.indexOf("Reverify rights immediately before any public host");
   assert.ok(stagingStart > 0 && deployStart > stagingStart && mutationStart > deployStart);
   assert.match(workflow.slice(stagingStart, deployStart), /publish-candidate\.sh rights/);
   assert.match(workflow.slice(deployStart, mutationStart), /publish-candidate\.sh rights/);
