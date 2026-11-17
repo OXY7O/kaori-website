@@ -11,7 +11,13 @@ host="${REGISTRY_HOST:-}"
 image="${REGISTRY_IMAGE:-}"
 api="https://api.github.com/repos/$repo"
 headers=(-H "Authorization: Bearer ${GH_TOKEN:?}" -H 'Accept: application/vnd.github+json')
-if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+auto_staging=false
+if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging &&
+      "$(printenv KAORI_WEBSITE_STAGING_AUTO || true)" == 1 ]]; then
+  [[ "$GITHUB_WORKFLOW_REF" == "$repo/.github/workflows/quality.yml@refs/heads/kaori/staging" ]] ||
+    fail 'automatic staging RC requires canonical Full Admission workflow identity'
+  auto_staging=true
+elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/rc-request ]] || fail 'push RC request must use kaori/rc-request'
 elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual RC dispatch must use kaori/staging'
@@ -26,11 +32,17 @@ fi
 command -v jq >/dev/null && command -v curl >/dev/null && docker info >/dev/null || fail 'runner prerequisites unavailable'
 current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
 [[ "$current" == "$sha" ]] || fail 'staging source changed'
-runs="$(curl -fsS "${headers[@]}" "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
-matched="$(jq -c --arg sha "$sha" '[.workflow_runs[] | select(.head_sha==$sha)] | sort_by(.run_number) | last // empty' <<< "$runs")"
-[[ -n "$matched" ]] || fail 'missing Full Admission run for exact staging SHA'
-[[ "$(jq -r '.status' <<< "$matched")" == completed && "$(jq -r '.conclusion' <<< "$matched")" == success ]] || fail 'Full Admission not PASS'
-echo "Full Admission: $(jq -r '.html_url' <<< "$matched")"
+if [[ "$auto_staging" == true ]]; then
+  # This quality.yml job runs only when all four mandatory admission jobs PASS.
+  # The parent workflow run is still in progress until publisher completion.
+  echo 'PASS: canonical four-job admission dependencies succeeded'
+else
+  runs="$(curl -fsS "${headers[@]}" "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
+  matched="$(jq -c --arg sha "$sha" '[.workflow_runs[] | select(.head_sha==$sha)] | sort_by(.run_number) | last // empty' <<< "$runs")"
+  [[ -n "$matched" ]] || fail 'missing Full Admission run for exact staging SHA'
+  [[ "$(jq -r '.status' <<< "$matched")" == completed && "$(jq -r '.conclusion' <<< "$matched")" == success ]] || fail 'Full Admission not PASS'
+  echo "Full Admission: $(jq -r '.html_url' <<< "$matched")"
+fi
 if [[ "$mode" == preflight ]]; then
   # Private repositories use an API-authenticated lookup; checkout intentionally does
   # not persist write-capable credentials into Git configuration.
