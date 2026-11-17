@@ -82,7 +82,7 @@ Existing Release Candidate and Release Deployment workflows require exact
 admitted staging source, immutable signed images, security evidence and approval.
 Private manual inspection and the approved request-branch public UAT are distinct;
 the latter requires exact per-RC cutover authority, not merely an admitted build.
-Recurring stable auto-deployment is governed separately by #119.
+The historical #119 one-off stable flow has been superseded for future source behavior by #203; no standing stable production activation is granted.
 
 ## Approved release-train transition — #201–#204
 
@@ -91,12 +91,11 @@ The target topology is two GitHub governance Environments on **one** public
 publish/deploy signed RCs (which become public **before** production approval),
 then a distinct Human UAT and reviewed `kaori/staging` → `main` promotion
 precedes GitHub `production` reviewer approval and exact-digest stable
-metadata publication. PR #205 is ready for review; PR #206 remains draft and
-inactive. Release rights, environment protection readback, host/rollback
+metadata publication. Reviewed PR #205 and PR #206 have both **merged to protected `kaori/staging`**, while automatic RC publication/deploy and stable production activation remain on HOLD. Release rights, environment protection readback, host/rollback
 verification and post-merge UAT are distinct acceptance gates. The prior
 RC.9 Human UAT acceptance applies to RC.9 only. See
 [CI/CD](CI_CD.md#admission-gated-automatic-public-staging--201--202) and
-[Deployment](DEPLOYMENT.md#planned-stable-production-approval-using-the-existing-one-slot-runtime--203).
+[Deployment](DEPLOYMENT.md#governed-stable-production-approval-using-the-existing-one-slot-runtime--203).
 
 ## Previous request-triggered Website RC and public UAT — #122 / #195
 
@@ -119,11 +118,7 @@ Always preserve the signed candidate's source SHA, immutable registry digest,
 SBOM/provenance, release tag, successful publisher run, deployment receipt,
 rollback authority and independent Human Acceptance. The footer's embedded
 `Website build vX.Y.Z-rc.N` remains truthful after same-digest stable promotion;
-it is not an asserted stable GitHub Release label. The old #119 one-time stable contract is historical; the new #203 production
-proposal requires a main-only protected `production` Environment reviewer
-gate after Human UAT, then promotes the **same accepted OCI digest** without
-rebuild or a second public Website instance. Neither source PR is an approval
-to publish while the one-time activation controls remain false/absent.
+it is not an asserted stable GitHub Release label. The old #119 one-time stable contract is historical; the integrated #203 production workflow requires a main-only protected `production` Environment reviewer gate after Human UAT, then promotes the **same accepted OCI digest** without rebuild or a second public Website instance. Neither merged source PR nor CI is publication approval; the exact activation settings, rights and environment protection must be independently verified.
 
 For the exact request commands, manual fallback and failure handling, see
 [CI/CD](CI_CD.md). KAORI release request policy is coordinated by
