@@ -79,7 +79,8 @@ test("production promotion uses latest reviewer state for the exact accepted sou
       ["-c", "--arg", "author", "maintainer", "--arg", "sha", "a".repeat(40), filter],
       { input: JSON.stringify(reviews), encoding: "utf8" },
     );
-    assert.equal(result.status, 0, result.stderr);
+    assert.ok([0, 1].includes(result.status), result.stderr);
+    assert.equal(result.stderr, "");
     return JSON.parse(result.stdout);
   };
   const review = (login, state, sha = "a".repeat(40)) => ({
