@@ -101,7 +101,6 @@ Edge apply owns trusted DNS/TLS readiness, HSTS, host/SNI checks and certificate
 
 Collect the exact SHA, image digest, immutable OCI release metadata, application container ID and health result, edge registration, TLS/Host/SNI check result, browser desktop/tablet/mobile light/dark screenshots, keyboard/accessibility evidence, and the human acceptance decision. Do not close #5 or promote until required evidence is committed and approved.
 
-
 ## Planned stable production approval using the existing one-slot runtime — #203
 
 The approved operating topology is **two GitHub Environments, one active public
@@ -122,6 +121,7 @@ repository switch `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED=true` must remain
 rollback, source rights, and Human UAT evidence are all confirmed.
 
 **Normal promotion:**
+
 1. Observe staging signed RC admitted and deployed to the **existing**
    public Website with immutable digest, receipt, shared edge and
    Website/App/Docs health PASS. Record real Human Visual UAT separately.
