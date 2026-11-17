@@ -218,10 +218,10 @@ an RC, before tag/Release creation, and again before public deployment.
 The issue must be **closed/completed**, with source-exact maintainer and
 independent reviewer comments, both recorded before issue closure:
 
-- Maintainer \`lethisa\`: \`KAORI_WEBSITE_PUBLICATION_GO:<staging SHA>\`
-- Reviewer \`donibawono\`: \`KAORI_WEBSITE_PUBLICATION_REVIEWED:<staging SHA>\`
+- Maintainer `lethisa`: `KAORI_WEBSITE_PUBLICATION_GO:<staging SHA>`
+- Reviewer `donibawono`: `KAORI_WEBSITE_PUBLICATION_REVIEWED:<staging SHA>`
 
-A later \`KAORI_WEBSITE_PUBLICATION_REVOKED:<staging SHA>\` from either actor
+A later `KAORI_WEBSITE_PUBLICATION_REVOKED:<staging SHA>` from either actor
 blocks the scope. Open/NO-GO issues, mismatched SHA, altered comments,
 missing independent review, unavailable API or incomplete pagination
 **fail closed** before any new public image or host mutation. This conservatively
