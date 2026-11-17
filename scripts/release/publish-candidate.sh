@@ -47,11 +47,13 @@ verify_recurring_publication_rights() {
       ([.[] | select(
         .user.login == "lethisa"
         and ((.body // "" | split("\n") | index("KAORI_WEBSITE_PUBLICATION_GO:" + $sha)) != null)
+        and (.created_at | type == "string") and (.updated_at | type == "string")
         and .created_at <= $cutoff and .updated_at <= $cutoff
       )] | length == 1)
       and ([.[] | select(
         .user.login == "donibawono"
         and ((.body // "" | split("\n") | index("KAORI_WEBSITE_PUBLICATION_REVIEWED:" + $sha)) != null)
+        and (.created_at | type == "string") and (.updated_at | type == "string")
         and .created_at <= $cutoff and .updated_at <= $cutoff
       )] | length == 1)
       and ([.[] | select(
@@ -66,6 +68,9 @@ verify_recurring_publication_rights() {
 
 if [[ "$mode" == rights && "$auto_staging" != true ]]; then
   fail 'recurring publication rights mode requires canonical automatic staging identity'
+fi
+if [[ "$mode" == rights ]]; then
+  [[ "$sha" =~ ^[a-f0-9]{40}$ ]] || fail 'recurring publication source SHA invalid'
 fi
 if [[ "$auto_staging" == true ]]; then
   verify_recurring_publication_rights
