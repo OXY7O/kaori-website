@@ -101,6 +101,62 @@ Edge apply owns trusted DNS/TLS readiness, HSTS, host/SNI checks and certificate
 
 Collect the exact SHA, image digest, immutable OCI release metadata, application container ID and health result, edge registration, TLS/Host/SNI check result, browser desktop/tablet/mobile light/dark screenshots, keyboard/accessibility evidence, and the human acceptance decision. Do not close #5 or promote until required evidence is committed and approved.
 
+
+## Planned stable production approval using the existing one-slot runtime — #203
+
+The approved operating topology is **two GitHub Environments, one active public
+Website runtime**. Staging signed RCs may already be exposed at
+`https://kaori.cloud` before the protected production approval. Production is
+an **acceptance and stable metadata** operation on the same installed RC
+digest, not a second server/Compose project or a forced redeployment.
+
+**Operator/admin configuration:** In repository Settings → Environments,
+configure `production` with deployment branch `main` only, designated
+required reviewer(s), prevent self-review, and prevent administrator bypass.
+Verify the actual reviewer gate blocks the job before credentials and stable
+publication. Make the necessary repository/environment-scoped
+`KAORI_WEBSITE_*` registry/SSH variables and secrets available, without
+exposing values. GitHub connector cannot verify these settings. The one-time
+repository switch `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED=true` must remain
+**absent or false** until these settings, accepted staging deployment,
+rollback, source rights, and Human UAT evidence are all confirmed.
+
+**Normal promotion:**
+1. Observe staging signed RC admitted and deployed to the **existing**
+   public Website with immutable digest, receipt, shared edge and
+   Website/App/Docs health PASS. Record real Human Visual UAT separately.
+2. An authorized maintainer records one issue comment with the exact
+   `KAORI_WEBSITE_UAT_ACCEPTED:<staging SHA>:<RC tag>:<sha256 digest>`
+   marker, after inspecting the live RC and its rollback evidence.
+3. Open/review the normal `kaori/staging` → `main` promotion PR.
+   Include `Human UAT evidence: <full issue comment URL>` in the PR body.
+   The human UAT marker must precede the PR merge. The promotion PR must
+   have an independent APPROVED review, not only CI PASS.
+4. After protected main merge and 4/4 Full Admission, GitHub Actions
+   reaches the actual `production` Environment approval; the operator
+   clicks **Approve and deploy**. There is no manual workflow dispatch or
+   per-RC approval-variable editing.
+5. Postapproval `promote-stable.sh` verifies the merge lineage, exact
+   signed/attested RC, human acceptance, immutable digest and actual
+   **current** public container/receipt using the existing server
+   `deploy/server/verify.sh` over pinned SSH, then verifies
+   `kaori.cloud`, `app.kaori.cloud` and `docs.kaori.cloud`.
+   **If staging has replaced that digest with a newer RC, BLOCK:** do not
+   publish stable metadata for an image no longer active.
+6. Stable SemVer is derived from the RC, published as an immutable
+   GitHub Release on `main` referencing the exact original digest;
+   no Docker rebuild/retag/host mutation. Review evidence and preserve
+   the last installed signed rollback receipt. The footer still shows
+   the RC build identity by design because the bytes are unchanged.
+
+**Failure and recovery:** A failed production gate or stale public digest
+does not change the running Website or create a stable tag. Reconcile
+staging image/accepted Human UAT and submit a new reviewed promotion
+if necessary; do not force main, rewrite a stable tag or bypass environment
+review. Keep the same `kaori-website-release-deploy` concurrency group as
+the staging deploy, protecting the single Website slot. Shared-edge,
+DNS/TLS and App/Docs infrastructure remain outside this workflow.
+
 ## Release deployment dispatch (manual only)
 
 Once a unique prerelease for the current admitted staging SHA exists, an operator may dispatch `deploy-staging-host.yml` from `kaori/staging`, providing the exact `candidate_tag` and a link to explicit maintainer authorization (`approval_reference`). The workflow validates GitHub RC evidence for the exact SHA/image digest, checks repository-level credentials without printing them, verifies the SSH pinned host key, and transfers the reviewed adapter via a separate SSH deployment identity. There is no automated dispatch from a feature branch, and no automatic shared-edge publication. A GitHub Free private repository does not enforce human approval; the authorization link is audit evidence for the operating procedure, not a substitute for technical branch protection.
