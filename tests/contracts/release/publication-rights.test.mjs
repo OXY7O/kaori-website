@@ -136,7 +136,10 @@ const denied = [
   },
   {
     label: "missing approval timestamp",
-    comments: [comment("lethisa", "KAORI_WEBSITE_PUBLICATION_GO:" + sha, { updated_at: null }), approvals[1]],
+    comments: [
+      comment("lethisa", "KAORI_WEBSITE_PUBLICATION_GO:" + sha, { updated_at: null }),
+      approvals[1],
+    ],
   },
   {
     label: "revoked decision",
