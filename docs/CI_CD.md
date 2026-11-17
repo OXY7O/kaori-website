@@ -181,39 +181,39 @@ The old #119 one-off stable release is historical; the source-integrated stable 
 
 **Source-only integration checkpoint (2026-11-17):** Independently approved [PR #205](https://github.com/OXY7O/kaori-website/pull/205) merged to `kaori/staging@06f5142d7a6578485516c4a1812bc950f1835b4e`; [Full Admission #44006999386](https://github.com/OXY7O/kaori-website/actions/runs/44006999386) passed all four required jobs. RC publication and deployment were both **SKIPPED**. This is not new RC release, live rollout or Human UAT approval. [KAORI #4939](https://github.com/OXY7O/KAORI/issues/4939) still requires a scoped recurring-publication GO decision.
 
-**Operating model:** `kaori/staging` is the source for GitHub Environment
-`staging`. The signed RC, when automatically deployed, replaces the **same
-single** `kaori-website` public runtime at `https://kaori.cloud`. This
+**Operating model:** \`kaori/staging\` is the source for GitHub Environment
+\`staging\`. The signed RC, when automatically deployed, replaces the **same
+single** \`kaori-website\` public runtime at \`https://kaori.cloud\`. This
 public exposure **precedes** production approval as the maintainer-approved
 single-server efficiency tradeoff. There is no parallel staging hostname,
 second public Docker project or automatic DNS/TLS modification.
 
-The existing `quality.yml` remains the one entrypoint: Promotion Policy,
+The existing \`quality.yml\` remains the one entrypoint: Promotion Policy,
 Full Admission, Container Admission and Browser Quality Evidence must all
 succeed on the protected merged SHA before the two dependent jobs can run.
-The trusted `platform-ci` publisher uses the existing
-`scripts/release/publish-candidate.sh` signer/scan/SBOM/provenance to choose
+The trusted \`platform-ci\` publisher uses the existing
+\`scripts/release/publish-candidate.sh\` signer/scan/SBOM/provenance to choose
 the next unique RC, or reuse an already signed exact-source release without
-rewriting its tag. The `kaori-ci` deployment job uses existing
-`scripts/release/deploy-release.sh`, pinned SSH trust, one public Compose
+rewriting its tag. The \`kaori-ci\` deployment job uses existing
+\`scripts/release/deploy-release.sh\`, pinned SSH trust, one public Compose
 project, existing shared-edge preflight/reattach, committed digest receipt,
 rollback and Website/Application/Docs checks. Its deployment concurrency
-group is `kaori-website-release-deploy`, shared with the existing manual
+group is \`kaori-website-release-deploy\`, shared with the existing manual
 Release Deployment fallback. Human UAT is always a separate acceptance.
 
 **Activation boundary:** This source change is intentionally inactive while
-`KAORI_WEBSITE_AUTO_STAGING_ENABLED` is absent/not `true`. An authorized
-repository administrator must first verify GitHub Environment `staging`
-(branch `kaori/staging`, no unexpected manual reviewers), scoped secrets,
+\`KAORI_WEBSITE_AUTO_STAGING_ENABLED\` is absent/not \`true\`. An authorized
+repository administrator must first verify GitHub Environment \`staging\`
+(branch \`kaori/staging\`, no unexpected manual reviewers), scoped secrets,
 runner identity and rollback baseline, as well as an explicitly accepted
 ongoing public RC publication exception under KAORI #4212. The environment
 can be configured once; individual releases require no manual tag/dispatch.
 Do **not** claim a successful staging auto-release merely because the source
-PR and Developer Check pass. The former `rc-request` and `uat-request`
+PR and Developer Check pass. The former \`rc-request\` and \`uat-request\`
 paths remain legacy fallbacks until the new flow is proven in live UAT.
 
-**Production is independent:** `main` promotion and the protected
-`production` Environment approval are a separate implementation child
+**Production is independent:** \`main\` promotion and the protected
+\`production\` Environment approval are a separate implementation child
 [#203](https://github.com/OXY7O/kaori-website/issues/203). Both GitHub
 Environments intentionally select the same public runtime now, but production
 must not report an older digest as active after a newer staging deployment.
