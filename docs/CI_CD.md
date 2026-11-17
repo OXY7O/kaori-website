@@ -284,7 +284,7 @@ ancestor of the reviewed promotion head and current `main`, then verifies that
 `deploy`) have not changed since that RC source. Source-only release governance
 or documentation commits after Human UAT need **no additional RC/UAT**; any
 shipped-input drift fails closed and needs a newly accepted signed candidate.
-The reviewer must approve the *current promotion head*; the previously signed
+The reviewer must approve the _current promotion head_; the previously signed
 RC source remains subject to exact GitHub prerelease/tag, immutable digest,
 pinned Cosign issuer/approved workflow identity and signed SPDX/SLSA attestations.
 No manual release tag, `workflow_dispatch`, per-RC repository variable or
@@ -320,7 +320,7 @@ reviewed `kaori/staging` → `main` PR, verified existing public immutable rollb
 receipt, actual protected production Environment reviewer gate, and scoped
 publication operations decision [KAORI #4939](https://github.com/OXY7O/KAORI/issues/4939).
 The existing #119 historical Docs dependency must be reconciled before
-activation. Future *new* automatic RC publication remains OFF/NO-GO under
+activation. Future _new_ automatic RC publication remains OFF/NO-GO under
 #4939; broad source/brand relicensing [KAORI #4212](https://github.com/OXY7O/KAORI/issues/4212) remains separate.
 No approval or UAT of the already accepted RC.10 should be requested again.
 Changing environment-scoped host configuration for a future dedicated server
