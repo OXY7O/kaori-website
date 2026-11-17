@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import test from "node:test";
+import { format, resolveConfig } from "prettier";
 
 const workflow = readFileSync(".github/workflows/quality.yml", "utf8");
 const publisher = readFileSync("scripts/release/publish-candidate.sh", "utf8");
@@ -165,4 +166,14 @@ test("noncanonical workflow identity cannot use the rights-only validation path"
   });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /BLOCK: automatic staging RC requires canonical Full Admission/);
+});
+
+// Temporary format diagnosis on a disposable CI runner; does not alter the gate.
+test("temporary print pinned Prettier output for review", async () => {
+  const file = "tests/contracts/release/publication-rights.test.mjs";
+  const current = readFileSync(file, "utf8");
+  const expected = await format(current, { ...(await resolveConfig(file)), filepath: file });
+  if (current !== expected) {
+    console.log("KAORI_FORMAT_START\\n" + expected + "\\nKAORI_FORMAT_END");
+  }
 });
