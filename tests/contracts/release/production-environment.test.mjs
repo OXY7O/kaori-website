@@ -185,4 +185,3 @@ test("git ancestry and shipped-input drift fail closed for prior accepted RC", (
   const unrelated = ok("rev-parse", "HEAD");
   assert.equal(git("merge-base", "--is-ancestor", unrelated, promotion).status, 1);
 });
-
