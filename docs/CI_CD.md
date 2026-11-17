@@ -325,8 +325,8 @@ older Website automation sequencing rule dependent on Docs #38/#39/#40/#43/#45
 and an older deployment topology. The later maintainer-approved
 [Website #201](https://github.com/OXY7O/kaori-website/issues/201) and
 [implementation #203](https://github.com/OXY7O/kaori-website/issues/203)
-supersede that architecture with **two GitHub Environments**, **one
-Website public slot**, and **immutable same-digest stable metadata only**.
+supersede that architecture with **two GitHub Environments**,
+**one Website public slot**, and **immutable same-digest stable metadata only**.
 The Website stable publisher does not create, promote or deploy a Docs release.
 The Docs workstream remains independently OPEN (latest observed signed Docs
 prerelease `v0.3.0-rc.8`, not an accepted stable Docs release); never claim its
