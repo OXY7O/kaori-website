@@ -45,8 +45,13 @@ for path in Dockerfile .dockerignore package.json package-lock.json astro.config
   git diff --quiet "$rc_sha" HEAD -- "$path" || fail "build inputs drifted since accepted RC: $path"
 done
 reviews="$(api_get "$api/pulls/$pr/reviews")" || fail 'promotion reviews unavailable'
-jq -e --arg author "$author" '[.[] | select(.state == "APPROVED" and .user.login != $author)] | length > 0' <<<"$reviews" >/dev/null ||
-  fail 'independent promotion reviewer approval missing'
+jq -e --arg author "$author" --arg sha "$rc_sha" '
+  [.[] | select(.user.login != $author and .commit_id == $sha) | .user.login] as $reviewers
+  | [.[] | select(.user.login as $login | $reviewers | index($login) != null)] as $relevant
+  | any($reviewers[]; . as $login |
+      ([$relevant[] | select(.user.login == $login)] | last | .state) == "APPROVED")
+' <<<"$reviews" >/dev/null ||
+  fail 'current-head independent promotion reviewer approval missing'
 
 # The promotion PR records Human UAT once; no manual tag, workflow dispatch or per-RC variable.
 evidence="$(grep -E '^Human UAT evidence: https://github[.]com/OXY7O/kaori-website/issues/[1-9][0-9]*#issuecomment-[1-9][0-9]*$' <<<"$pr_body" || true)"
@@ -164,7 +169,7 @@ previous=/var/lib/kaori-website/deploy-state/previous-release.env
 [[ -s "$previous" && ! -L "$previous" ]] ||
   { echo 'BLOCK: previous immutable rollback receipt missing'; exit 1; }
 previous_image="$(grep '^KAORI_WEBSITE_IMAGE=' "$previous" | cut -d= -f2-)"
-[[ "$previous_image" == *@sha256:* ]] ||
+[[ "$previous_image" =~ @sha256:[a-f0-9]{64}$ ]] ||
   { echo 'BLOCK: previous immutable rollback digest evidence invalid'; exit 1; }
 grep -Fxq "KAORI_WEBSITE_IMAGE=$expected_image" "$receipt" ||
   { echo 'BLOCK: public slot digest changed since accepted RC'; exit 1; }
