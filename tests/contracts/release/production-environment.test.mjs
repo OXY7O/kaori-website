@@ -185,3 +185,21 @@ test("git ancestry and shipped-input drift fail closed for prior accepted RC", (
   const unrelated = ok("rev-parse", "HEAD");
   assert.equal(git("merge-base", "--is-ancestor", unrelated, promotion).status, 1);
 });
+
+test("FORMAT_DIAGNOSTIC temporary pinned formatter output", async () => {
+  const prettier = await import("prettier");
+  const target = "docs/CI_CD.md";
+  const before = readFileSync(target, "utf8");
+  const config = await prettier.resolveConfig(target);
+  const after = await prettier.format(before, { ...config, filepath: target });
+  if (before !== after) {
+    let first = 0;
+    while (before[first] === after[first] && first < before.length && first < after.length) {
+      first++;
+    }
+    console.log("FORMAT_DIAGNOSTIC position", first);
+    console.log("FORMAT_DIAGNOSTIC BEFORE", JSON.stringify(before.slice(first - 100, first + 1000)));
+    console.log("FORMAT_DIAGNOSTIC AFTER", JSON.stringify(after.slice(first - 100, first + 1000)));
+    console.log("FORMAT_DIAGNOSTIC EXPECTED_TAIL", JSON.stringify(after.slice(-5500)));
+  }
+});
