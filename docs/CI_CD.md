@@ -319,9 +319,25 @@ still requires this issue's #210 reviewed lineage correction, an independently
 reviewed `kaori/staging` → `main` PR, verified existing public immutable rollback
 receipt, actual protected production Environment reviewer gate, and scoped
 publication operations decision [KAORI #4939](https://github.com/OXY7O/KAORI/issues/4939).
-The existing #119 historical Docs dependency must be reconciled before
-activation. Future _new_ automatic RC publication remains OFF/NO-GO under
-#4939; broad source/brand relicensing [KAORI #4212](https://github.com/OXY7O/KAORI/issues/4212) remains separate.
+**Historical Docs dependency reconciliation (#119 → #201/#203):**
+[#119](https://github.com/OXY7O/kaori-website/issues/119) documented an
+older Website automation sequencing rule dependent on Docs #38/#39/#40/#43/#45
+and an older deployment topology. The later maintainer-approved
+[Website #201](https://github.com/OXY7O/kaori-website/issues/201) and
+[implementation #203](https://github.com/OXY7O/kaori-website/issues/203)
+supersede that architecture with **two GitHub Environments, one Website
+public slot, and immutable same-digest stable metadata only**. The Website
+stable publisher does not create, promote or deploy a Docs release.
+The Docs workstream remains independently OPEN (latest observed signed Docs
+prerelease `v0.3.0-rc.8`, not an accepted stable Docs release); never claim its
+UAT or production requirements are complete. The Website stable verification
+still requires `docs.kaori.cloud` HTTPS readiness and must never mutate Docs.
+This reconciliation removes an obsolete **cross-repository ordering barrier**,
+not the actual Website rights, production Environment, rollback or staging-to-main
+review gates. Future new automatic RC publication remains OFF/NO-GO under
+[KAORI #4939](https://github.com/OXY7O/KAORI/issues/4939); broad source/brand
+relicensing [KAORI #4212](https://github.com/OXY7O/KAORI/issues/4212)
+remains a separate independent decision.
 No approval or UAT of the already accepted RC.10 should be requested again.
 Changing environment-scoped host configuration for a future dedicated server
 does not change the release promotion semantics; authoritative DNS/TLS stays
