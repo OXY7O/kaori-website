@@ -306,8 +306,8 @@ runs accept only an exactly matching pre-existing stable release.
 ### Activation and migration guard
 
 **2026-11-17 exact candidate checkpoint:** signed `v0.1.2-rc.10` is
-already published, deployed to the sole public Website slot and **explicitly
-Human Accepted** by the maintainer, recorded at
+already published, deployed to the sole public Website slot and
+**explicitly Human Accepted** by the maintainer, recorded at
 [Website #202](https://github.com/OXY7O/kaori-website/issues/202#issuecomment-6939870730).
 The actual public Inter OFL-1.1 and Lucide/Feather ISC+MIT notices were
 byte-verified on the exact live RC.10 OCI by the authorized host operator;
