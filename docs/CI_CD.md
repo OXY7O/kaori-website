@@ -172,3 +172,76 @@ never overwrite an immutable tag or force an invalid branch SHA.
 This request workflow originated in [Website #122](https://github.com/OXY7O/kaori-website/issues/122) and its public UAT revision [#195](https://github.com/OXY7O/kaori-website/issues/195)
 and [KAORI #4201](https://github.com/OXY7O/KAORI/issues/4201).
 Stable/production automation remains #119 and admission caching remains #118.
+
+## Planned production Environment approval and immutable stable promotion — #201 / #203
+
+**Target architecture:** production is GitHub Environment `production` restricted
+to protected branch `main`. Staging release candidates and accepted stable
+releases deliberately use the **same single public `https://kaori.cloud` Website
+Compose runtime**, with the same host/edge/DNS. An RC is therefore public
+**before** the later production approval; the approval formally governs
+the stable release, not public exposure.
+
+The existing Full Admission workflow now contains the source-protected
+`Publish Human Accepted Stable Release` job. Its execution requires a
+protected push to `main`, all four mandatory admission jobs PASS, and the
+**one-time** repository variable
+`KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED=true`. With that variable absent
+or false, production publication is **inactive**. The job uses GitHub
+`environment: production`, which must be configured by the repository
+administrator with branch restriction `main`, a designated required reviewer,
+prevent-self-review and no admin bypass. The environment settings and actual
+waiting-for-approval behavior **cannot be confirmed from source code alone**.
+Do not enable the variable until they have been independently inspected.
+
+### Automatic, zero-rebuild stable authority
+
+After live Human UAT of the signed RC, the reviewed
+`kaori/staging` → `main` promotion PR must include **one** literal
+evidence line:
+
+`Human UAT evidence: https://github.com/OXY7O/kaori-website/issues/<issue>#issuecomment-<comment>`
+
+The referenced prior issue comment must be authored by a trusted collaborator
+with write or higher permission, **before the promotion PR merge**, and contain
+the single line:
+
+`KAORI_WEBSITE_UAT_ACCEPTED:<40-char-staging-SHA>:<vX.Y.Z-rc.N>:<sha256:digest>`
+
+The production job **derives** the RC SHA from the exact merged promotion PR,
+reads this authorized evidence, verifies independent PR approval, same-source
+GitHub prerelease + immutable digest, unchanged Website build inputs, the
+pinned Cosign issuer/approved workflow identity and signed SPDX/SLSA attestations.
+No manual release tag, `workflow_dispatch`, per-RC repository variable or
+secondary release branch is needed for production. The UAT approval comment is
+the existing required human decision/evidence, not another dispatch step.
+
+The stable SemVer `vX.Y.Z` is derived from accepted
+`vX.Y.Z-rc.N`. After GitHub Environment approval, a restricted
+`platform-ci` job uses pinned SSH **read-only** to inspect the committed
+`/var/lib/kaori-website/deploy-state/release.env`, existing public Compose
+container and Docker image digest/health, the existing server `verify.sh`,
+shared-edge membership and all three Website/App/Docs HTTPS endpoints.
+A different installed RC **fails closed** before stable tag creation.
+With the accepted digest still active, the job creates a stable GitHub
+Release referencing the **same image digest**, with the main/RC/UAT/production
+run identities; it never rebuilds/retags Docker or mutates the host. Repeated
+runs accept only an exactly matching pre-existing stable release.
+
+### Activation and migration guard
+
+Production implementation #203 remains a **Draft PR** until staging auto-RC
+[#202](https://github.com/OXY7O/kaori-website/issues/202) is reviewed,
+Human UAT is actually accepted, protected environment reviewer and branch
+rules are independently verified, the current public rollback receipts are
+confirmed, and the outdated dependency assumptions in [#119](https://github.com/OXY7O/kaori-website/issues/119)
+are reconciled with the approved Docs baseline. Broad rights/relicensing audit
+[KAORI #4212](https://github.com/OXY7O/KAORI/issues/4212) remains separate.
+Changing environment-scoped host configuration for a future dedicated server
+does not change the release promotion semantics; authoritative DNS/TLS stays
+with the existing shared-edge/provider operating procedure.
+
+The stable release is **metadata promotion** and the live Website may still
+display the original signed `-rc.N` build footer, intentionally preserving
+the byte-identical artifact. Do not claim stable-source rebuild or a separate
+runtime when there is none.
