@@ -116,7 +116,7 @@ Edge apply owns trusted DNS/TLS readiness, HSTS, host/SNI checks and certificate
 
 Collect the exact SHA, image digest, immutable OCI release metadata, application container ID and health result, edge registration, TLS/Host/SNI check result, browser desktop/tablet/mobile light/dark screenshots, keyboard/accessibility evidence, and the human acceptance decision. Do not close #5 or promote until required evidence is committed and approved.
 
-## Planned automatic staging UAT on the existing public slot — #202
+## Admission-gated staging UAT on the existing public slot — #202
 
 The maintainer accepts one current public Website runtime (`https://kaori.cloud`)
 for staging signed RC and approved production stable releases. The runtime
@@ -124,35 +124,33 @@ does not split until separate infrastructure becomes available; GitHub
 `staging` and `production` are logical **governance** Environments, not
 additional hostnames or Compose projects.
 
-After the issue-linked PR is independently merged and admitted, the existing
-\`quality.yml\` runs four required jobs. The optional admitted staging
+After independently reviewed PR #205 was merged, the exact staging source passed all four admission jobs in run #44006999386. The existing `quality.yml` retains those four required jobs. Its new RC publication and deploy jobs both SKIPPED on that run. The optional admitted staging
 publisher/deployer becomes active **only** after a repository administrator
-configures and authorizes \`KAORI_WEBSITE_AUTO_STAGING_ENABLED=true\`. It
+configures and authorizes `KAORI_WEBSITE_AUTO_STAGING_ENABLED=true`. It
 then selects a unique signed RC, builds/scans/signs, commits evidence and
-deploys the immutable digest to the existing \`kaori-website\` project,
+deploys the immutable digest to the existing `kaori-website` project,
 reusing the same shared-edge registration, rollback receipt and readiness
 checks as the approved RC.9 public deployment. Deployment claims must come
 from actual GitHub Actions plus host evidence. Human Visual UAT remains
 a separate documented acceptance step.
 
-**Before enabling:** verify GitHub Environment \`staging\` exists and only
-permits \`kaori/staging\`, required reviewers are disabled for automatic
+**Before enabling:** verify GitHub Environment `staging` exists and only
+permits `kaori/staging`, required reviewers are disabled for automatic
 staging, allowed self-hosted runner and scoped secret names are correct,
 the current public digest/rollback are healthy, and KAORI #4212 has an
-explicitly accepted _ongoing_ publication/rights boundary. With the
-activation flag absent/false this proposed flow **does not publish or deploy**.
+explicitly accepted _ongoing_ publication/rights boundary. With the activation control absent/false the code **does not publish or deploy**. No successful automatic public rollout has been evidenced since the source merge; operator-reported variable settings require independent GitHub Settings verification.
 Legacy RC/Deployment manual workflows remain available for separately
 approved recovery until replacement evidence is accepted. If a newer staging
 SHA appears during publication/deployment, stop rather than publish stale RC.
 
 **Shared slot warning:** staged RC is visible to public users immediately
 after automatic deployment; production approval does **not** gate initial
-visibility. The production Environment (separate #203 workstream) will
+visibility. The integrated `production` Environment gate (#203 / merged PR #206) is designed to
 approve stable release identity and verify the same digest, without
 rebuilding or changing DNS/TLS. A newer staging RC after production
 approval request invalidates that pending live acceptance.
 
-## Planned stable production approval using the existing one-slot runtime — #203
+## Governed stable production approval using the existing one-slot runtime — #203
 
 The approved operating topology is **two GitHub Environments, one active public
 Website runtime**. Staging signed RCs may already be exposed at
@@ -166,12 +164,9 @@ required reviewer(s), prevent self-review, and prevent administrator bypass.
 Verify the actual reviewer gate blocks the job before credentials and stable
 publication. Make the necessary repository/environment-scoped
 `KAORI_WEBSITE_*` registry/SSH variables and secrets available, without
-exposing values. GitHub connector cannot verify these settings. The one-time
-repository switch `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED=true` must remain
-**absent or false** until these settings, accepted staging deployment,
-rollback, source rights, and Human UAT evidence are all confirmed.
+exposing values. GitHub connector cannot verify these settings. The one-time repository switch `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` must not be used as release authority until these settings, accepted staging deployment, rollback, publication rights and a *fresh* exact-RC Human UAT have all been confirmed. The source gate is integrated to staging, but its actual waiting-for-reviewer behavior and subsequent stable publication remain unverified.
 
-**Normal promotion:**
+**Normal promotion (inactive until all acceptance gates are verified):**
 
 1. Observe staging signed RC admitted and deployed to the **existing**
    public Website with immutable digest, receipt, shared edge and
