@@ -60,6 +60,8 @@ comment="$(api_get "$api/issues/comments/$comment_id")" || fail 'Human UAT comme
   fail 'UAT comment belongs to wrong issue'
 [[ "$(jq -r '.created_at' <<<"$comment")" < "$merged_at" ]] ||
   fail 'Human UAT happened after promotion merge'
+[[ "$(jq -r '.updated_at' <<<"$comment")" < "$merged_at" ]] ||
+  fail 'Human UAT evidence was edited after promotion merge'
 approver="$(jq -r '.user.login // ""' <<<"$comment")"
 [[ "$approver" =~ ^[A-Za-z0-9-]+$ ]] || fail 'invalid UAT approver'
 permission="$(api_get "$api/collaborators/$approver/permission" | jq -r '.permission')"
@@ -157,7 +159,93 @@ setsid -w ssh-add "$tmp/key" </dev/null >/dev/null
     "$image_ref" "$rc_sha" "$rc_tag" "$WEBSITE_DEPLOY_ROOT"
   cat <<'REMOTE'
 receipt=/var/lib/kaori-website/deploy-state/release.env
+previous=/var/lib/kaori-website/deploy-state/previous-release.env
 [[ -f "$receipt" && ! -L "$receipt" ]] || { echo 'BLOCK: release receipt missing'; exit 1; }
+[[ -s "$previous" && ! -L "$previous" ]] ||
+  { echo 'BLOCK: previous immutable rollback receipt missing'; exit 1; }
+grep -Eq '^KAORI_WEBSITE_IMAGE=[^[:space:]]+@sha256:[a-f0-9]{64}
+grep -Fxq "KAORI_WEBSITE_IMAGE=$expected_image" "$receipt" ||
+  { echo 'BLOCK: public slot digest changed since accepted RC'; exit 1; }
+grep -Fxq "KAORI_WEBSITE_SOURCE_SHA=$expected_sha" "$receipt" ||
+  { echo 'BLOCK: public slot source differs from Human Accepted RC'; exit 1; }
+grep -Fxq "KAORI_WEBSITE_VERSION=$expected_rc" "$receipt" ||
+  { echo 'BLOCK: public slot build version differs from accepted RC'; exit 1; }
+export KAORI_WEBSITE_IMAGE="$expected_image"
+export KAORI_WEBSITE_EXPECTED_VERSION="$expected_rc"
+export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1
+export KAORI_WEBSITE_RUNTIME_ENV=production
+export COMPOSE_PROJECT_NAME=kaori-website
+bash "$root/releases/$expected_sha/server/verify.sh"
+web="$(docker ps --filter label=com.docker.compose.project=kaori-website \
+  --filter label=com.docker.compose.service=web --format '{{.ID}}')"
+[[ "$web" =~ ^[a-f0-9]{12,64}$ ]] || { echo 'BLOCK: multiple or missing public Website'; exit 1; }
+[[ "$(docker inspect --format '{{if index .NetworkSettings.Networks "edge-public"}}true{{else}}false{{end}}' "$web")" == true ]] ||
+  { echo 'BLOCK: accepted Website is detached from existing shared edge'; exit 1; }
+echo 'PASS: public Website immutable digest, source, health, receipt and shared-edge match'
+REMOTE
+} | ssh -p "$port" -i "$tmp/key" -o BatchMode=yes -o IdentitiesOnly=yes \
+  -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$tmp/known_hosts" \
+  "$WEBSITE_SSH_USER@$WEBSITE_HOST" 'bash -se'
+
+# Independently validate the exact subject signed by the current or legacy RC publisher.
+printf '%s' "$REGISTRY_PASSWORD" | DOCKER_CONFIG="$tmp/docker" docker login "$REGISTRY_HOST" \
+  --username "$REGISTRY_USER" --password-stdin >/dev/null
+identity=''
+for workflow in quality.yml publish-staging-image.yml; do
+  for branch in kaori/staging kaori/rc-request; do
+    [[ "$workflow" != quality.yml || "$branch" == kaori/staging ]] || continue
+    candidate="https://github.com/OXY7O/kaori-website/.github/workflows/$workflow@refs/heads/$branch"
+    if docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker \
+      -v "$tmp/docker:/root/.docker:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3 verify \
+      --certificate-identity "$candidate" --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+      "$image_ref" >"$tmp/signature.json" 2>/dev/null; then identity="$candidate"; break; fi
+  done
+  [[ -z "$identity" ]] || break
+done
+[[ -n "$identity" && -s "$tmp/signature.json" ]] ||
+  fail 'accepted digest does not verify with approved RC signer'
+for kind in spdxjson slsaprovenance1; do
+  docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker \
+    -v "$tmp/docker:/root/.docker:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3 verify-attestation \
+    --type "$kind" --certificate-identity "$identity" \
+    --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+    "$image_ref" >"$tmp/$kind.json" || fail "signed $kind attestation failed"
+done
+for domain in kaori.cloud app.kaori.cloud docs.kaori.cloud; do
+  curl -fLsS --connect-timeout 10 --max-time 25 -o /dev/null "https://$domain/" ||
+    fail "trusted HTTPS readiness failed for $domain"
+done
+
+if [[ "$existing" == 404 ]]; then
+  body="$(jq -n --arg stable "$stable_tag" --arg main "$GITHUB_SHA" \
+    --arg rc "$rc_tag" --arg rcsha "$rc_sha" --arg digest "$digest" \
+    --arg image "$image_ref" --arg uat "$evidence_url" --arg pr "$pr" --arg run "$GITHUB_RUN_ID" '
+    ["KAORI Website stable artifact: " + $stable, "Stable main SHA: " + $main,
+     "Accepted RC: " + $rc, "Accepted RC source SHA: " + $rcsha,
+     "Immutable digest: " + $digest, "Deployment authority: " + $image,
+     "Human UAT evidence: " + $uat, "Merged promotion PR: #" + $pr,
+     "Production environment approved run: " + $run,
+     "Exact live RC digest and signed OCI attestations reverified; no rebuild/retag or host mutation."] | join("\n")')"
+  payload="$(jq -n --arg tag "$stable_tag" --arg sha "$GITHUB_SHA" --arg body "$body" \
+    '{tag_name:$tag,target_commitish:$sha,name:("KAORI Website "+$tag),body:$body,
+      draft:false,prerelease:false,make_latest:"true"}')"
+  published="$(curl --fail-with-body -fsS -H "Authorization: Bearer $GH_TOKEN" \
+    -H 'Accept: application/vnd.github+json' -H 'Content-Type: application/json' \
+    -X POST --data "$payload" "$api/releases")" ||
+    fail 'stable publication failed; inspect reserved tag before retry'
+  [[ "$(jq -r '.tag_name' <<<"$published")" == "$stable_tag" ]] ||
+    fail 'published stable identity mismatch'
+else
+  echo "PASS: already-published exact stable $stable_tag reused without mutation"
+fi
+[[ "$(api_get "$api/git/ref/tags/$stable_tag" | jq -r '.object.sha')" == "$GITHUB_SHA" ]] ||
+  fail 'stable tag does not identify exact accepted main'
+printf 'PASS: accepted stable %s from RC %s at signed digest %s; no image build or host mutation\n' \
+  "$stable_tag" "$rc_tag" "$digest"
+printf 'Stable Release: %s\nMain SHA: %s\nRC: %s\nImmutable OCI: %s\n' \
+  "$stable_tag" "$GITHUB_SHA" "$rc_tag" "$image_ref" >>"$GITHUB_STEP_SUMMARY"
+ "$previous" ||
+  { echo 'BLOCK: previous immutable rollback digest evidence invalid'; exit 1; }
 grep -Fxq "KAORI_WEBSITE_IMAGE=$expected_image" "$receipt" ||
   { echo 'BLOCK: public slot digest changed since accepted RC'; exit 1; }
 grep -Fxq "KAORI_WEBSITE_SOURCE_SHA=$expected_sha" "$receipt" ||
