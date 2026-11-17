@@ -286,6 +286,9 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
+      - name: Verify approved source-scoped public publication rights
+        shell: bash
+        run: bash scripts/release/publish-candidate.sh rights
       - name: Select unique signed candidate or verify existing release
         id: candidate
         shell: bash
@@ -385,9 +388,15 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Reverify recurring publication rights before public deployment
+        shell: bash
+        run: bash scripts/release/publish-candidate.sh rights
       - name: Verify signed exact-source RC and pinned host
         shell: bash
         run: bash scripts/release/deploy-release.sh preflight
+      - name: Reverify rights immediately before any public host mutation
+        shell: bash
+        run: bash scripts/release/publish-candidate.sh rights
       - name: Deploy exact signed RC to existing shared public Website
         shell: bash
         run: bash scripts/release/deploy-release.sh deploy
