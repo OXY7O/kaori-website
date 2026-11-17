@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import test from "node:test";
 
 const fullAdmission = readFileSync(".github/workflows/quality.yml", "utf8");
@@ -68,9 +69,9 @@ test("publication depends on merged staging promotion, trusted Human UAT and imm
   assert.doesNotMatch(publisher, /KAORI_WEBSITE_STABLE_RELEASE_94|ACCEPTED_DIGEST/);
 });
 
-test("production promotion uses latest reviewer state for the exact accepted source", () => {
+test("production promotion uses latest reviewer state for the reviewed staging head", () => {
   const filter = publisher.match(
-    /jq -e --arg author "\$author" --arg sha "\$rc_sha" '([\s\S]*?)' <<<"\$reviews"/,
+    /jq -e --arg author "\$author" --arg sha "\$promotion_sha" '([\s\S]*?)' <<<"\$reviews"/,
   )?.[1];
   assert.ok(filter, "expected current-head review validation");
   const evaluate = (reviews) => {
@@ -120,4 +121,67 @@ test("invalid production workflow identity fails before API, SSH and release mut
       /curl|docker run|ssh-agent|stable release published/i,
     );
   }
+});
+
+test("stable lineage binds Human UAT to an ancestor, not to subsequent source-only staging HEAD", () => {
+  assert.match(publisher, /promotion_sha="\$\(jq -r '\.\[0\]\.head\.sha'/);
+  assert.match(publisher, /--arg sha "\$promotion_sha"/);
+  assert.match(publisher, /git merge-base --is-ancestor "\$promotion_sha" HEAD/);
+  assert.match(publisher, /git merge-base --is-ancestor "\$accepted_sha" "\$promotion_sha"/);
+  assert.match(publisher, /git merge-base --is-ancestor "\$accepted_sha" HEAD/);
+  assert.match(publisher, /git diff --quiet "\$accepted_sha" HEAD -- "\$path"/);
+  assert.match(publisher, /rc_sha="\$accepted_sha"/);
+  assert.doesNotMatch(publisher, /\[\[ "\$accepted_sha" == "\$rc_sha" \]\]/);
+  assert.ok(
+    publisher.indexOf('git merge-base --is-ancestor "$accepted_sha" "$promotion_sha"') <
+      publisher.indexOf('rc_sha="$accepted_sha"'),
+    "source lineage must be validated before any signed RC release lookup",
+  );
+});
+
+test("git ancestry and shipped-input drift fail closed for prior accepted RC", (t) => {
+  const dir = mkdtempSync(join(tmpdir(), "kaori-accepted-rc-"));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const git = (...args) =>
+    spawnSync("git", args, {
+      cwd: dir,
+      encoding: "utf8",
+      timeout: 10000,
+    });
+  const ok = (...args) => {
+    const result = git(...args);
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout.trim();
+  };
+
+  ok("init", "-q");
+  ok("config", "user.name", "KAORI Release Test");
+  ok("config", "user.email", "test@example.invalid");
+  mkdirSync(join(dir, "src"));
+  mkdirSync(join(dir, "docs"));
+  writeFileSync(join(dir, "src", "index.txt"), "accepted release bytes\n");
+  writeFileSync(join(dir, "docs", "CI_CD.md"), "pre-release notes\n");
+  ok("add", ".");
+  ok("commit", "-qm", "signed RC source");
+  const accepted = ok("rev-parse", "HEAD");
+
+  writeFileSync(join(dir, "docs", "CI_CD.md"), "updated release runbook\n");
+  ok("add", ".");
+  ok("commit", "-qm", "source-only governance update");
+  const promotion = ok("rev-parse", "HEAD");
+  assert.equal(git("merge-base", "--is-ancestor", accepted, promotion).status, 0);
+  assert.equal(git("diff", "--quiet", accepted, promotion, "--", "src").status, 0);
+
+  writeFileSync(join(dir, "src", "index.txt"), "changed public bytes\n");
+  ok("add", ".");
+  ok("commit", "-qm", "changed runtime build input");
+  const drifted = ok("rev-parse", "HEAD");
+  assert.equal(git("diff", "--quiet", accepted, drifted, "--", "src").status, 1);
+
+  ok("checkout", "--quiet", "--detach", accepted);
+  writeFileSync(join(dir, "src", "index.txt"), "unrelated candidate\n");
+  ok("add", ".");
+  ok("commit", "-qm", "unrelated signed source");
+  const unrelated = ok("rev-parse", "HEAD");
+  assert.equal(git("merge-base", "--is-ancestor", unrelated, promotion).status, 1);
 });
