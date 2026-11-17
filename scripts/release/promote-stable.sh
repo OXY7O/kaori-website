@@ -132,6 +132,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 chmod 700 "$tmp"
+mkdir -m 700 "$tmp/docker"
 printf '%s\n' "$WEBSITE_SSH_KEY" >"$tmp/key"
 printf '%s\n' "$WEBSITE_KNOWN_HOSTS" >"$tmp/known_hosts"
 chmod 600 "$tmp/key" "$tmp/known_hosts"
@@ -181,7 +182,7 @@ REMOTE
   "$WEBSITE_SSH_USER@$WEBSITE_HOST" 'bash -se'
 
 # Independently validate the exact subject signed by the current or legacy RC publisher.
-printf '%s' "$REGISTRY_PASSWORD" | DOCKER_CONFIG="$tmp" docker login "$REGISTRY_HOST" \
+printf '%s' "$REGISTRY_PASSWORD" | DOCKER_CONFIG="$tmp/docker" docker login "$REGISTRY_HOST" \
   --username "$REGISTRY_USER" --password-stdin >/dev/null
 identity=''
 for workflow in quality.yml publish-staging-image.yml; do
@@ -189,7 +190,7 @@ for workflow in quality.yml publish-staging-image.yml; do
     [[ "$workflow" != quality.yml || "$branch" == kaori/staging ]] || continue
     candidate="https://github.com/OXY7O/kaori-website/.github/workflows/$workflow@refs/heads/$branch"
     if docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker \
-      -v "$tmp:/root/.docker:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3 verify \
+      -v "$tmp/docker:/root/.docker:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3 verify \
       --certificate-identity "$candidate" --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       "$image_ref" >"$tmp/signature.json" 2>/dev/null; then identity="$candidate"; break; fi
   done
@@ -199,7 +200,7 @@ done
   fail 'accepted digest does not verify with approved RC signer'
 for kind in spdxjson slsaprovenance1; do
   docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker \
-    -v "$tmp:/root/.docker:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3 verify-attestation \
+    -v "$tmp/docker:/root/.docker:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3 verify-attestation \
     --type "$kind" --certificate-identity "$identity" \
     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
     "$image_ref" >"$tmp/$kind.json" || fail "signed $kind attestation failed"
