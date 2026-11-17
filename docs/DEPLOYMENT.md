@@ -156,7 +156,7 @@ approval request invalidates that pending live acceptance.
 
 ## Planned stable production approval using the existing one-slot runtime — #203
 
-**Source checkpoint, 2026-11-17:** Approved PR #206 merged into protected staging, but no main promotion, fresh signed RC UAT, or actual protected production reviewer wait has been accepted. Publication rights #4939 remain HOLD.
+**Source checkpoint, 2026-11-17:** Reviewed PR #206 merged into protected staging and published/deployed signed `v0.1.2-rc.10` on the sole public Website slot. Its exact OCI digest, technical readiness and live license-file notices passed; the maintainer explicitly **APPROVED** the RC.10 Human UAT in [Website #202](https://github.com/OXY7O/kaori-website/issues/202#issuecomment-6939870730). Subsequent approved #209/#207 staging source-only changes do **not** revoke that historical signed RC acceptance or require another RC. A governed production promotion has **not** occurred. The audited previous signed rollback identity, actual protected production reviewer behavior and rights for future recurring publication [KAORI #4939](https://github.com/OXY7O/KAORI/issues/4939) remain separate.
 
 The approved operating topology is **two GitHub Environments, one active public
 Website runtime**. Staging signed RCs may already be exposed at
@@ -182,8 +182,13 @@ exposing values. GitHub connector cannot independently verify these settings. Th
    marker, after inspecting the live RC and its rollback evidence.
 3. Open/review the normal `kaori/staging` → `main` promotion PR.
    Include `Human UAT evidence: <full issue comment URL>` in the PR body.
-   The human UAT marker must precede the PR merge. The promotion PR must
-   have an independent APPROVED review, not only CI PASS.
+   The Human UAT marker must precede the PR merge. The promotion PR must
+   have an independent APPROVED review, not only CI PASS. For a prior
+   already-accepted signed RC whose later staging commits affect **only**
+   release governance, tests or documentation, the accepted RC SHA must be
+   an ancestor of the reviewed promotion head, and Git must prove no changes
+   in **any shipped build inputs** from accepted RC source through `main`.
+   A prior signed UAT must not be copied onto a source with runtime drift.
 4. After protected main merge and 4/4 Full Admission, GitHub Actions
    reaches the actual `production` Environment approval; the operator
    clicks **Approve and deploy**. There is no manual workflow dispatch or
