@@ -35,17 +35,14 @@ prs="$(jq -c --arg sha "$GITHUB_SHA" '[.[] | select(
 )]' <<<"$merged")"
 [[ "$(jq length <<<"$prs")" -eq 1 ]] || fail 'expected exactly one reviewed staging-to-main PR'
 pr="$(jq -r '.[0].number' <<<"$prs")"
-rc_sha="$(jq -r '.[0].head.sha' <<<"$prs")"
+promotion_sha="$(jq -r '.[0].head.sha' <<<"$prs")"
 author="$(jq -r '.[0].user.login' <<<"$prs")"
 merged_at="$(jq -r '.[0].merged_at' <<<"$prs")"
 pr_body="$(jq -r '.[0].body // ""' <<<"$prs")"
-[[ "$rc_sha" =~ ^[a-f0-9]{40}$ ]] || fail 'promotion staging source invalid'
-git merge-base --is-ancestor "$rc_sha" HEAD || fail 'accepted RC is not a main ancestor'
-for path in Dockerfile .dockerignore package.json package-lock.json astro.config.mjs tsconfig.json src public deploy; do
-  git diff --quiet "$rc_sha" HEAD -- "$path" || fail "build inputs drifted since accepted RC: $path"
-done
+[[ "$promotion_sha" =~ ^[a-f0-9]{40}$ ]] || fail 'promotion staging source invalid'
+git merge-base --is-ancestor "$promotion_sha" HEAD || fail 'reviewed promotion head is not a main ancestor'
 reviews="$(api_get "$api/pulls/$pr/reviews")" || fail 'promotion reviews unavailable'
-jq -e --arg author "$author" --arg sha "$rc_sha" '
+jq -e --arg author "$author" --arg sha "$promotion_sha" '
   [.[] | select(.user.login != $author and .commit_id == $sha) | .user.login] as $reviewers
   | [.[] | select(.user.login as $login | $reviewers | index($login) != null)] as $relevant
   | any($reviewers[]; . as $login |
@@ -77,7 +74,18 @@ marker="$(grep -E '^KAORI_WEBSITE_UAT_ACCEPTED:[a-f0-9]{40}:v[0-9]+[.][0-9]+[.][
 accepted_sha="$(cut -d: -f2 <<<"$marker")"
 rc_tag="$(cut -d: -f3 <<<"$marker")"
 digest="sha256:$(cut -d: -f5 <<<"$marker")"
-[[ "$accepted_sha" == "$rc_sha" ]] || fail 'Human UAT source mismatches promoted staging'
+[[ "$accepted_sha" =~ ^[a-f0-9]{40}$ ]] || fail 'invalid accepted RC source SHA'
+# An accepted earlier RC may precede later docs/release-guard-only staging merges.
+# Trust only the prior Human UAT binding and require it to be on the reviewed
+# promotion lineage, with no change to any shipped Website build input.
+git merge-base --is-ancestor "$accepted_sha" "$promotion_sha" ||
+  fail 'Human UAT source is not an ancestor of reviewed promotion'
+git merge-base --is-ancestor "$accepted_sha" HEAD ||
+  fail 'Human UAT source is not an ancestor of approved main'
+for path in Dockerfile .dockerignore package.json package-lock.json astro.config.mjs tsconfig.json src public deploy; do
+  git diff --quiet "$accepted_sha" HEAD -- "$path" || fail "build inputs drifted since accepted RC: $path"
+done
+rc_sha="$accepted_sha"
 stable_tag="$(sed -E 's/-rc[.][1-9][0-9]*$//' <<<"$rc_tag")"
 [[ "$stable_tag" =~ ^v[0-9]+[.][0-9]+[.][0-9]+$ ]] || fail 'stable SemVer invalid'
 
