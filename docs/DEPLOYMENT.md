@@ -40,12 +40,27 @@ Production image/Compose use an unprivileged server, health endpoint at `/health
 3. Prepare the above app and state directories with restricted ownership; verify no naming/Compose project collision.
 4. Confirm the approved hostname split: `kaori.cloud` serves the website; `app.kaori.cloud` serves KAORI Application. Verify current edge registrations and obtain cutover authority before changing the apex.
 5. Verify exact staging SHA, completed website Full Admission and immutable digest; ensure OCI labels match SHA and SemVer candidate.
-6. With GitHub Free/private, use repository-level Actions secrets/variables and an explicit manual release deployment authorization record; protected GitHub Environments and environment-level secrets are not available. Pin the website target's SSH host key. Never use a direct runner-to-localhost deployment shortcut.
+6. This repository is **public** and the maintainer reports both `staging`
+   and `production` GitHub Environments have been created. Before enabling
+   automation, an administrator must verify their deployment branch policies,
+   required reviewers, self-review/bypass restrictions, and intended scoped
+   variable/secret names. Keep the host SSH key pinned and the deployment
+   adapter's separate SSH trust boundary; never substitute a runner-local
+   Docker deployment shortcut.
 7. Every release candidate retains verified SBOM, Trivy HIGH/CRITICAL results, provenance, signing and immutable registry identity before deployment; successful earlier release evidence does not transfer to a new SHA.
 
 ## Repository Actions configuration
 
-Repository-level keys are now wired into the manual-only release candidate publisher (#4) and release deployment workflow (#5) on issue-linked review branches. Credentials and admission must still be verified for each independent release; previous acceptance does not authorize a new publication. Provision them in `OXY7O/kaori-website` repository settings; do not assume organization-level or environment-level secrets will reach a private GitHub Free repository.
+The existing manual candidate publisher and deployment fallback retain
+issue-scoped authorization. The proposed automated jobs explicitly use
+`staging` and `production` GitHub Environments and must receive their
+intended scoped credentials only after administrator verification. The two
+**repository-level** one-time switches
+`KAORI_WEBSITE_AUTO_STAGING_ENABLED` and
+`KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` must remain false/absent pending
+separate #202/#203 acceptance; setting them is not a substitute for rights,
+rollback, UAT or an actual production approval gate. No prior accepted RC
+authorizes recurring public release by default.
 
 - Variables: `KAORI_WEBSITE_DOCKER_REGISTRY_HOST`, `KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE`, `KAORI_WEBSITE_HOST`, `KAORI_WEBSITE_HOST_PORT`, `KAORI_WEBSITE_HOST_USER`, `KAORI_WEBSITE_HOST_DEPLOY_ROOT`, `KAORI_WEBSITE_PUBLIC_DOMAIN`.
 - Secrets: `KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME`, `KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD`, `KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY`, `KAORI_WEBSITE_HOST_SSH_PASSPHRASE` when the private key is encrypted, and `KAORI_WEBSITE_HOST_KNOWN_HOSTS` pinned out of band.
@@ -103,10 +118,10 @@ Collect the exact SHA, image digest, immutable OCI release metadata, application
 
 ## Planned automatic staging UAT on the existing public slot — #202
 
-The maintainer accepts one current public Website runtime (\`https://kaori.cloud\`)
+The maintainer accepts one current public Website runtime (`https://kaori.cloud`)
 for staging signed RC and approved production stable releases. The runtime
 does not split until separate infrastructure becomes available; GitHub
-\`staging\` and \`production\` are logical **governance** Environments, not
+`staging` and `production` are logical **governance** Environments, not
 additional hostnames or Compose projects.
 
 After the issue-linked PR is independently merged and admitted, the existing
@@ -195,14 +210,21 @@ DNS/TLS and App/Docs infrastructure remain outside this workflow.
 
 ## Release deployment dispatch (manual only)
 
-Once a unique prerelease for the current admitted staging SHA exists, an operator may dispatch `deploy-staging-host.yml` from `kaori/staging`, providing the exact `candidate_tag` and a link to explicit maintainer authorization (`approval_reference`). The workflow validates GitHub RC evidence for the exact SHA/image digest, checks repository-level credentials without printing them, verifies the SSH pinned host key, and transfers the reviewed adapter via a separate SSH deployment identity. There is no automated dispatch from a feature branch, and no automatic shared-edge publication. A GitHub Free private repository does not enforce human approval; the authorization link is audit evidence for the operating procedure, not a substitute for technical branch protection.
+Once a unique prerelease for the current admitted staging SHA exists, an operator may dispatch `deploy-staging-host.yml` from `kaori/staging`, providing the exact `candidate_tag` and a link to explicit maintainer authorization (`approval_reference`). The workflow validates GitHub RC evidence for the exact SHA/image digest,
+checks its authorized credentials without printing them, verifies pinned SSH
+host trust and transfers the reviewed adapter through a distinct deployment
+identity. This is a **manual recovery path**, never an implicit bypass of
+staging admission, public-slot authorization or required production
+Environment review. No feature-branch dispatch is an automatic deployment.
 
-## Current approved public UAT request — #195
+## Legacy public UAT request fallback — #195
 
-This is the **current** Website request-branch operating contract and supersedes
-the private-only push behavior originally documented under #122/#124.
-Historical private UAT runbooks and RC.8 records below remain valid
-**historical evidence**, not current default behavior.
+This is the previously approved request-branch contract that superseded
+#122/#124 private-only behavior. It remains separately governed while the
+new #202 admission-gated staging train is not activated or proven. Once that
+train is accepted, this procedure is **fallback only**, not routine release
+or a competing path around GitHub Environments. Historical private RC.8
+records remain evidence, not current default behavior.
 
 1. Obtain exact accepted `kaori/staging` SHA, successful all-lanes Full Admission,
    one matching signed RC tag, immutable OCI digest/SBOM/provenance and successful
