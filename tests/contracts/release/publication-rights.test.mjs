@@ -135,6 +135,10 @@ const denied = [
     ],
   },
   {
+    label: "missing approval timestamp",
+    comments: [comment("lethisa", "KAORI_WEBSITE_PUBLICATION_GO:" + sha, { updated_at: null }), approvals[1]],
+  },
+  {
     label: "revoked decision",
     comments: [...approvals, comment("lethisa", "KAORI_WEBSITE_PUBLICATION_REVOKED:" + sha)],
   },
@@ -153,6 +157,12 @@ test("GitHub rights API failure does not fall back to a release switch", () => {
   const result = checkRights(approvedIssue, approvals, { RIGHTS_TEST_API_DOWN: "1" });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /BLOCK: recurring publication rights issue unavailable/);
+});
+
+test("malformed source SHA cannot request a recurring publication", () => {
+  const result = checkRights(approvedIssue, approvals, { ACCEPTED_SHA: "not-a-sha" });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /BLOCK: recurring publication source SHA invalid/);
 });
 
 test("noncanonical workflow identity cannot use the rights-only validation path", () => {
