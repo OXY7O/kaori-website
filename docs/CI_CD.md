@@ -210,6 +210,26 @@ Do **not** claim a successful staging auto-release merely because the source
 PR and Developer Check pass. The former \`rc-request\` and \`uat-request\`
 paths remain legacy fallbacks until the new flow is proven in live UAT.
 
+**Fail-closed publication-rights guard (#208, pending merge):** The one-time
+automation flag is necessary but is **not approval** to publish. The existing
+publisher's read-only rights preflight consults cross-repository
+[KAORI #4939](https://github.com/OXY7O/KAORI/issues/4939) before selecting
+an RC, before tag/Release creation, and again before public deployment.
+The issue must be **closed/completed**, with source-exact maintainer and
+independent reviewer comments, both recorded before issue closure:
+
+- Maintainer \`lethisa\`: \`KAORI_WEBSITE_PUBLICATION_GO:<staging SHA>\`
+- Reviewer \`donibawono\`: \`KAORI_WEBSITE_PUBLICATION_REVIEWED:<staging SHA>\`
+
+A later \`KAORI_WEBSITE_PUBLICATION_REVOKED:<staging SHA>\` from either actor
+blocks the scope. Open/NO-GO issues, mismatched SHA, altered comments,
+missing independent review, unavailable API or incomplete pagination
+**fail closed** before any new public image or host mutation. This conservatively
+binds approval to one reviewed source, not every later staging push. Any
+broader recurring source scope needs its own explicit #4939 rights decision.
+Historical RC.9/RC.10 technical CI and Human UAT cannot grant this approval.
+Manual separately authorized RC recovery remains under its existing authority.
+
 **Production is independent:** \`main\` promotion and the protected
 \`production\` Environment approval are a separate implementation child
 [#203](https://github.com/OXY7O/kaori-website/issues/203). Both GitHub
