@@ -44,7 +44,7 @@ test("only main with a production environment may publish same-digest stable", (
 test("publication depends on merged staging promotion, trusted Human UAT and immutable RC identity", () => {
   for (const marker of [
     "api/commits/$GITHUB_SHA/pulls",
-    'select(.state == "APPROVED"',
+    "current-head independent promotion reviewer approval missing",
     "Human UAT evidence:",
     "KAORI_WEBSITE_UAT_ACCEPTED:",
     "collaborators/$approver/permission",
@@ -66,6 +66,34 @@ test("publication depends on merged staging promotion, trusted Human UAT and imm
   }
   assert.doesNotMatch(publisher, /docker build|docker push|docker compose up/);
   assert.doesNotMatch(publisher, /KAORI_WEBSITE_STABLE_RELEASE_94|ACCEPTED_DIGEST/);
+});
+
+test("production promotion uses latest reviewer state for the exact accepted source", () => {
+  const filter = publisher.match(
+    /jq -e --arg author "\$author" --arg sha "\$rc_sha" '([\s\S]*?)' <<<"\$reviews"/,
+  )?.[1];
+  assert.ok(filter, "expected current-head review validation");
+  const evaluate = (reviews) => {
+    const result = spawnSync(
+      "jq",
+      ["-c", "--arg", "author", "maintainer", "--arg", "sha", "a".repeat(40), filter],
+      { input: JSON.stringify(reviews), encoding: "utf8" },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    return JSON.parse(result.stdout);
+  };
+  const review = (login, state, sha = "a".repeat(40)) => ({
+    user: { login },
+    state,
+    commit_id: sha,
+  });
+  assert.equal(evaluate([review("reviewer", "APPROVED")]), true);
+  assert.equal(evaluate([review("maintainer", "APPROVED")]), false);
+  assert.equal(evaluate([review("reviewer", "APPROVED", "b".repeat(40))]), false);
+  assert.equal(
+    evaluate([review("reviewer", "APPROVED"), review("reviewer", "DISMISSED")]),
+    false,
+  );
 });
 
 test("invalid production workflow identity fails before API, SSH and release mutation", () => {
