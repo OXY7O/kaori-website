@@ -91,10 +91,7 @@ test("production promotion uses latest reviewer state for the exact accepted sou
   assert.equal(evaluate([review("reviewer", "APPROVED")]), true);
   assert.equal(evaluate([review("maintainer", "APPROVED")]), false);
   assert.equal(evaluate([review("reviewer", "APPROVED", "b".repeat(40))]), false);
-  assert.equal(
-    evaluate([review("reviewer", "APPROVED"), review("reviewer", "DISMISSED")]),
-    false,
-  );
+  assert.equal(evaluate([review("reviewer", "APPROVED"), review("reviewer", "DISMISSED")]), false);
 });
 
 test("invalid production workflow identity fails before API, SSH and release mutation", () => {
