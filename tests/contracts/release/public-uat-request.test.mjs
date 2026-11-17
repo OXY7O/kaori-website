@@ -6,6 +6,8 @@ import test from "node:test";
 
 const workflow = readFileSync(".github/workflows/deploy-staging-host.yml", "utf8");
 const adapter = readFileSync("scripts/release/deploy-release.sh", "utf8");
+const admission = readFileSync(".github/workflows/quality.yml", "utf8");
+const publisher = readFileSync("scripts/release/publish-candidate.sh", "utf8");
 const deploy = readFileSync("deploy/server/deploy.sh", "utf8");
 const sha = "a".repeat(40);
 const tag = "v0.1.2-rc.9";
@@ -129,4 +131,45 @@ test("manual deployment inputs remain explicit and staging-bound", () => {
   assert.match(workflow, /\[\[ "\$GITHUB_REF" == refs\/heads\/kaori\/staging \]\]/);
   assert.match(workflow, /edge="\$REQUEST_PUBLIC_EDGE"/);
   assert.match(adapter, /GITHUB_EVENT_NAME" == workflow_dispatch/);
+});
+
+test("admitted protected staging is the only automatic signing trigger", () => {
+  assert.match(admission, /staging-rc-publish:/);
+  assert.match(admission, /staging-rc-deploy:/);
+  assert.match(
+    admission,
+    /needs: \[promotion-source, full-admission, container-admission, browser-evidence\]/,
+  );
+  assert.match(admission, /KAORI_WEBSITE_AUTO_STAGING_ENABLED == 'true'/);
+  assert.match(admission, /environment:\n      name: staging/);
+  assert.match(admission, /group: kaori-website-release-deploy/);
+  assert.match(admission, /Select unique signed candidate or verify existing release/);
+  assert.match(admission, /scripts\/release\/deploy-release\.sh deploy/);
+  assert.match(admission, /should_publish=true/);
+  assert.match(
+    publisher,
+    /automatic staging RC requires canonical Full Admission workflow identity/,
+  );
+  assert.match(admission, /existing RC source mismatch/);
+  assert.match(adapter, /staging auto-deploy requires existing single public edge/);
+  assert.match(adapter, /staging auto-deploy authority must match approved workstream/);
+});
+
+test("automatic staging adapter rejects wrong provenance before SSH", () => {
+  const result = spawnSync("bash", [resolve("scripts/release/deploy-release.sh"), "preflight"], {
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      GITHUB_EVENT_NAME: "push",
+      GITHUB_REF: "refs/heads/kaori/staging",
+      KAORI_WEBSITE_STAGING_AUTO: "1",
+      GITHUB_REPOSITORY: "OXY7O/kaori-website",
+      GITHUB_WORKFLOW_REF:
+        "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/kaori/staging",
+      KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "0",
+      APPROVAL_REF: "https://github.com/OXY7O/kaori-website/issues/202",
+    },
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /BLOCK: staging auto-deploy requires existing single public edge/);
 });

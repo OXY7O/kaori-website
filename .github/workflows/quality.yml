@@ -23,7 +23,7 @@ permissions:
 
 concurrency:
   group: kaori-website-admission-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && vars.KAORI_WEBSITE_AUTO_STAGING_ENABLED != 'true' }}
 
 env:
   KAORI_WEBSITE_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -250,3 +250,149 @@ jobs:
         run: |
           printf 'Approved production Environment run: %s\n' "$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
           printf 'Same public Website slot; no image rebuild or automatic host mutation\n' >> "$GITHUB_STEP_SUMMARY"
+
+  staging-rc-publish:
+    name: Publish Accepted Staging RC
+    needs: [promotion-source, full-admission, container-admission, browser-evidence]
+    if: >-
+      ${{ github.event_name == 'push' && github.ref == 'refs/heads/kaori/staging' && vars.KAORI_WEBSITE_AUTO_STAGING_ENABLED == 'true' }}
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    environment:
+      name: staging
+      url: https://kaori.cloud
+    timeout-minutes: 120
+    concurrency:
+      group: kaori-website-rc
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      actions: read
+      id-token: write
+    outputs:
+      tag: ${{ steps.candidate.outputs.tag }}
+    env:
+      ACCEPTED_SHA: ${{ github.sha }}
+      GH_TOKEN: ${{ github.token }}
+      KAORI_WEBSITE_STAGING_AUTO: "1"
+      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
+    steps:
+      - name: Checkout exact admitted source and immutable release tags
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+      - name: Select unique signed candidate or verify existing release
+        id: candidate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
+          [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'automatic RC requires staging'
+          [[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || fail 'RC checkout differs from admitted source'
+          current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
+          [[ "$current" == "$ACCEPTED_SHA" ]] || fail 'staging advanced before RC selection'
+          existing="$(git tag --points-at "$current" | grep -E "^v[0-9]+[.][0-9]+[.][0-9]+-rc[.][1-9][0-9]*$" || true)"
+          if [[ -n "$existing" ]]; then
+            [[ "$(printf '%s\n' "$existing" | wc -l)" -eq 1 ]] || fail 'ambiguous same-source RC tags'
+            release="$(curl -fsS "${headers[@]}" "$api/releases/tags/$existing")" || fail 'existing RC is not fully published'
+            [[ "$(jq -r '.prerelease' <<<"$release")" == true ]] || fail 'existing release not an RC'
+            [[ "$(jq -r '.target_commitish' <<<"$release")" == "$current" ]] || fail 'existing RC source mismatch'
+            [[ "$(jq -r '.body // ""' <<<"$release")" == *'Immutable digest: sha256:'* ]] ||
+              fail 'existing RC lacks immutable digest evidence'
+            printf 'tag=%s\nshould_publish=false\n' "$existing" >> "$GITHUB_OUTPUT"
+            echo "PASS: reuse signed RC $existing, no rebuild"
+            exit 0
+          fi
+          stable="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname |
+            grep -E "^v[0-9]+[.][0-9]+[.][0-9]+$" | head -n1 || true)"
+          [[ -n "$stable" ]] || fail 'stable SemVer baseline absent'
+          IFS=. read -r major minor patch <<<"${stable#v}"
+          version="$major.$minor.$((patch + 1))"
+          highest=0
+          while IFS= read -r used; do
+            [[ -n "$used" ]] || continue
+            suffix="${used##*.}"
+            [[ "$suffix" =~ ^[1-9][0-9]*$ ]] || continue
+            if (( 10#$suffix > highest )); then highest=$((10#$suffix)); fi
+          done < <(git tag --list "v$version-rc.*")
+          tag="v$version-rc.$((highest + 1))"
+          status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/git/ref/tags/$tag")"
+          [[ "$status" == 404 ]] || fail 'next RC tag reserved or GitHub unavailable'
+          printf 'tag=%s\nshould_publish=true\n' "$tag" >> "$GITHUB_OUTPUT"
+          echo "PASS: signed RC candidate $tag for exact staging $current"
+      - name: Verify publisher and registry configuration
+        if: ${{ steps.candidate.outputs.should_publish == 'true' }}
+        shell: bash
+        env:
+          RC_TAG: ${{ steps.candidate.outputs.tag }}
+        run: bash scripts/release/publish-candidate.sh preflight
+      - name: Build, scan, sign and publish immutable release
+        if: ${{ steps.candidate.outputs.should_publish == 'true' }}
+        shell: bash
+        env:
+          RC_TAG: ${{ steps.candidate.outputs.tag }}
+        run: bash scripts/release/publish-candidate.sh publish
+      - name: Logout of release registry
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "$REGISTRY_HOST" ]]; then docker logout "$REGISTRY_HOST" || true; fi
+
+  staging-rc-deploy:
+    name: Deploy Accepted Staging RC
+    needs: [staging-rc-publish]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/kaori/staging' && vars.KAORI_WEBSITE_AUTO_STAGING_ENABLED == 'true' && needs.staging-rc-publish.result == 'success' }}
+    runs-on: [self-hosted, linux, x64, kaori-ci]
+    environment:
+      name: staging
+      url: https://kaori.cloud
+    timeout-minutes: 45
+    concurrency:
+      group: kaori-website-release-deploy
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      actions: read
+    env:
+      ACCEPTED_SHA: ${{ github.sha }}
+      GH_TOKEN: ${{ github.token }}
+      KAORI_WEBSITE_STAGING_AUTO: "1"
+      RC_TAG: ${{ needs.staging-rc-publish.outputs.tag }}
+      APPROVAL_REF: https://github.com/OXY7O/kaori-website/issues/202
+      KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "1"
+      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
+      WEBSITE_HOST: ${{ vars.KAORI_WEBSITE_HOST }}
+      WEBSITE_SSH_PORT: ${{ vars.KAORI_WEBSITE_HOST_PORT }}
+      WEBSITE_SSH_USER: ${{ vars.KAORI_WEBSITE_HOST_USER }}
+      WEBSITE_DEPLOY_ROOT: ${{ vars.KAORI_WEBSITE_HOST_DEPLOY_ROOT }}
+      WEBSITE_SSH_KEY: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY }}
+      WEBSITE_SSH_PASSPHRASE: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PASSPHRASE }}
+      WEBSITE_KNOWN_HOSTS: ${{ secrets.KAORI_WEBSITE_HOST_KNOWN_HOSTS }}
+    steps:
+      - name: Checkout exact admitted staging source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify signed exact-source RC and pinned host
+        shell: bash
+        run: bash scripts/release/deploy-release.sh preflight
+      - name: Deploy exact signed RC to existing shared public Website
+        shell: bash
+        run: bash scripts/release/deploy-release.sh deploy
+      - name: Record release acceptance boundary
+        shell: bash
+        run: |
+          printf 'Staging RC: %s\nSource SHA: %s\n' "$RC_TAG" "$ACCEPTED_SHA" >> "$GITHUB_STEP_SUMMARY"
+          printf 'ONE PUBLIC SLOT https://kaori.cloud: deployed; HUMAN UAT: PENDING\n' >> "$GITHUB_STEP_SUMMARY"
