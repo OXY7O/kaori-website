@@ -14,7 +14,7 @@ const approvedIssue = {
   state: "closed",
   state_reason: "completed",
   closed_at: cutoff,
-  comments: 2,
+  comments: 1,
 };
 
 function comment(login, body, overrides = {}) {
@@ -28,8 +28,10 @@ function comment(login, body, overrides = {}) {
 }
 
 const approvals = [
-  comment("lethisa", "KAORI_WEBSITE_PUBLICATION_GO:" + sha),
-  comment("donibawono", "KAORI_WEBSITE_PUBLICATION_REVIEWED:" + sha),
+  comment(
+    "lethisa",
+    "## Maintainer authorization\nKAORI_WEBSITE_PUBLICATION_GO:STANDING\nScope: recurring Website publication",
+  ),
 ];
 
 function checkRights(issue = approvedIssue, comments = approvals, overrides = {}) {
@@ -89,10 +91,10 @@ test("both privileged staging jobs recheck rights before RC selection and public
   assert.match(workflow, /needs: \[staging-rc-publish\]/);
 });
 
-test("accepted rights require exact source and independent reviewer", () => {
+test("standing owner permission authorizes current staging source after closure", () => {
   const result = checkRights();
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /PASS: KAORI #4939 approved exact staging source/);
+  assert.match(result.stdout, /PASS: KAORI #4939 standing publication authorized/);
   assert.doesNotMatch(result.stdout + result.stderr, /docker|ssh|published|deployed/i);
 });
 
@@ -114,36 +116,34 @@ const denied = [
     issue: { ...approvedIssue, comments: 101 },
   },
   {
-    label: "no maintainer authorization",
-    comments: [comment("other", "KAORI_WEBSITE_PUBLICATION_GO:" + sha), approvals[1]],
+    label: "missing owner permission",
+    comments: [comment("other", "KAORI_WEBSITE_PUBLICATION_GO:STANDING")],
   },
   {
-    label: "no independent approved reviewer",
-    comments: [approvals[0], comment("other", "KAORI_WEBSITE_PUBLICATION_REVIEWED:" + sha)],
+    label: "older source-only permission is not standing",
+    comments: [comment("lethisa", "KAORI_WEBSITE_PUBLICATION_GO:" + sha)],
   },
   {
-    label: "stale source marker",
-    comments: [comment("lethisa", "KAORI_WEBSITE_PUBLICATION_GO:" + "b".repeat(40)), approvals[1]],
-  },
-  {
-    label: "approval edited after issue closed",
+    label: "owner permission edited after issue closure",
     comments: [
-      comment("lethisa", "KAORI_WEBSITE_PUBLICATION_GO:" + sha, {
+      comment("lethisa", "KAORI_WEBSITE_PUBLICATION_GO:STANDING", {
         updated_at: "2026-11-17T03:00:00Z",
       }),
-      approvals[1],
     ],
   },
   {
-    label: "missing approval timestamp",
-    comments: [
-      comment("lethisa", "KAORI_WEBSITE_PUBLICATION_GO:" + sha, { updated_at: null }),
-      approvals[1],
-    ],
+    label: "missing permission timestamp",
+    comments: [comment("lethisa", "KAORI_WEBSITE_PUBLICATION_GO:STANDING", { updated_at: null })],
   },
   {
-    label: "revoked decision",
-    comments: [...approvals, comment("lethisa", "KAORI_WEBSITE_PUBLICATION_REVOKED:" + sha)],
+    label: "revoked standing owner permission",
+    issue: { ...approvedIssue, comments: 2 },
+    comments: [...approvals, comment("lethisa", "KAORI_WEBSITE_PUBLICATION_REVOKED:STANDING")],
+  },
+  {
+    label: "incomplete pagination despite a valid owner permission",
+    issue: { ...approvedIssue, comments: 2 },
+    comments: approvals,
   },
 ];
 
@@ -156,10 +156,15 @@ for (const scenario of denied) {
   });
 }
 
+test("standing permission covers later staging SHA without another owner approval", () => {
+  const result = checkRights(approvedIssue, approvals, { ACCEPTED_SHA: "b".repeat(40) });
+  assert.equal(result.status, 0, result.stderr);
+});
+
 test("GitHub rights API failure does not fall back to a release switch", () => {
   const result = checkRights(approvedIssue, approvals, { RIGHTS_TEST_API_DOWN: "1" });
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /BLOCK: recurring publication rights issue unavailable/);
+  assert.match(result.stderr, /BLOCK: standing publication authority issue unavailable/);
 });
 
 test("malformed source SHA cannot request a recurring publication", () => {

@@ -23,47 +23,41 @@ elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
 else
   fail 'unsupported RC request event'
 fi
-# KAORI #4939 is recurring-publication authority; a repository activation
-# switch does not convey source-distribution rights. Reuse source-bound
-# independent Human Acceptance evidence (as in the stable release path).
+# KAORI #4939 records standing first-party owner publication authority. Preserve
+# fail-closed owner evidence and revocation, without introducing a third issue
+# approval level beyond protected PR code review and production deployment review.
 verify_recurring_publication_rights() {
   local issue_data comments_data closed_at count
   local authority="https://api.github.com/repos/OXY7O/KAORI/issues/4939"
-  issue_data="$(curl --fail-with-body -fsS ""${headers[@]}"" "$authority")" ||
-    fail 'recurring publication rights issue unavailable'
+  issue_data="$(curl --fail-with-body -fsS "${headers[@]}" "$authority")" ||
+    fail 'standing publication authority issue unavailable'
   jq -e '.state == "closed" and .state_reason == "completed" and
     (.closed_at | type == "string")' <<<"$issue_data" >/dev/null ||
-    fail 'recurring publication rights are not approved in KAORI #4939'
+    fail 'standing publication authorization is not completed in KAORI #4939'
   closed_at="$(jq -r '.closed_at' <<<"$issue_data")"
   count="$(jq -r '.comments // -1' <<<"$issue_data")"
   [[ "$count" =~ ^[0-9]+$ && "$count" -le 100 ]] ||
-    fail 'publication approval comment coverage unavailable'
-  comments_data="$(curl --fail-with-body -fsS ""${headers[@]}"" "$authority/comments?per_page=100")" ||
-    fail 'publication approval reviewer evidence unavailable'
-  # Two source-exact comments must predate final closure. Later edits,
-  # untrusted commenters and different-source approvals cannot pass.
-  jq -e --arg sha "$sha" --arg cutoff "$closed_at" '
-    if type != "array" then false else
+    fail 'standing publication approval comment coverage unavailable'
+  comments_data="$(curl --fail-with-body -fsS "${headers[@]}" "$authority/comments?per_page=100")" ||
+    fail 'standing publication owner evidence unavailable'
+  # Exactly one authenticated owner permission must predate closure. Reject
+  # incomplete pagination, late edits, revoked authority and owner impersonation.
+  jq -e --arg cutoff "$closed_at" --argjson expected "$count" '
+    if type != "array" or length != $expected then false else
       ([.[] | select(
         .user.login == "lethisa"
-        and ((.body // "" | split("\n") | index("KAORI_WEBSITE_PUBLICATION_GO:" + $sha)) != null)
-        and (.created_at | type == "string") and (.updated_at | type == "string")
-        and .created_at <= $cutoff and .updated_at <= $cutoff
-      )] | length == 1)
-      and ([.[] | select(
-        .user.login == "donibawono"
-        and ((.body // "" | split("\n") | index("KAORI_WEBSITE_PUBLICATION_REVIEWED:" + $sha)) != null)
+        and ((.body // "" | split("\n") | index("KAORI_WEBSITE_PUBLICATION_GO:STANDING")) != null)
         and (.created_at | type == "string") and (.updated_at | type == "string")
         and .created_at <= $cutoff and .updated_at <= $cutoff
       )] | length == 1)
       and ([.[] | select(
         (.user.login == "lethisa" or .user.login == "donibawono")
-        and ((.body // "" | split("\n") | index("KAORI_WEBSITE_PUBLICATION_REVOKED:" + $sha)) != null)
+        and ((.body // "" | split("\n") | index("KAORI_WEBSITE_PUBLICATION_REVOKED:STANDING")) != null)
       )] | length == 0)
     end
   ' <<<"$comments_data" >/dev/null ||
-    fail 'approved exact-source publication and independent review evidence missing or revoked'
-  printf 'PASS: KAORI #4939 approved exact staging source %s with independent review\n' "$sha"
+    fail 'standing owner publication authorization missing, incomplete or revoked'
+  printf 'PASS: KAORI #4939 standing publication authorized for staging source %s\n' "$sha"
 }
 
 if [[ "$mode" == rights && "$auto_staging" != true ]]; then

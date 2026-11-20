@@ -212,25 +212,16 @@ Do **not** claim a successful staging auto-release merely because the source
 PR and Developer Check pass. The former \`rc-request\` and \`uat-request\`
 paths remain legacy fallbacks until the new flow is proven in live UAT.
 
-**Fail-closed publication-rights guard (#208, pending merge):** The one-time
-automation flag is necessary but is **not approval** to publish. The existing
-publisher's read-only rights preflight consults cross-repository
-[KAORI #4939](https://github.com/OXY7O/KAORI/issues/4939) before selecting
-an RC, before tag/Release creation, and again before public deployment.
-The issue must be **closed/completed**, with source-exact maintainer and
-independent reviewer comments, both recorded before issue closure:
+**Standing first-party publication authorization (#4939):** The KAORI creator/maintainer has explicitly approved ongoing public Website operation and signed release publication. The one-time automation variable remains an activation switch, **not** a rights grant. The existing rights preflight reads the cross-repository [KAORI #4939](https://github.com/OXY7O/KAORI/issues/4939) before selecting an RC, before tag/Release creation and again before public deployment.
 
-- Maintainer `lethisa`: `KAORI_WEBSITE_PUBLICATION_GO:<staging SHA>`
-- Reviewer `donibawono`: `KAORI_WEBSITE_PUBLICATION_REVIEWED:<staging SHA>`
+The issue must be **closed/completed**, with exactly one unedited, authenticated owner `lethisa` standing authorization comment predating closure:
 
-A later `KAORI_WEBSITE_PUBLICATION_REVOKED:<staging SHA>` from either actor
-blocks the scope. Open/NO-GO issues, mismatched SHA, altered comments,
-missing independent review, unavailable API or incomplete pagination
-**fail closed** before any new public image or host mutation. This conservatively
-binds approval to one reviewed source, not every later staging push. Any
-broader recurring source scope needs its own explicit #4939 rights decision.
-Historical RC.9/RC.10 technical CI and Human UAT cannot grant this approval.
-Manual separately authorized RC recovery remains under its existing authority.
+- Maintainer/owner: `KAORI_WEBSITE_PUBLICATION_GO:STANDING`
+- Revocation: `KAORI_WEBSITE_PUBLICATION_REVOKED:STANDING` by the owner or designated security reviewer; any revocation blocks future publication
+
+Invalid issue state, missing/edited owner evidence, revoked standing permission, unavailable GitHub API and incomplete comment coverage **fail closed**. The same standing permission applies to later protected staging source commits; there is **no extra per-SHA issue reviewer approval**. The two required GitHub approval levels remain (1) independent protected PR code review with Developer Check/Full Admission and (2) actual production Environment deployment approval. New RCs still require signed identity, successful vulnerability checks, rollback and Human UAT before protected stable promotion. Public source relicensing, trademark sublicensing and third-party notices are separate rights decisions; a standing owner release operation does not rewrite those licenses.
+
+This scope replaces the older per-SHA reviewer-comment condition introduced for conservative fail-closed behavior in #208; it does not disable the rights preflight, allow direct `main`, or enable staging publishing before authorized activation. Historical RC.9/RC.10 owner UAT remains exact-digest evidence, not automatic acceptance of newly built bits. Manual separately authorized recovery remains under existing authority.
 
 **Production is independent:** \`main\` promotion and the protected
 \`production\` Environment approval are a separate implementation child
