@@ -46,18 +46,18 @@ verify_recurring_publication_rights() {
     if type != "array" or length != $expected then false else
       ([.[] | select(
         .user.login == "lethisa"
-        and ((.body // "" | split("\\n") | index("KAORI_WEBSITE_PUBLICATION_GO:STANDING")) != null)
+        and ((.body // "" | split("\n") | index("KAORI_WEBSITE_PUBLICATION_GO:STANDING")) != null)
         and (.created_at | type == "string") and (.updated_at | type == "string")
         and .created_at <= $cutoff and .updated_at <= $cutoff
       )] | length == 1)
       and ([.[] | select(
         (.user.login == "lethisa" or .user.login == "donibawono")
-        and ((.body // "" | split("\\n") | index("KAORI_WEBSITE_PUBLICATION_REVOKED:STANDING")) != null)
+        and ((.body // "" | split("\n") | index("KAORI_WEBSITE_PUBLICATION_REVOKED:STANDING")) != null)
       )] | length == 0)
     end
   ' <<<"$comments_data" >/dev/null ||
     fail 'standing owner publication authorization missing, incomplete or revoked'
-  printf 'PASS: KAORI #4939 standing publication authorized for staging source %s\\n' "$sha"
+  printf 'PASS: KAORI #4939 standing publication authorized for staging source %s\n' "$sha"
 }
 
 if [[ "$mode" == rights && "$auto_staging" != true ]]; then
