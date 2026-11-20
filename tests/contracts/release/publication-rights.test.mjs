@@ -27,7 +27,7 @@ function comment(login, body, overrides = {}) {
   };
 }
 
-const approvals = [comment("lethisa", "KAORI_WEBSITE_PUBLICATION_GO:STANDING")];
+const approvals = [comment("lethisa", "## Maintainer authorization\nKAORI_WEBSITE_PUBLICATION_GO:STANDING\nScope: recurring Website publication")];
 
 function checkRights(issue = approvedIssue, comments = approvals, overrides = {}) {
   const dir = mkdtempSync(join(tmpdir(), "kaori-website-rights-"));
