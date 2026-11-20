@@ -159,7 +159,7 @@ test("standing permission covers later staging SHA without another owner approva
 test("GitHub rights API failure does not fall back to a release switch", () => {
   const result = checkRights(approvedIssue, approvals, { RIGHTS_TEST_API_DOWN: "1" });
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /BLOCK: recurring publication rights issue unavailable/);
+  assert.match(result.stderr, /BLOCK: standing publication authority issue unavailable/);
 });
 
 test("malformed source SHA cannot request a recurring publication", () => {
