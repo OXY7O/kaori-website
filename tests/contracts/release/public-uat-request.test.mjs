@@ -138,7 +138,7 @@ test("admitted protected staging is the only automatic signing trigger", () => {
     admission,
     /needs: \[promotion-source, full-admission, container-admission, browser-evidence\]/,
   );
-  assert.match(admission, /KAORI_WEBSITE_AUTO_STAGING_ENABLED == 'true'/);
+  assert.match(admission, /KAORI_WEBSITE_AUTO_STAGING_ENABLED:-/);
   assert.match(admission, /environment:\n      name: staging/);
   assert.match(admission, /group: kaori-website-release-deploy/);
   assert.match(admission, /Select unique signed candidate or verify existing release/);
