@@ -11,7 +11,16 @@ if [[ "$runtime_env" == uat ]]; then
     expected_port=18083
 else
     [[ "$runtime_env" == production ]] || { echo 'BLOCK: unknown runtime environment' >&2; exit 1; }
-    expected_port=18080
+    project="${COMPOSE_PROJECT_NAME:-kaori-website}"
+    [[ "$project" =~ ^kaori-website(-[a-z0-9][a-z0-9-]*)?$ &&
+       "$project" != kaori-website-uat ]] || {
+        echo 'BLOCK: production project must be a distinct Website namespace' >&2; exit 1;
+    }
+    expected_port="${KAORI_WEBSITE_LOOPBACK_PORT:-18080}"
+    [[ "$expected_port" =~ ^[0-9]{4,5}$ ]] &&
+        (( 10#$expected_port >= 1024 && 10#$expected_port <= 65535 )) || {
+        echo 'BLOCK: production loopback port must be between 1024 and 65535' >&2; exit 1;
+    }
 fi
 expected_image="${KAORI_WEBSITE_IMAGE:?Set KAORI_WEBSITE_IMAGE to the accepted digest-qualified image}"
 [[ "$expected_image" =~ @sha256:[a-f0-9]{64}$ ]] || { echo 'BLOCK: digest-qualified image required' >&2; exit 1; }

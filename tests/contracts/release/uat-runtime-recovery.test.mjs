@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
@@ -86,7 +86,13 @@ function fixture(t, { failCandidate = false } = {}) {
   const guard = '[[ "$state_dir" == /opt/kaori-website/uat/deploy-state ]]';
   const deploySource = readFileSync(resolve("deploy/server/deploy.sh"), "utf8");
   assert.equal(deploySource.split(guard).length, 2, "canonical UAT state guard changed");
-  for (const filename of ["deploy.sh", "verify.sh", "compose.website.yml", "compose.uat.yml"]) {
+  for (const filename of [
+    "deploy.sh",
+    "verify.sh",
+    "compose.website.yml",
+    "compose.uat.yml",
+    "compose.release.yml",
+  ]) {
     const original = readFileSync(resolve("deploy/server", filename), "utf8");
     const sandboxed =
       filename === "deploy.sh"
@@ -201,4 +207,64 @@ test("invalid prior release receipt blocks before container replacement", (t) =>
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /BLOCK: previous release receipt contains an invalid build version/);
   assert.equal(readFileSync(env.MOCK_RUNNING_IMAGE, "utf8"), priorImage);
+});
+
+test("production target rejects invalid project or state", (t) => {
+  const { env, state, scriptDir } = fixture(t);
+  const base = {
+    ...env,
+    KAORI_WEBSITE_RUNTIME_ENV: "production",
+    KAORI_WEBSITE_STATE_DIR: state,
+  };
+  const cases = [
+    ["kaori-app", "production project must be a distinct Website namespace"],
+    ["kaori-website-uat", "production project must be a distinct Website namespace"],
+    ["kaori-website-preview", "production state must belong to the configured Website project"],
+  ];
+  for (const [project, reason] of cases) {
+    const result = run(
+      join(scriptDir, "deploy.sh"),
+      [candidateImage, candidateSha, candidateVersion],
+      { ...base, COMPOSE_PROJECT_NAME: project },
+    );
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, new RegExp(reason));
+    assert.equal(readFileSync(env.MOCK_RUNNING_IMAGE, "utf8").trim(), candidateImage);
+    assert.equal(existsSync(join(state, "release.env")), false);
+  }
+});
+
+test("independent Website project uses dedicated state and port", (t) => {
+  const { env, state, scriptDir } = fixture(t);
+  const path = join(scriptDir, "deploy.sh");
+  const source = readFileSync(path, "utf8");
+  const guardedState = '[[ "$state_dir" == "/var/lib/$project/deploy-state" ]]';
+  assert.equal(source.split(guardedState).length, 2);
+  // Redirect only the strict production state check into this isolated fake
+  // Docker fixture. Real deploy.sh retains the /var/lib/<project> guard.
+  writeFileSync(
+    path,
+    source.replace(guardedState, '[[ "$state_dir" == "$MOCK_TARGET_STATE_DIR" ]]'),
+  );
+  const target = {
+    ...env,
+    KAORI_WEBSITE_RUNTIME_ENV: "production",
+    COMPOSE_PROJECT_NAME: "kaori-website-preview",
+    KAORI_WEBSITE_STATE_DIR: state,
+    KAORI_WEBSITE_LOOPBACK_PORT: "18083",
+    MOCK_TARGET_STATE_DIR: state,
+  };
+  const badPort = run(path, [candidateImage, candidateSha, candidateVersion], {
+    ...target,
+    KAORI_WEBSITE_LOOPBACK_PORT: "80",
+  });
+  assert.notEqual(badPort.status, 0);
+  assert.match(badPort.stderr, /production loopback port must be between/);
+  const deployed = run(path, [candidateImage, candidateSha, candidateVersion], target);
+  assert.equal(deployed.status, 0, deployed.stderr);
+  assert.match(deployed.stdout, /PASS: website release committed/);
+  assert.match(
+    readFileSync(join(state, "release.env"), "utf8"),
+    /KAORI_WEBSITE_VERSION=v0\.1\.2-rc\.6/,
+  );
 });

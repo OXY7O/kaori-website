@@ -14,10 +14,17 @@ state_dir="${KAORI_WEBSITE_STATE_DIR:-/var/lib/kaori-website/deploy-state}"
 runtime_env="${KAORI_WEBSITE_RUNTIME_ENV:-production}"
 case "$runtime_env" in
     production)
-        [[ -z "${COMPOSE_PROJECT_NAME:-}" || "$COMPOSE_PROJECT_NAME" == kaori-website ]] ||
-            fail 'production project identity must be kaori-website'
-        [[ "$state_dir" == /var/lib/kaori-website/deploy-state ]] ||
-            fail 'production release state authority changed'
+        # GitHub Environment configuration selects the Website runtime; a
+        # physical host may safely contain several independently named projects.
+        project="${COMPOSE_PROJECT_NAME:-kaori-website}"
+        [[ "$project" =~ ^kaori-website(-[a-z0-9][a-z0-9-]*)?$ &&
+           "$project" != kaori-website-uat ]] ||
+            fail 'production project must be a distinct Website namespace'
+        [[ "$state_dir" == "/var/lib/$project/deploy-state" ]] ||
+            fail 'production state must belong to the configured Website project'
+        port="${KAORI_WEBSITE_LOOPBACK_PORT:-18080}"
+        [[ "$port" =~ ^[0-9]{4,5}$ ]] && (( 10#$port >= 1024 && 10#$port <= 65535 )) ||
+            fail 'production loopback port must be between 1024 and 65535'
         ;;
     uat)
         [[ "${COMPOSE_PROJECT_NAME:-}" == kaori-website-uat ]] ||
