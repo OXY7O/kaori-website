@@ -231,7 +231,6 @@ test("git ancestry and shipped-input drift fail closed for prior accepted RC", (
   assert.equal(git("merge-base", "--is-ancestor", unrelated, promotion).status, 1);
 });
 
-
 test("production runtime probe follows receipt health and effective target", (t) => {
   const match = publisher.match(/cat <<'REMOTE_PROBE'\n([\s\S]*?)\nREMOTE_PROBE/);
   assert.ok(match, "expected canonical read-only remote production probe");
@@ -270,7 +269,12 @@ test("production runtime probe follows receipt health and effective target", (t)
     "KAORI_WEBSITE_IMAGE=" + oldImage + "\n",
   );
   const runtimeImage = join(state, "running-image");
-  const execute = (image, sha, version, { health = "healthy", missingReceipt = false } = {}) => {
+  const execute = (
+    image,
+    sha,
+    version,
+    { health = "healthy", missingReceipt = false } = {},
+  ) => {
     writeFileSync(runtimeImage, image);
     const receipt = join(state, "release.env");
     if (missingReceipt) {
@@ -324,5 +328,8 @@ test("production runtime probe follows receipt health and effective target", (t)
     missingReceipt: true,
   });
   assert.notEqual(unmanaged.status, 0);
-  assert.match(unmanaged.stderr, /production target needs an independently prepared prior receipt/);
+  assert.match(
+    unmanaged.stderr,
+    /production target needs an independently prepared prior receipt/,
+  );
 });
