@@ -716,3 +716,19 @@ docker exec "$container" apk info -vv | grep -E '^(musl|musl-utils|zlib)-[0-9]'
 ```
 
 Do **not** use `docker compose down -v`, restart unrelated shared-edge services, discard rollback receipts, dispatch a new release, or infer `main`/stable acceptance from this documentation checkpoint. The earlier failed RC.6 private UAT run remains historical FAILURE.
+
+## GitHub Environment credential and SSH preflight (read-only) — #239
+
+The existing `.github/workflows/environment-credential-preflight.yml` reuses **the already configured** `staging`/`production` GitHub Environment variables and five encrypted secrets. It never provisions a VM, changes a server file, restarts Docker, deploys an image, publishes a tag or updates DNS. Runtime application configuration remains authoritative on the VM; there is **no GitHub `HOST_DEPLOY_ENV_FILE` setting or topology/slot-count mode**.
+
+The first approved protected-staging merge of this workflow runs a **staging-only** preflight once (file-change-scoped push). Later runs are explicit CLI dispatches:
+
+```bash
+gh workflow run environment-credential-preflight.yml -R OXY7O/kaori-website --ref kaori/staging -f target_environment=staging
+# Only after reviewed main promotion and native production Environment reviewer approval:
+gh workflow run environment-credential-preflight.yml -R OXY7O/kaori-website --ref main -f target_environment=production
+```
+
+The job fails closed on a wrong branch, absent credentials, mismatched registry/image prefix, unsafe deploy root, missing **pinned known_hosts**, rejected SSH key/passphrase, unreachable or untrusted VM, missing existing release receipt, or unavailable target Docker daemon. Registry login is stored only in a disposable hosted-runner config. Remote checks run as the configured SSH user and perform **existence/read-only inspections only**. Production requires a protected `main` branch and the actual GitHub `production` Environment review; a staging secret cannot be used to assert production readiness. No secret values or host files are printed.
+
+A PASS proves credential transport and target access **at the time of the run**, not an accepted image digest, independent browser UAT, recovery, public-edge authority, or stable release. A failed check is an operational blocker; do not bypass it by switching to repository-level fallback secrets or running the normal deploy workflow as a test. Retain existing repository credentials until Environment-scoped preflight and required release checks are independently accepted.
