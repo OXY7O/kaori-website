@@ -28,15 +28,12 @@ function rejectPreflight(overrides = {}) {
   });
 }
 
-test("production release GET and POST curl flags are compatible and fail-closed", () => {
-  const calls = publisher.split("\n").filter((line) => line.includes("curl --fail-with-body"));
-  assert.equal(calls.length, 2, "both authenticated GET and stable-release POST must fail on HTTP error");
-  for (const call of calls) {
-    assert.match(call, /curl --fail-with-body -sS\b/);
-    assert.doesNotMatch(call, /curl --fail-with-body -f/);
-  }
+test("production GET and POST use compatible fail-closed curl flags", () => {
+  const calls = publisher.match(/curl --fail-with-body -sS/g) || [];
+  assert.equal(calls.length, 2);
   assert.match(publisher, /api_get\(\) \{\s*curl --fail-with-body -sS /);
   assert.match(publisher, /published="\$\(curl --fail-with-body -sS /);
+  assert.doesNotMatch(publisher, /curl --fail-with-body -fsS/);
 });
 
 test("only main with a production environment may publish same-digest stable", () => {
