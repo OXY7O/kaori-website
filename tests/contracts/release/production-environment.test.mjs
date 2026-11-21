@@ -49,7 +49,7 @@ test("staging recurring rights use compatible fail-closed curl flags", () => {
 test("only main with a production environment may publish same-digest stable", () => {
   assert.match(fullAdmission, /name: Publish Human Accepted Stable Release/);
   assert.match(fullAdmission, /name: production\n      url: https:\/\/kaori\.cloud/);
-  assert.match(fullAdmission, /KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED == 'true'/);
+  assert.match(fullAdmission, /KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED:-/);
   assert.match(fullAdmission, /group: kaori-website-release-deploy/);
   assert.match(
     fullAdmission,
