@@ -79,6 +79,36 @@ activation. Never infer successful two-VM operation from the current
 one-slot release evidence. The optional separate-host adapter is
 tracked under [Website #234](https://github.com/OXY7O/kaori-website/issues/234).
 
+### Configured runtime identity — Website #237
+
+GitHub Environment `staging` selects the staging **deployment target**;
+`production` selects the production target. The operator may configure
+both to the same effective runtime, or to different runtimes (including
+different Compose projects on one VM). Neither the number of Environments
+nor the server IP alone determines the number of running services. There
+is **no topology-mode or slot-count switch** in the release contract.
+
+In the existing staging RC deploy job, the optional Environment-scoped
+variables `KAORI_WEBSITE_COMPOSE_PROJECT`,
+`KAORI_WEBSITE_STATE_DIR`, and `KAORI_WEBSITE_LOOPBACK_PORT`
+are passed to the canonical deployment adapter. If unset, the reviewed
+public default remains `kaori-website`,
+`/var/lib/kaori-website/deploy-state`, and `127.0.0.1:18080`.
+For an independently named Website project, state must be rooted at
+`/var/lib/<project>/deploy-state`, must exist and be writable, and
+the loopback port must be unique on the selected host. The legacy
+private `kaori-website-uat` namespace remains reserved to its
+separate historical adapter.
+
+The current shared-edge attachment path remains authorized only for
+the canonical `kaori-website` public runtime; a noncanonical target
+may be deployed privately after operator provisioning and explicit
+authorization, but a different public route requires a separately
+approved provider-owned edge configuration. This work does not alter
+GitHub Environment branch policies, automatically enable deployment,
+or implement production stable reconciliation to a new runtime.
+That final stable-target step remains governed by [#234](https://github.com/OXY7O/kaori-website/issues/234).
+
 ## Container and development smoke
 
 ```bash
