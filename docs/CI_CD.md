@@ -82,7 +82,7 @@ Dependabot **security updates** are independently active and generated [bot PR #
 
 **Verified GitHub branch settings (2026-11-08):** the public repository's `main` and `kaori/staging` are protected with active branch-safety ruleset **#26685572** (no deletion/non-fast-forward) and PR-only ruleset **#26685631** (one independent approval, stale-dismissal and resolved review conversations; no bypass). Staging ruleset **#26685877** requires exact GitHub Actions contexts `Route Checks` and `Website Validation`. Main ruleset **#26786379** requires `Promotion Policy`, `Full Admission`, `Container Admission`, and `Browser Quality Evidence`, all with GitHub Actions integration **15368**. Read-back after subsequent admin changes is still mandatory; neither protected branches nor successful CI substitute for deployed staging/UAT, signed immutable RC, release verification or explicit human acceptance. Native GitHub CodeQL configuration is a separate [security workstream #150](https://github.com/OXY7O/kaori-website/issues/150), not an admission gate in this document.
 
-Release and deployment configuration and secrets are exclusively scoped to the protected GitHub Environments `staging` and `production`. After the native Environment boundary, each resolver step binds its Environment configuration through a step-level `env` map using `vars.*`; `scripts/release/resolve-environment.sh` then validates and maps these runner inputs into the existing registry/SSH adapter names without logging values. GitHub configuration variables do not become shell environment variables merely by existing in the `vars` context. While old repository keys remain, GitHub's variable fallback can conceal missing Environment keys; operator must verify Environment values before deleting repository copies. Developer Check remains unprivileged and validates the release wiring contract; Environment Credential Preflight independently verifies real registry, pinned SSH and prepared host without mutation. Activation switches are environment-scoped and default-off. Production Environment reviewer approval can be requested on protected main push even when activation is disabled; the privileged release steps are skipped until activated and accepted. Do not infer Environment policies or matching values without administrator readback.
+Release and deployment configuration and secrets are exclusively scoped to the protected GitHub Environments `staging` and `production`. After the native Environment boundary, each resolver step binds its Environment configuration through a step-level `env` map using `vars.*`; `scripts/release/resolve-environment.sh` then validates and maps these runner inputs into the existing registry/SSH adapter names without logging values. GitHub configuration variables do not become shell environment variables merely by existing in the `vars` context. While old repository keys remain, GitHub's variable fallback can conceal missing Environment keys; operator must verify Environment values before deleting repository copies. Developer Check remains unprivileged and validates the release wiring contract; Environment Credential Preflight independently verifies real registry, pinned SSH and prepared host without mutation. Staging automatic RC activation remains Environment-scoped and default-off. **A push to main only runs admission; it cannot request production approval or publish a stable release.** Production is reachable exclusively from the explicitly dispatched `release-production.yml` workflow on protected main, with native independent Environment approval and signed Human UAT evidence. The retired production auto-activation variable is not a release authorization. Do not infer Environment policies or matching values without administrator readback.
 
 Runner access, GitHub Project custom fields, native relationships, and review metadata still require GitHub-side setup where connector capabilities are absent. **A YAML check cannot substitute for server-enforced branch protection.**
 
@@ -108,6 +108,7 @@ The previously deployed candidate was [v0.1.0-rc.7](https://github.com/OXY7O/kao
 | `quality.yml`               | Staging/main push, promotion PR, manual admission when available | Full Admission (format, typecheck, npm audit, static build) **and Docker Runtime Admission**; no deployment.               |
 | `publish-staging-image.yml` | Explicit RC manual dispatch                                      | Exact admitted staging SHA, immutable image, Trivy HIGH/CRITICAL, SBOM/provenance, keyless signature and release evidence. |
 | `deploy-staging-host.yml`   | Explicit release deployment dispatch                             | Pin SSH trust, validate signed RC/digest and approval reference; deploy only the standalone website.                       |
+| `release-production.yml`     | Explicit `workflow_dispatch` from protected `main`            | Check exact main admission, request stable tag and reviewed promotion PR, require native production reviewer, reconcile signed accepted digest, publish stable GitHub Release. |
 
 **Retired release bootstrap automation:** One-time private image, port diagnosis, ingress repair and RC.2/RC.4/RC.5/RC.6/RC.7 staging activation workflows were retired under #20 after exact-source execution. Historical Actions evidence remains in #10, #15, #21, #27, #30, #38 and #43, and #48. The trusted admission/release surface retains the **four canonical workflows** shown above, **plus** isolated `.github/workflows/community-fork-check.yml` for external-fork feedback only. At this historical checkpoint no automatic staging push release/deploy pipeline existed; #202 was later merged as guarded source only.
 
@@ -128,11 +129,12 @@ The original issue #23 display-label contract describes the following **four tru
 | Workflow file                                 | Workflow display name  | Job display labels                                                                     |
 | --------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------- |
 | `.github/workflows/developer-check.yml`       | **Developer Check**    | Route Checks, Website Validation, Container Validation, Release Configuration          |
-| `.github/workflows/quality.yml`               | **Full Admission**     | Promotion Policy, Full Admission, Container Admission, Publish Accepted Stable Release |
+| `.github/workflows/quality.yml`               | **Full Admission**     | Promotion Policy, Full Admission, Container Admission, Browser Quality Evidence |
 | `.github/workflows/publish-staging-image.yml` | **Release Candidate**  | Publish Release Candidate                                                              |
 | `.github/workflows/deploy-staging-host.yml`   | **Release Deployment** | Deploy Release Candidate                                                               |
+| `.github/workflows/release-production.yml`    | **Production Release**  | Validate Explicit Release Request, Release Accepted Artifact to Production              |
 
-Pull-request runs include their PR/branch label; manual release runs show the selected candidate tag. The stable-publication job is issue-bounded: its previous issue #72 marker was consumed by stable v0.1.0 and its then-planned marker [KAORI_WEBSITE_STABLE_RELEASE_94] was gated on explicit v0.1.1 RC.3 Human Acceptance, reviewed staging-to-main PR, and exact-main source, container and browser admission. Ordinary pushes do not publish a stable release.
+Pull-request runs include their PR/branch label; explicit production runs show the requested stable tag. Historical one-time stable release markers are retired. Ordinary source promotions never request production Environment approval; a separate manual release request is required, with the accepted RC digest retained as the signed image-build authority.
 
 **Historical entries are expected:** GitHub Actions may continue listing retired `KAORI Website One-Time RC.x ...` workflows that executed before their YAML was removed. Their run metadata and audit evidence are preserved. Do not delete historical runs to hide names, change existing workflow file paths to manipulate history, or imply that historic workflow names remain active.
 
@@ -230,69 +232,26 @@ Environments intentionally select the same public runtime now, but production
 must not report an older digest as active after a newer staging deployment.
 Stable promotion reuses the accepted RC image, with no rebuild.
 
-## Planned production Environment approval and immutable stable promotion — #201 / #203
+## Explicit production release request — Website #257
 
-**Target architecture:** production is GitHub Environment `production` restricted
-to protected branch `main`. Staging release candidates and accepted stable
-releases deliberately use the **same single public `https://kaori.cloud` Website
-Compose runtime**, with the same host/edge/DNS. An RC is therefore public
-**before** the later production approval; the approval formally governs
-the stable release, not public exposure.
+**Current approved correction (2026-11-22):** Protected `kaori/staging → main` promotion is **source promotion only**. Every `main` push executes `quality.yml` mandatory Full Admission; it must **not** queue a production Environment deployment job or publish a stable tag. The previous push-coupled production job in Website #201/#203 is superseded **only for trigger timing**. Its immutable RC→Human UAT→signed stable digest/rollback contract remains authoritative.
 
-The existing Full Admission workflow now contains the source-protected
-`Publish Human Accepted Stable Release` job. Its execution requires a
-protected push to `main`, all four mandatory admission jobs PASS, and the
-**protected production Environment** variable
-`KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED=true`. With that variable absent
-or false, production publication is **inactive** after native Environment approval. The job uses GitHub
-`environment: production`, which must be configured by the repository
-administrator with branch restriction `main`, a designated required reviewer,
-prevent-self-review and no admin bypass. The environment settings and actual
-waiting-for-approval behavior **cannot be confirmed from source code alone**.
-Do not enable the variable until they have been independently inspected.
+A stable release begins **only** when an authorized maintainer explicitly requests one from GitHub Actions → **Production Release** (`.github/workflows/release-production.yml`) on protected `main`. For example, after separate release authorization:
 
-### Automatic, zero-rebuild stable authority
+```bash
+gh workflow run release-production.yml -R OXY7O/kaori-website --ref main \
+  -f stable_tag=vX.Y.Z -f promotion_pr=123
+```
 
-After live Human UAT of the signed RC, the reviewed
-`kaori/staging` → `main` promotion PR must include **one** literal
-evidence line:
+The example values are placeholders, not a ready-to-execute release. Do not dispatch until the maintainer explicitly asks for that stable release and the linked RC's Human UAT is accepted. Merely approving a PR or reaching main is not this authorization.
 
-`Human UAT evidence: https://github.com/OXY7O/kaori-website/issues/<issue>#issuecomment-<comment>`
+The unprivileged `Validate Explicit Release Request` job checks the requester, exact current main SHA, **completed successful exact-main Full Admission**, requested stable SemVer, merged official reviewed promotion PR number, and the existence of one Human UAT reference in that PR. Incorrect/missing inputs block **before** a production Environment reviewer is asked.
 
-The referenced prior issue comment must be authored by a trusted collaborator
-with write or higher permission, **before the promotion PR merge**, and contain
-the single line:
+After these checks, `Release Accepted Artifact to Production` enters native protected `production` Environment and requires independent reviewer approval. Only **then** the restricted runner resolves Environment-scoped credentials. `scripts/release/promote-stable.sh` independently verifies current main, explicit workflow identity, the chosen promotion PR's independent current-head approval and merge ancestry, accepted UAT comment ownership/timestamp, signed RC tag/digest, SBOM/provenance and no drift in shipped Website inputs. The requested `vX.Y.Z` **must** match the stable version derived from its accepted `vX.Y.Z-rc.N`; the workflow cannot silently release a different candidate.
 
-`KAORI_WEBSITE_UAT_ACCEPTED:<40-char-staging-SHA>:<vX.Y.Z-rc.N>:<sha256:digest>`
+The previously reviewed `scripts/release/deploy-release.sh` reconciles the configured protected production target after pinned SSH, rollback/receipt/health/edge checks. If the accepted immutable digest is already healthy on that exact target, redundant deployment is skipped; otherwise the **same signed RC digest** is deployed and verified with the reviewed adapter. No rebuild, registry retag, modified image bits or automatic provider edge change is allowed. **Only after successful target verification/reconciliation** does the job create the stable GitHub Release `vX.Y.Z` on current main with the accepted digest, exact RC source, promotion PR, Human UAT URL and production run reference. A stable release tag is not an RC tag; the signed OCI *build* identity and existing static footer may still retain the original RC build version as immutable provenance.
 
-The production job derives **two different SHA identities**: the independently
-reviewed staging **promotion head** from the merged `kaori/staging` → `main`
-PR, and the previously Human Accepted signed **RC source** from the existing
-trusted, immutable Human UAT comment. It requires the accepted RC SHA to be an
-ancestor of the reviewed promotion head and current `main`, then verifies that
-**all runtime/build inputs** (`Dockerfile`, `.dockerignore`, `package.json`,
-`package-lock.json`, `astro.config.mjs`, `tsconfig.json`, `src`, `public`,
-`deploy`) have not changed since that RC source. Source-only release governance
-or documentation commits after Human UAT need **no additional RC/UAT**; any
-shipped-input drift fails closed and needs a newly accepted signed candidate.
-The reviewer must approve the _current promotion head_; the previously signed
-RC source remains subject to exact GitHub prerelease/tag, immutable digest,
-pinned Cosign issuer/approved workflow identity and signed SPDX/SLSA attestations.
-No manual release tag, `workflow_dispatch`, per-RC repository variable or
-secondary release branch is needed for production. The UAT approval comment is
-the existing human decision, not another dispatch or repeated approval.
-
-The stable SemVer `vX.Y.Z` is derived from accepted
-`vX.Y.Z-rc.N`. After GitHub Environment approval, a restricted
-`platform-ci` job uses pinned SSH **read-only** to inspect the committed
-`/var/lib/kaori-website/deploy-state/release.env`, existing public Compose
-container and Docker image digest/health, the existing server `verify.sh`,
-shared-edge membership and all three Website/App/Docs HTTPS endpoints.
-A different installed RC **fails closed** before stable tag creation.
-With the accepted digest still active, the job creates a stable GitHub
-Release referencing the **same image digest**, with the main/RC/UAT/production
-run identities; it never rebuilds/retags Docker or mutates the host. Repeated
-runs accept only an exactly matching pre-existing stable release.
+The native Environment reviewer approves **execution of this explicit release request**, not routine source merges. The retired `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` setting is no longer consumed by the active release workflow; toggling it cannot request a release. Staging's separate `KAORI_WEBSITE_AUTO_STAGING_ENABLED` remains default-off unless independently authorized. A missing UAT comment, unrelated PR, source drift, incorrect digest or missing runtime proof fails closed. Manual production dispatch is **not** exercised as part of source implementation/CI tests.
 
 ### Activation and migration guard
 
