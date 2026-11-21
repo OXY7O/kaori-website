@@ -6,6 +6,7 @@ import { join, resolve } from "node:path";
 import test from "node:test";
 
 const fullAdmission = readFileSync(".github/workflows/quality.yml", "utf8");
+const environmentConfig = readFileSync("scripts/release/resolve-environment.sh", "utf8");
 const publisher = readFileSync("scripts/release/promote-stable.sh", "utf8");
 const candidatePublisher = readFileSync("scripts/release/publish-candidate.sh", "utf8");
 
@@ -49,7 +50,7 @@ test("staging recurring rights use compatible fail-closed curl flags", () => {
 test("only main with a production environment may publish same-digest stable", () => {
   assert.match(fullAdmission, /name: Publish Human Accepted Stable Release/);
   assert.match(fullAdmission, /name: production\n      url: https:\/\/kaori\.cloud/);
-  assert.match(fullAdmission, /KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED == 'true'/);
+  assert.match(fullAdmission, /KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED:-/);
   assert.match(fullAdmission, /group: kaori-website-release-deploy/);
   assert.match(
     fullAdmission,
@@ -89,13 +90,14 @@ test("publication depends on merged staging promotion, trusted Human UAT and imm
 
 test("production Environment configuration selects runtime without topology mode", () => {
   for (const marker of [
-    "WEBSITE_COMPOSE_PROJECT:",
-    "WEBSITE_STATE_DIR:",
-    "WEBSITE_LOOPBACK_PORT:",
-    "KAORI_WEBSITE_ATTACH_EXISTING_EDGE:",
+    "put WEBSITE_COMPOSE_PROJECT",
+    "put WEBSITE_STATE_DIR",
+    "put WEBSITE_LOOPBACK_PORT",
+    "put KAORI_WEBSITE_ATTACH_EXISTING_EDGE",
   ]) {
-    assert.ok(fullAdmission.includes(marker), marker);
+    assert.ok(environmentConfig.includes(marker), marker);
   }
+  assert.match(fullAdmission, /scripts\/release\/resolve-environment\.sh deployment/);
   assert.match(publisher, /runtime_project="\$\{WEBSITE_COMPOSE_PROJECT:-kaori-website\}"/);
   assert.match(
     publisher,

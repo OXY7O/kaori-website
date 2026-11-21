@@ -82,7 +82,7 @@ Dependabot **security updates** are independently active and generated [bot PR #
 
 **Verified GitHub branch settings (2026-11-08):** the public repository's `main` and `kaori/staging` are protected with active branch-safety ruleset **#26685572** (no deletion/non-fast-forward) and PR-only ruleset **#26685631** (one independent approval, stale-dismissal and resolved review conversations; no bypass). Staging ruleset **#26685877** requires exact GitHub Actions contexts `Route Checks` and `Website Validation`. Main ruleset **#26786379** requires `Promotion Policy`, `Full Admission`, `Container Admission`, and `Browser Quality Evidence`, all with GitHub Actions integration **15368**. Read-back after subsequent admin changes is still mandatory; neither protected branches nor successful CI substitute for deployed staging/UAT, signed immutable RC, release verification or explicit human acceptance. Native GitHub CodeQL configuration is a separate [security workstream #150](https://github.com/OXY7O/kaori-website/issues/150), not an admission gate in this document.
 
-Use repository-scoped Actions Variables and Secrets for approved release jobs as already configured; GitHub-hosted admission does not use publication credentials. Do not infer that organization/environment secrets or policies are enabled without a verified settings readback. The Developer Check and Full Admission require no custom credentials. The canonical `publish-staging-image.yml` RC publisher and `deploy-staging-host.yml` release deployment use repository-scoped registry and SSH credentials with explicit operator authority and an admitted exact staging SHA. These are **manual fallback** release operations; the separate #202 automatic staging train is inactive until its scoped recurring-publication rights and runtime checks are accepted. Both were authored on staging, and the default-branch dispatch limitation is documented below.
+Release and deployment configuration and secrets are exclusively scoped to the protected GitHub Environments `staging` and `production`. After the native Environment boundary, each resolver step binds its Environment configuration through a step-level `env` map using `vars.*`; `scripts/release/resolve-environment.sh` then validates and maps these runner inputs into the existing registry/SSH adapter names without logging values. GitHub configuration variables do not become shell environment variables merely by existing in the `vars` context. While old repository keys remain, GitHub's variable fallback can conceal missing Environment keys; operator must verify Environment values before deleting repository copies. Developer Check remains unprivileged and validates the release wiring contract; Environment Credential Preflight independently verifies real registry, pinned SSH and prepared host without mutation. Activation switches are environment-scoped and default-off. Production Environment reviewer approval can be requested on protected main push even when activation is disabled; the privileged release steps are skipped until activated and accepted. Do not infer Environment policies or matching values without administrator readback.
 
 Runner access, GitHub Project custom fields, native relationships, and review metadata still require GitHub-side setup where connector capabilities are absent. **A YAML check cannot substitute for server-enforced branch protection.**
 
@@ -146,7 +146,7 @@ Legacy fallback RC and UAT use deliberate `kaori/rc-request` and `kaori/uat-requ
 Until #202 is explicitly activated, staging pushes run only Full Admission.
 The protected `staging` GitHub Environment may run the automated signed
 release/deployment train only after all four admission jobs have succeeded
-and the one-time `KAORI_WEBSITE_AUTO_STAGING_ENABLED=true` repository control
+and the `KAORI_WEBSITE_AUTO_STAGING_ENABLED=true` protected Environment control
 has been approved. No per-RC variable or manual dispatch is required.
 The existing Release Candidate and Release Deployment workflows retain manual dispatch.
 
@@ -242,9 +242,9 @@ the stable release, not public exposure.
 The existing Full Admission workflow now contains the source-protected
 `Publish Human Accepted Stable Release` job. Its execution requires a
 protected push to `main`, all four mandatory admission jobs PASS, and the
-**one-time** repository variable
+**protected production Environment** variable
 `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED=true`. With that variable absent
-or false, production publication is **inactive**. The job uses GitHub
+or false, production publication is **inactive** after native Environment approval. The job uses GitHub
 `environment: production`, which must be configured by the repository
 administrator with branch restriction `main`, a designated required reviewer,
 prevent-self-review and no admin bypass. The environment settings and actual

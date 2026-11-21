@@ -87,7 +87,7 @@ test("both privileged staging jobs recheck rights before RC selection and public
   assert.ok(publisher.includes('if [[ "$auto_staging" == true ]]; then'));
   assert.match(publisher, /verify_recurring_publication_rights; fi\s+jq -nc --arg ref/);
   assert.match(publisher, /verify_recurring_publication_rights; fi\s+jq -n --arg tag/);
-  assert.match(workflow, /KAORI_WEBSITE_AUTO_STAGING_ENABLED == 'true'/);
+  assert.match(workflow, /KAORI_WEBSITE_AUTO_STAGING_ENABLED:-/);
   assert.match(workflow, /needs: \[staging-rc-publish\]/);
 });
 
