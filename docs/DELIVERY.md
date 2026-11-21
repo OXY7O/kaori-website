@@ -30,22 +30,27 @@ reuse Website-specific implementation, host credentials, or public ingress.
 - **Human UAT:** Verify the deployed RC's SHA, digest, runtime/edge health,
   browser and accessibility behavior, and relevant security evidence.
   Record explicit release-bound acceptance; CI success is not Human UAT.
-- **Production source:** Promote only through an independently approved
-  `kaori/staging → main` PR and the main-target admission. The protected
-  GitHub `production` Environment applies its own reviewer/approval boundary.
-- **Stable release:** Publish `vX.Y.Z` from that accepted RC's **exact signed
-  OCI digest**, without rebuilding or retagging application bits. Today the
-  production step verifies the same running shared slot: it does **not**
-  launch a second container or silently redeploy the host.
+- **Production source:** Promote through an independently approved
+  `kaori/staging → main` PR and the main-target admission. **Merging main is
+  not a production release request.**
+- **Explicit production release:** Only after a maintainer requests
+  `vX.Y.Z` via `release-production.yml` with the approved promotion PR
+  does GitHub validate main admission and require the protected `production`
+  Environment reviewer. The release verifies or reconciles the configured
+  runtime with the Human-Accepted signed RC's **exact OCI digest**. The
+  resulting GitHub Release is stable `vX.Y.Z`, never an RC release tag.
+  No rebuild or registry retag occurs; when that digest is already deployed
+  and healthy on the same target, redundant deployment is skipped.
 - **Stale RC protection:** If a newer staging RC has displaced the accepted
   live digest, stable publication must fail closed until the correct artifact,
   acceptance, and runtime evidence are reconciled.
-- **Activation:** The `KAORI_WEBSITE_AUTO_STAGING_ENABLED` and
-  `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` switches are independent,
-  Environment-scoped and default-off. Both are read on the runner after
-  the protected Environment boundary. A main push may request production
-  reviewer approval even when its switch is false; no publication occurs.
-  Neither switch substitutes for rights, signed evidence or human acceptance.
+- **Activation:** Staging's `KAORI_WEBSITE_AUTO_STAGING_ENABLED` remains
+  Environment-scoped and default-off. Production **has no push-triggered
+  activation**: a main push never queues its reviewer or release job.
+  The former `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` is retired from
+  executable release authority. Only a valid explicit stable release dispatch
+  with an independent production reviewer may proceed. No switch or reviewer
+  alone replaces accepted signed evidence or Human UAT.
 
 GitHub `staging` and `production` are **logical governance/credential
 scopes**, not statements that two servers already exist. They share the
@@ -54,14 +59,12 @@ accepted v0.1.2 stable release from v0.1.2-rc.11 demonstrates same-digest
 promotion without a second production deployment.
 
 **Future separate VM:** Keep the same branch, admission, RC, UAT, immutable
-digest, review, and stable-version contract. Per-Environment host/SSH
-configuration can select different approved targets, but the existing stable
-publisher currently **verifies an already running RC** and does not
-bootstrap/deploy a separate production host. DNS, shared-edge routing,
-target preparation, host-specific receipts, and a reviewed separate-host
-deployment path require independent admission before a two-VM cutover.
-Do not claim that setting new host variables alone provides working
-production migration today. The bounded implementation authority is
+digest and explicit production release request contract. Per-Environment
+host/SSH/project configuration selects independently approved targets. The
+existing #239 release adapter can reconcile an accepted signed digest into a
+prepared receipt-backed target, but it does **not** provision servers, configure
+DNS/TLS, authorize a different provider edge or replace a missing rollback
+baseline. Those operations require separate admission and live UAT. See
 [Website #234](https://github.com/OXY7O/kaori-website/issues/234).
 See [deployment boundaries](DEPLOYMENT.md#reference-host-topology-and-portability).
 
@@ -135,7 +138,7 @@ Existing Release Candidate and Release Deployment workflows require exact
 admitted staging source, immutable signed images, security evidence and approval.
 Private manual inspection and the approved request-branch public UAT are distinct;
 the latter requires exact per-RC cutover authority, not merely an admitted build.
-The historical #119 one-off stable flow has been superseded for future source behavior by #203; no standing stable production activation is granted.
+The historical #119 one-off stable flow was superseded by #203 for signed same-digest promotion; Website #257 now supersedes the #203 main-push *trigger*. No standing stable production activation is granted.
 
 ## Approved release-train transition — #201–#204
 
@@ -143,8 +146,10 @@ The target topology is two GitHub governance Environments on **one** public
 `https://kaori.cloud` slot: admitted `kaori/staging` merges may automatically
 publish/deploy signed RCs (which become public **before** production approval),
 then a distinct Human UAT and reviewed `kaori/staging` → `main` promotion
-precedes GitHub `production` reviewer approval and exact-digest stable
-metadata publication. Reviewed PR #205 and PR #206 have both **merged to protected `kaori/staging`**, while automatic RC publication/deploy and stable production activation remain on HOLD. Release rights, environment protection readback, host/rollback
+precede an **explicit maintainer production release request**. Only that
+release request reaches GitHub `production` reviewer approval and same-digest
+stable metadata publication. The push-triggered production approval from the
+older #201/#203 implementation is superseded by Website #257. Reviewed PR #205 and PR #206 have both **merged to protected `kaori/staging`**, while automatic RC publication/deploy and stable production activation remain on HOLD. Release rights, environment protection readback, host/rollback
 verification and post-merge UAT are distinct acceptance gates. The prior
 RC.9 Human UAT acceptance applies to RC.9 only. See
 [CI/CD](CI_CD.md#admission-gated-automatic-public-staging--201--202) and
@@ -171,7 +176,7 @@ Always preserve the signed candidate's source SHA, immutable registry digest,
 SBOM/provenance, release tag, successful publisher run, deployment receipt,
 rollback authority and independent Human Acceptance. The footer's embedded
 `Website build vX.Y.Z-rc.N` remains truthful after same-digest stable promotion;
-it is not an asserted stable GitHub Release label. The old #119 one-time stable contract is historical; the integrated #203 production workflow requires a main-only protected `production` Environment reviewer gate after Human UAT, then promotes the **same accepted OCI digest** without rebuild or a second public Website instance. Neither merged source PR nor CI is publication approval; the exact activation settings, rights and environment protection must be independently verified.
+it is not an asserted stable GitHub Release label. The old #119 one-time stable contract is historical; the updated #257 production workflow requires an **explicit release request on main**, a protected `production` Environment reviewer, and the same accepted signed digest without rebuild. Neither source PR review nor main merge is release permission; the exact release request, rights and environment protection must be independently verified.
 
 For the exact request commands, manual fallback and failure handling, see
 [CI/CD](CI_CD.md). KAORI release request policy is coordinated by
