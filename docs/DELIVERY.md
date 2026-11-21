@@ -138,7 +138,7 @@ Existing Release Candidate and Release Deployment workflows require exact
 admitted staging source, immutable signed images, security evidence and approval.
 Private manual inspection and the approved request-branch public UAT are distinct;
 the latter requires exact per-RC cutover authority, not merely an admitted build.
-The historical #119 one-off stable flow was superseded by #203 for signed same-digest promotion; Website #257 now supersedes the #203 main-push *trigger*. No standing stable production activation is granted.
+The historical #119 one-off stable flow was superseded by #203 for signed same-digest promotion; Website #257 now supersedes the #203 main-push _trigger_. No standing stable production activation is granted.
 
 ## Approved release-train transition — #201–#204
 
