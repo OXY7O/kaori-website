@@ -132,7 +132,27 @@ done
 [[ "$WEBSITE_DEPLOY_ROOT" == /opt/kaori-website &&
    "$WEBSITE_HOST" =~ ^[a-zA-Z0-9._-]+$ &&
    "$WEBSITE_SSH_USER" =~ ^[a-zA-Z0-9._-]+$ ]] ||
-  fail 'production runtime target differs from approved Website'
+  fail 'production runtime host or root is invalid'
+# GitHub Environment production owns target configuration. Neither its name
+# nor a shared IP determines whether a separate Docker runtime exists.
+runtime_project="${WEBSITE_COMPOSE_PROJECT:-kaori-website}"
+runtime_state="${WEBSITE_STATE_DIR:-/var/lib/kaori-website/deploy-state}"
+runtime_port="${WEBSITE_LOOPBACK_PORT:-18080}"
+runtime_edge="${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-1}"
+[[ "$runtime_project" =~ ^kaori-website(-[a-z0-9][a-z0-9-]*)?$ &&
+   "$runtime_project" != kaori-website-uat ]] ||
+  fail 'invalid configured production Website project'
+[[ "$runtime_state" == "/var/lib/$runtime_project/deploy-state" ]] ||
+  fail 'configured production release state does not belong to project'
+[[ "$runtime_port" =~ ^[0-9]{4,5}$ ]] &&
+  (( 10#$runtime_port >= 1024 && 10#$runtime_port <= 65535 )) ||
+  fail 'invalid configured production loopback port'
+[[ "$runtime_edge" == 0 || "$runtime_edge" == 1 ]] ||
+  fail 'invalid configured production edge selection'
+if [[ "$runtime_edge" == 1 ]]; then
+  [[ "$runtime_project" == kaori-website && "$runtime_port" == 18080 ]] ||
+    fail 'existing public edge is registered for canonical Website runtime only'
+fi
 port="$(printenv WEBSITE_SSH_PORT || true)"
 if [[ -z "$port" ]]; then port=22; fi
 [[ "$port" =~ ^[0-9]{1,5}$ ]] && (( port >= 1 && port <= 65535 )) ||
@@ -170,9 +190,11 @@ setsid -w ssh-add "$tmp/key" </dev/null >/dev/null
   printf 'set -Eeuo pipefail\n'
   printf 'expected_image=%q\nexpected_sha=%q\nexpected_rc=%q\nroot=%q\n' \
     "$image_ref" "$rc_sha" "$rc_tag" "$WEBSITE_DEPLOY_ROOT"
+  printf 'runtime_state=%q\nruntime_project=%q\nruntime_port=%q\nruntime_edge=%q\n' \
+    "$runtime_state" "$runtime_project" "$runtime_port" "$runtime_edge"
   cat <<'REMOTE'
-receipt=/var/lib/kaori-website/deploy-state/release.env
-previous=/var/lib/kaori-website/deploy-state/previous-release.env
+receipt="$runtime_state/release.env"
+previous="$runtime_state/previous-release.env"
 [[ -f "$receipt" && ! -L "$receipt" ]] || { echo 'BLOCK: release receipt missing'; exit 1; }
 [[ -s "$previous" && ! -L "$previous" ]] ||
   { echo 'BLOCK: previous immutable rollback receipt missing'; exit 1; }
@@ -189,14 +211,23 @@ export KAORI_WEBSITE_IMAGE="$expected_image"
 export KAORI_WEBSITE_EXPECTED_VERSION="$expected_rc"
 export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1
 export KAORI_WEBSITE_RUNTIME_ENV=production
-export COMPOSE_PROJECT_NAME=kaori-website
+export KAORI_WEBSITE_STATE_DIR="$runtime_state"
+export KAORI_WEBSITE_LOOPBACK_PORT="$runtime_port"
+export COMPOSE_PROJECT_NAME="$runtime_project"
 bash "$root/releases/$expected_sha/server/verify.sh"
-web="$(docker ps --filter label=com.docker.compose.project=kaori-website \
+web="$(docker ps --filter "label=com.docker.compose.project=$runtime_project" \
   --filter label=com.docker.compose.service=web --format '{{.ID}}')"
 [[ "$web" =~ ^[a-f0-9]{12,64}$ ]] || { echo 'BLOCK: multiple or missing public Website'; exit 1; }
-[[ "$(docker inspect --format '{{if index .NetworkSettings.Networks "edge-public"}}true{{else}}false{{end}}' "$web")" == true ]] ||
-  { echo 'BLOCK: accepted Website is detached from existing shared edge'; exit 1; }
-echo 'PASS: public Website immutable digest, source, health, receipt and shared-edge match'
+if [[ "$runtime_edge" == 1 ]]; then
+  [[ "$(docker inspect --format '{{if index .NetworkSettings.Networks "edge-public"}}true{{else}}false{{end}}' "$web")" == true ]] ||
+    { echo 'BLOCK: accepted Website is detached from existing shared edge'; exit 1; }
+else
+  # Provider-owned routing for other runtime identities has not yet been
+  # admitted. Never publish stable against an unrelated public endpoint.
+  echo 'BLOCK: configured production runtime has no approved edge evidence yet' >&2
+  exit 1
+fi
+echo 'PASS: configured production Website digest, source, health, receipt and edge match'
 REMOTE
 } | ssh -p "$port" -i "$tmp/key" -o BatchMode=yes -o IdentitiesOnly=yes \
   -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$tmp/known_hosts" \
