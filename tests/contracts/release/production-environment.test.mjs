@@ -22,7 +22,8 @@ function rejectPreflight(overrides = {}) {
       GITHUB_REF: "refs/heads/main",
       GITHUB_REPOSITORY: "OXY7O/kaori-website",
       GITHUB_EVENT_NAME: "workflow_dispatch",
-      GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/release-production.yml@refs/heads/main",
+      GITHUB_WORKFLOW_REF:
+        "OXY7O/kaori-website/.github/workflows/release-production.yml@refs/heads/main",
       PRODUCTION_STABLE_TAG: "v0.1.3",
       PRODUCTION_PROMOTION_PR: "219",
       GITHUB_RUN_ID: "123",
@@ -160,15 +161,27 @@ test("production promotion uses latest reviewer state for the reviewed staging h
 
 test("non-dispatch, wrong workflow and malformed release requests fail before API/SSH", () => {
   const cases = [
-    [{ GITHUB_REF: "refs/heads/kaori/staging" }, "only explicit main release dispatch can publish stable"],
+    [
+      { GITHUB_REF: "refs/heads/kaori/staging" },
+      "only explicit main release dispatch can publish stable",
+    ],
     [{ GITHUB_EVENT_NAME: "push" }, "only explicit main release dispatch can publish stable"],
-    [{ GITHUB_REPOSITORY: "OXY7O/KAORI" }, "only explicit main release dispatch can publish stable"],
+    [
+      { GITHUB_REPOSITORY: "OXY7O/KAORI" },
+      "only explicit main release dispatch can publish stable",
+    ],
     [
       { GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/main" },
       "canonical protected production release workflow identity required",
     ],
-    [{ PRODUCTION_STABLE_TAG: "v0.1.3-rc.2" }, "explicit stable version and promotion PR are required"],
-    [{ PRODUCTION_PROMOTION_PR: "../219" }, "explicit stable version and promotion PR are required"],
+    [
+      { PRODUCTION_STABLE_TAG: "v0.1.3-rc.2" },
+      "explicit stable version and promotion PR are required",
+    ],
+    [
+      { PRODUCTION_PROMOTION_PR: "../219" },
+      "explicit stable version and promotion PR are required",
+    ],
     [
       { REGISTRY_IMAGE: "docker.io/example/kaori-app" },
       "dedicated Website image authority missing",
