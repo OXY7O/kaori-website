@@ -291,7 +291,12 @@ jobs:
 
   staging-rc-publish:
     name: Publish Accepted Staging RC
-    needs: [promotion-source, full-admission, container-admission, browser-evidence, staging-release-activation]
+    needs:
+      - promotion-source
+      - full-admission
+      - container-admission
+      - browser-evidence
+      - staging-release-activation
     if: >-
       ${{ github.event_name == 'push' && github.ref == 'refs/heads/kaori/staging' && needs.staging-release-activation.outputs.enabled == 'true' }}
     runs-on: [self-hosted, linux, x64, platform-ci]
@@ -390,7 +395,8 @@ jobs:
   staging-rc-deploy:
     name: Deploy Accepted Staging RC
     needs: [staging-rc-publish]
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/kaori/staging' && needs.staging-rc-publish.result == 'success' && needs.staging-rc-publish.outputs.tag != '' }}
+    if: >-
+      ${{ github.event_name == 'push' && github.ref == 'refs/heads/kaori/staging' && needs.staging-rc-publish.result == 'success' && needs.staging-rc-publish.outputs.tag != '' }}
     runs-on: [self-hosted, linux, x64, kaori-ci]
     environment:
       name: staging
