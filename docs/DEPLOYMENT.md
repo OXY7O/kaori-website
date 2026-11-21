@@ -108,6 +108,22 @@ approved provider-owned edge configuration. Neither this work nor production
 reconciliation changes GitHub Environment branch policies or automatically
 enables deployment.
 
+### Manual release fallback — Website #240
+
+Manual `Release Candidate` and `Release Deployment` workflows now run
+**only** via `workflow_dispatch` on protected `kaori/staging`. Both jobs
+bind GitHub Environment `staging`, using its scoped target configuration,
+secrets, approval rules, and the existing resource concurrency groups.
+Historical push triggers on `kaori/rc-request` and `kaori/uat-request`
+are retired, along with duplicate repository-scoped per-RC UAT variables.
+
+Use the automatic `quality.yml` staging release path when enabled by the
+operator. Manual fallback requires the exact admitted source, unique
+signed immutable RC, explicit release approval URL, and reviewed public
+edge authorization; it never bypasses source/digest, pinned SSH, health,
+or rollback checks. Protected `production` remains a separate main
+promotion Environment with its own approval and deployment target.
+
 ### Stable target reconciliation — Website #239
 
 The protected `main` workflow selects its deployment target from GitHub
