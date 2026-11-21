@@ -22,7 +22,10 @@ test("release workflows do not evaluate repository Variables before Environment 
     assert.match(yaml, /scripts\/release\/resolve-environment\.sh/);
   }
   assert.doesNotMatch(developer, /environment:\n\s+name: staging/);
-  assert.match(developer, /node --test tests\/contracts\/release\/environment-configuration\.test\.mjs/);
+  assert.match(
+    developer,
+    /node --test tests\/contracts\/release\/environment-configuration\.test\.mjs/,
+  );
 });
 
 test("activation comes from protected Environment and fails closed when absent", () => {
