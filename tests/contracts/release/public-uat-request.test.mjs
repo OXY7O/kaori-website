@@ -37,7 +37,8 @@ function preflight(overrides = {}) {
 
 test("production deployment adapter accepts only explicit main release workflow", () => {
   const approved = "https://github.com/OXY7O/kaori-website/pull/235";
-  const releaseIdentity = "OXY7O/kaori-website/.github/workflows/release-production.yml@refs/heads/main";
+  const releaseIdentity =
+    "OXY7O/kaori-website/.github/workflows/release-production.yml@refs/heads/main";
   const validRequest = {
     GITHUB_EVENT_NAME: "workflow_dispatch",
     GITHUB_REF: "refs/heads/main",
@@ -47,7 +48,11 @@ test("production deployment adapter accepts only explicit main release workflow"
   };
   const cases = [
     [
-      { ...validRequest, GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/main", APPROVAL_REF: approved },
+      {
+        ...validRequest,
+        GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/main",
+        APPROVAL_REF: approved,
+      },
       "production deployment must originate from canonical explicit release workflow",
     ],
     [
@@ -55,15 +60,29 @@ test("production deployment adapter accepts only explicit main release workflow"
       "production deploy requires reviewed promotion PR authority",
     ],
     [
-      { ...validRequest, GITHUB_WORKFLOW_REF: releaseIdentity, APPROVAL_REF: "https://github.com/OXY7O/kaori-website/issues/235" },
+      {
+        ...validRequest,
+        GITHUB_WORKFLOW_REF: releaseIdentity,
+        APPROVAL_REF: "https://github.com/OXY7O/kaori-website/issues/235",
+      },
       "production deploy requires reviewed promotion PR authority",
     ],
     [
-      { ...validRequest, GITHUB_WORKFLOW_REF: releaseIdentity, PRODUCTION_STABLE_TAG: "v0.1.2-rc.9", APPROVAL_REF: approved },
+      {
+        ...validRequest,
+        GITHUB_WORKFLOW_REF: releaseIdentity,
+        PRODUCTION_STABLE_TAG: "v0.1.2-rc.9",
+        APPROVAL_REF: approved,
+      },
       "production deploy requires explicit stable tag",
     ],
     [
-      { GITHUB_EVENT_NAME: "push", GITHUB_REF: "refs/heads/main", GITHUB_WORKFLOW_REF: releaseIdentity, APPROVAL_REF: approved },
+      {
+        GITHUB_EVENT_NAME: "push",
+        GITHUB_REF: "refs/heads/main",
+        GITHUB_WORKFLOW_REF: releaseIdentity,
+        APPROVAL_REF: approved,
+      },
       "unsupported UAT request event",
     ],
   ];
