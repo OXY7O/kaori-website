@@ -220,6 +220,11 @@ jobs:
       issues: read
     env:
       GH_TOKEN: ${{ github.token }}
+      # Explicit fail-closed topology selection; split-host stays disabled
+      # until the independently reviewed and UAT-proven #234 adapter exists.
+      KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY: ${{ vars.KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY || 'single-slot' }}
+      KAORI_WEBSITE_SPLIT_HOST_ENABLED: ${{ vars.KAORI_WEBSITE_SPLIT_HOST_ENABLED || 'false' }}
+      WEBSITE_STAGING_HOST: ${{ vars.KAORI_WEBSITE_STAGING_HOST }}
       REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
       REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
       REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
