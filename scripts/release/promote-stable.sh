@@ -4,6 +4,27 @@ fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 [[ $# -eq 1 ]] || fail 'usage: promote-stable.sh preflight|publish'
 mode="$1"
 [[ "$mode" == preflight || "$mode" == publish ]] || fail 'unsupported stable mode'
+# The single shared Website slot remains the accepted default. Do not infer a
+# second production deployment from a different SSH target: it requires a
+# separately admitted and exercised production deploy/rollback adapter (#234).
+topology="${KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY:-single-slot}"
+case "$topology" in
+  single-slot)
+    [[ "${KAORI_WEBSITE_SPLIT_HOST_ENABLED:-false}" != true ]] ||
+      fail 'split-host activation conflicts with approved single-slot topology'
+    ;;
+  separate-host)
+    [[ "${KAORI_WEBSITE_SPLIT_HOST_ENABLED:-false}" == true ]] ||
+      fail 'separate-host topology requires explicit production activation'
+    [[ -n "${WEBSITE_HOST:-}" && -n "${WEBSITE_STAGING_HOST:-}" &&
+       "$WEBSITE_HOST" != "$WEBSITE_STAGING_HOST" ]] ||
+      fail 'separate-host production target must differ from staging host'
+    fail 'separate-host stable deployment is not admitted; reviewed target adapter and host UAT required (#234)'
+    ;;
+  *)
+    fail 'unsupported Website deployment topology'
+    ;;
+esac
 for name in GH_TOKEN GITHUB_SHA GITHUB_REF GITHUB_REPOSITORY GITHUB_EVENT_NAME GITHUB_WORKFLOW_REF GITHUB_RUN_ID REGISTRY_HOST REGISTRY_IMAGE; do
   [[ -n "$(printenv "$name" || true)" ]] || fail "missing $name"
 done
