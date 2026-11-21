@@ -15,6 +15,69 @@ Never modify `/opt/kaori`, `/etc/kaori`, `/var/lib/kaori` or the KAORI applicati
 
 The same versioned **application deployment protocol** as KAORI is used: exact accepted staging SHA â Full Admission â build once â immutable OCI image digest â dedicated host SSH trust boundary â health verification â release verification evidence â human acceptance â promotion of the same digest to production. A docker image build or Astro CI success alone is **not** website release acceptance.
 
+## Reference host topology and portability
+
+**Current approved target:** `staging` and `production` GitHub
+Environments share **one physical KAORI Website VM, one public
+`kaori-website` Compose project, one release receipt, and one public
+`https://kaori.cloud` slot**. These Environment names enforce
+different release authorization, reviewer, and credential scopes; they
+do not currently correspond to independently running services.
+
+- **Staging:** A reviewed, admitted `kaori/staging` commit yields an
+  intentional signed `vX.Y.Z-rc.N`, which may be deployed to the one
+  public Website slot under the existing release/edge guard. A new RC
+  can temporarily replace a stable release on the public site, by
+  explicit accepted operational policy.
+- **Production:** A reviewed `kaori/staging → main` promotion and
+  accepted Human UAT authorize protected `production` Environment
+  approval. The stable publisher verifies that the **same signed RC
+  digest is already healthy in the one slot** and publishes `vX.Y.Z`
+  metadata without rebuilding, retagging, or changing the running host.
+- **Rollback:** `/var/lib/kaori-website/deploy-state/release.env`
+  and `previous-release.env` identify current and prior immutable
+  Website images. An RC is never treated as automatically approved for
+  production just because it is publicly accessible.
+- **Safety:** `KAORI_WEBSITE_AUTO_STAGING_ENABLED` and
+  `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` are independent opt-in
+  switches; neither overrides actual rights, branch protection,
+  Environment review, SHA/digest evidence, health, or Human UAT.
+
+### Moving to separate VMs later
+
+The **release governance contract does not change** when infrastructure
+is split. Use the existing `staging` and `production` GitHub
+Environment scopes to configure distinct target values, as appropriate:
+
+- Target identity: `KAORI_WEBSITE_HOST`,
+  `KAORI_WEBSITE_HOST_PORT`, `KAORI_WEBSITE_HOST_USER`, and
+  `KAORI_WEBSITE_HOST_DEPLOY_ROOT`.
+- Pinned SSH trust: `KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY`,
+  `KAORI_WEBSITE_HOST_SSH_PASSPHRASE`, and
+  `KAORI_WEBSITE_HOST_KNOWN_HOSTS`.
+- Registry identity: `KAORI_WEBSITE_DOCKER_REGISTRY_HOST`,
+  `KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE`, and their existing
+  environment-appropriate credential secrets.
+- Provider-controlled routing: approved DNS/TLS/SNI, shared-edge
+  site registration, network attachment, and public endpoint checks.
+
+**Current limitation:** Configurable SSH destination does **not** yet
+mean the production release job can install a stable artifact on a new
+server. `scripts/release/promote-stable.sh` only checks the signed
+RC digest already running on the configured target and requires the
+existing `edge-public` attachment, fixed Website Compose/receipt
+contract, and shared-edge registration. It has **no separated-production
+bootstrap/deploy operation**. Changing only the Environment variables
+would make a fresh production VM fail preflight, not deploy it.
+
+Before any split, separately review and validate target provisioning,
+production deployment/rollback and receipt handoff using the **existing
+signed digest and deployment adapters**, plus provider-owned edge
+cutover. A code or adapter change may be necessary at that point;
+it must be issue-scoped, reviewed, tested, and UAT-accepted before
+activation. Never infer successful two-VM operation from the current
+one-slot release evidence.
+
 ## Container and development smoke
 
 ```bash
