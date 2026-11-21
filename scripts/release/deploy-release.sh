@@ -18,18 +18,6 @@ elif [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/stagin
     fail 'staging auto-deploy requires existing single public edge'
   [[ "$(printenv APPROVAL_REF || true)" == https://github.com/OXY7O/kaori-website/issues/202 ]] ||
     fail 'staging auto-deploy authority must match approved workstream'
-elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
-  [[ "$GITHUB_REF" == refs/heads/kaori/uat-request ]] || fail 'push UAT request must use kaori/uat-request'
-  [[ "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" == 1 ]] ||
-    fail 'public UAT request requires explicit approved existing-edge attachment'
-  [[ -n "${PUBLIC_UAT_APPROVED_SHA:-}" && "$PUBLIC_UAT_APPROVED_SHA" == "${ACCEPTED_SHA:-}" ]] ||
-    fail 'public UAT request approval SHA missing or stale'
-  [[ -n "${PUBLIC_UAT_APPROVED_TAG:-}" && "$PUBLIC_UAT_APPROVED_TAG" == "${RC_TAG:-}" ]] ||
-    fail 'public UAT request approval tag missing or stale'
-  [[ "${PUBLIC_UAT_APPROVAL_ISSUE:-}" =~ ^[1-9][0-9]*$ ]] ||
-    fail 'public UAT request approval issue missing'
-  [[ "${APPROVAL_REF:-}" == "https://github.com/OXY7O/kaori-website/issues/$PUBLIC_UAT_APPROVAL_ISSUE" ]] ||
-    fail 'public UAT request approval reference mismatch'
 elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual UAT dispatch must use kaori/staging'
 else
@@ -109,8 +97,6 @@ if [[ "$mode" == preflight ]]; then
     echo 'PASS: protected main production Environment deployment of accepted signed RC digest'
   elif [[ "$GITHUB_REF" == refs/heads/kaori/staging ]]; then
     echo 'PASS: authorized protected staging auto-deployment of signed public RC'
-  elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
-    echo 'PASS: request-branch public UAT matched exact approval SHA, tag and issue'
   else
     echo 'NOTE: manual approval_reference is an audit pointer, not an automated reviewer/branch-protection gate'
   fi

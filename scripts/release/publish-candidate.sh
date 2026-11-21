@@ -16,8 +16,6 @@ if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging 
   [[ "$GITHUB_WORKFLOW_REF" == "$repo/.github/workflows/quality.yml@refs/heads/kaori/staging" ]] ||
     fail 'automatic staging RC requires canonical Full Admission workflow identity'
   auto_staging=true
-elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
-  [[ "$GITHUB_REF" == refs/heads/kaori/rc-request ]] || fail 'push RC request must use kaori/rc-request'
 elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual RC dispatch must use kaori/staging'
 else
