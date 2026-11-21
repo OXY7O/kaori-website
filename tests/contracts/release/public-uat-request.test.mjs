@@ -111,7 +111,10 @@ test("approved request selects existing single public slot, not parallel UAT", (
     adapter,
     /runtime_env=production\nremote_release="\$WEBSITE_DEPLOY_ROOT\/releases\/\$ACCEPTED_SHA"/,
   );
-  assert.match(adapter, /remote_state_dir="\$\{WEBSITE_STATE_DIR:-\/var\/lib\/kaori-website\/deploy-state\}"/);
+  assert.match(
+    adapter,
+    /remote_state_dir="\$\{WEBSITE_STATE_DIR:-\/var\/lib\/kaori-website\/deploy-state\}"/,
+  );
   assert.match(adapter, /reattach-existing-site\.sh" preflight/);
   assert.match(adapter, /reattach-existing-site\.sh" attach/);
   assert.match(adapter, /export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1/);
@@ -153,6 +156,23 @@ test("admitted protected staging is the only automatic signing trigger", () => {
   assert.match(admission, /existing RC source mismatch/);
   assert.match(adapter, /staging auto-deploy requires existing single public edge/);
   assert.match(adapter, /staging auto-deploy authority must match approved workstream/);
+});
+
+test("canonical staging deploy receives operator-configured runtime identity", () => {
+  assert.match(admission, /name: staging\n      url: https:\/\/kaori\.cloud/);
+  assert.match(admission, /WEBSITE_COMPOSE_PROJECT: /);
+  assert.match(admission, /WEBSITE_STATE_DIR: /);
+  assert.match(admission, /WEBSITE_LOOPBACK_PORT: /);
+  assert.match(adapter, /runtime_project="\$\{WEBSITE_COMPOSE_PROJECT:-kaori-website\}"/);
+  assert.match(
+    adapter,
+    /remote_state_dir="\$\{WEBSITE_STATE_DIR:-\/var\/lib\/kaori-website\/deploy-state\}"/,
+  );
+  assert.match(adapter, /runtime_loopback="\$\{WEBSITE_LOOPBACK_PORT:-18080\}"/);
+  assert.match(adapter, /export COMPOSE_PROJECT_NAME="\$runtime_project"/);
+  assert.match(adapter, /export KAORI_WEBSITE_STATE_DIR="\$remote_state_dir"/);
+  assert.match(adapter, /export KAORI_WEBSITE_LOOPBACK_PORT="\$runtime_loopback"/);
+  assert.doesNotMatch(adapter, /DEPLOYMENT_TOPOLOGY|SPLIT_HOST_ENABLED/);
 });
 
 test("automatic staging adapter rejects wrong provenance before SSH", () => {
