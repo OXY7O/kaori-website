@@ -40,6 +40,22 @@ fi
 port="${WEBSITE_SSH_PORT:-22}"
 [[ "$port" =~ ^[0-9]{1,5}$ ]] && (( port >= 1 && port <= 65535 )) || fail 'invalid SSH port'
 [[ "$WEBSITE_DEPLOY_ROOT" == /opt/kaori-website ]] || fail 'website release root must be /opt/kaori-website'
+# The GitHub Environment resolves the target; no synthetic slot-count flag.
+runtime_project="${WEBSITE_COMPOSE_PROJECT:-kaori-website}"
+remote_state_dir="${WEBSITE_STATE_DIR:-/var/lib/kaori-website/deploy-state}"
+runtime_loopback="${WEBSITE_LOOPBACK_PORT:-18080}"
+[[ "$runtime_project" =~ ^kaori-website(-[a-z0-9][a-z0-9-]*)?$ &&
+   "$runtime_project" != kaori-website-uat ]] ||
+  fail 'production project must be a distinct Website namespace'
+[[ "$remote_state_dir" == "/var/lib/$runtime_project/deploy-state" ]] ||
+  fail 'production state must belong to the configured Website project'
+[[ "$runtime_loopback" =~ ^[0-9]{4,5}$ ]] &&
+   (( 10#$runtime_loopback >= 1024 && 10#$runtime_loopback <= 65535 )) ||
+  fail 'production loopback port must be between 1024 and 65535'
+if [[ "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" == 1 ]]; then
+  [[ "$runtime_project" == kaori-website && "$runtime_loopback" == 18080 ]] ||
+    fail 'existing public edge is bound to canonical Website runtime; separately approve other routing'
+fi
 [[ -n "${WEBSITE_SSH_KEY:-}" && -n "${WEBSITE_KNOWN_HOSTS:-}" ]] || fail 'SSH private key/known_hosts missing'
 command -v ssh-keygen >/dev/null && command -v ssh >/dev/null && command -v scp >/dev/null || fail 'SSH runner dependencies missing'
 api="https://api.github.com/repos/$GITHUB_REPOSITORY"
@@ -108,10 +124,10 @@ scp_opts=(-P "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o St
 # The older isolated UAT project is left untouched for separately scoped cleanup.
 runtime_env=production
 remote_release="$WEBSITE_DEPLOY_ROOT/releases/$ACCEPTED_SHA"
-remote_state_dir=/var/lib/kaori-website/deploy-state
 {
   printf 'set -Eeuo pipefail\n'
   printf 'deploy_root=%q\nremote_release=%q\nremote_state_dir=%q\nruntime_env=%q\n' "$WEBSITE_DEPLOY_ROOT" "$remote_release" "$remote_state_dir" "$runtime_env"
+  printf 'runtime_project=%q\nruntime_loopback=%q\n' "$runtime_project" "$runtime_loopback"
   cat <<'REMOTE_PREPARE'
 [[ -d "$deploy_root" && ! -L "$deploy_root" && -w "$deploy_root" ]] || { echo 'BLOCK: website root not provisioned' >&2; exit 1; }
 if [[ "$runtime_env" == uat ]]; then
@@ -141,6 +157,7 @@ scp "${scp_opts[@]}" -r deploy/server "$target:$remote_release/"
 {
   printf 'set -Eeuo pipefail\n'
   printf 'deploy_root=%q\nremote_release=%q\nremote_state_dir=%q\nruntime_env=%q\n' "$WEBSITE_DEPLOY_ROOT" "$remote_release" "$remote_state_dir" "$runtime_env"
+  printf 'runtime_project=%q\nruntime_loopback=%q\n' "$runtime_project" "$runtime_loopback"
   printf 'registry_host=%q\nregistry_user=%q\nregistry_pass=%q\n' "$REGISTRY_HOST" "$REGISTRY_USER" "$REGISTRY_PASSWORD"
   printf 'image_ref=%q\nsource_sha=%q\nrelease_tag=%q\n' "$image_ref" "$ACCEPTED_SHA" "$RC_TAG"
   printf 'attach_existing_edge=%q\n' "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}"
@@ -185,7 +202,7 @@ else
     }
   else
     # A manual private release must never silently replace the already public Website.
-    existing_web="$(docker ps --filter label=com.docker.compose.project=kaori-website \
+    existing_web="$(docker ps --filter "label=com.docker.compose.project=$runtime_project" \
       --filter label=com.docker.compose.service=web --format '{{.ID}}')"
     if [[ -n "$existing_web" ]]; then
       while IFS= read -r existing_id; do
@@ -199,8 +216,11 @@ else
     fi
   fi
 fi
-# Reuse the existing public Compose identity, release receipt and loopback port.
-# Historical private-UAT-specific checks remain for prior operator evidence.
+# The configured runtime identity is authoritative, independent of how many
+# Environments resolve to this target. Preserve legacy UAT override behavior.
+export COMPOSE_PROJECT_NAME="$runtime_project"
+export KAORI_WEBSITE_STATE_DIR="$remote_state_dir"
+export KAORI_WEBSITE_LOOPBACK_PORT="$runtime_loopback"
 export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1
 bash "$remote_release/server/deploy.sh" "$image_ref" "$source_sha" "$release_tag"
 if [[ "$runtime_env" == uat ]]; then
