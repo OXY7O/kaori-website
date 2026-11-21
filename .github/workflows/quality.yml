@@ -215,6 +215,8 @@ jobs:
       - name: Resolve protected staging activation on runner
         id: activation
         shell: bash
+        env:
+          KAORI_WEBSITE_AUTO_STAGING_ENABLED: ${{ vars.KAORI_WEBSITE_AUTO_STAGING_ENABLED }}
         run: |
           set -Eeuo pipefail
           if [[ "${KAORI_WEBSITE_AUTO_STAGING_ENABLED:-}" == true ]]; then
@@ -254,6 +256,8 @@ jobs:
       - name: Check protected production activation
         id: activation
         shell: bash
+        env:
+          KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED: ${{ vars.KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED }}
         run: |
           set -Eeuo pipefail
           if [[ "${KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED:-}" == true ]]; then
@@ -273,6 +277,17 @@ jobs:
       - name: Resolve protected Environment configuration
         if: steps.activation.outputs.enabled == 'true'
         shell: bash
+        env:
+          KAORI_WEBSITE_DOCKER_REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+          KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+          KAORI_WEBSITE_HOST: ${{ vars.KAORI_WEBSITE_HOST }}
+          KAORI_WEBSITE_HOST_PORT: ${{ vars.KAORI_WEBSITE_HOST_PORT }}
+          KAORI_WEBSITE_HOST_USER: ${{ vars.KAORI_WEBSITE_HOST_USER }}
+          KAORI_WEBSITE_HOST_DEPLOY_ROOT: ${{ vars.KAORI_WEBSITE_HOST_DEPLOY_ROOT }}
+          KAORI_WEBSITE_COMPOSE_PROJECT: ${{ vars.KAORI_WEBSITE_COMPOSE_PROJECT }}
+          KAORI_WEBSITE_STATE_DIR: ${{ vars.KAORI_WEBSITE_STATE_DIR }}
+          KAORI_WEBSITE_LOOPBACK_PORT: ${{ vars.KAORI_WEBSITE_LOOPBACK_PORT }}
+          KAORI_WEBSITE_ATTACH_EXISTING_EDGE: ${{ vars.KAORI_WEBSITE_ATTACH_EXISTING_EDGE }}
         run: bash scripts/release/resolve-environment.sh deployment
       - name: Verify exact promotion, independent Human UAT and signed RC
         if: steps.activation.outputs.enabled == 'true'
@@ -329,6 +344,9 @@ jobs:
           persist-credentials: false
       - name: Resolve protected Environment configuration
         shell: bash
+        env:
+          KAORI_WEBSITE_DOCKER_REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+          KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
         run: bash scripts/release/resolve-environment.sh registry
       - name: Verify approved source-scoped public publication rights
         shell: bash
@@ -429,6 +447,17 @@ jobs:
           persist-credentials: false
       - name: Resolve protected Environment configuration
         shell: bash
+        env:
+          KAORI_WEBSITE_DOCKER_REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+          KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+          KAORI_WEBSITE_HOST: ${{ vars.KAORI_WEBSITE_HOST }}
+          KAORI_WEBSITE_HOST_PORT: ${{ vars.KAORI_WEBSITE_HOST_PORT }}
+          KAORI_WEBSITE_HOST_USER: ${{ vars.KAORI_WEBSITE_HOST_USER }}
+          KAORI_WEBSITE_HOST_DEPLOY_ROOT: ${{ vars.KAORI_WEBSITE_HOST_DEPLOY_ROOT }}
+          KAORI_WEBSITE_COMPOSE_PROJECT: ${{ vars.KAORI_WEBSITE_COMPOSE_PROJECT }}
+          KAORI_WEBSITE_STATE_DIR: ${{ vars.KAORI_WEBSITE_STATE_DIR }}
+          KAORI_WEBSITE_LOOPBACK_PORT: ${{ vars.KAORI_WEBSITE_LOOPBACK_PORT }}
+          KAORI_WEBSITE_ATTACH_EXISTING_EDGE: ${{ vars.KAORI_WEBSITE_ATTACH_EXISTING_EDGE }}
         run: bash scripts/release/resolve-environment.sh deployment
       - name: Reverify recurring publication rights before public deployment
         shell: bash
