@@ -1,9 +1,6 @@
 name: Release Deployment
 run-name: "Release Deployment · ${{ inputs.candidate_tag || github.ref_name }}"
 on:
-  push:
-    branches:
-      - kaori/uat-request
   workflow_dispatch:
     inputs:
       candidate_tag:
@@ -29,6 +26,9 @@ jobs:
   deploy:
     name: Deploy Release Candidate
     runs-on: [self-hosted, linux, x64, kaori-ci]
+    environment:
+      name: staging
+      url: https://kaori.cloud
     timeout-minutes: 45
     env:
       ACCEPTED_SHA: ${{ github.sha }}
@@ -40,14 +40,13 @@ jobs:
       WEBSITE_HOST: ${{ vars.KAORI_WEBSITE_HOST }}
       WEBSITE_SSH_PORT: ${{ vars.KAORI_WEBSITE_HOST_PORT }}
       WEBSITE_SSH_USER: ${{ vars.KAORI_WEBSITE_HOST_USER }}
+      WEBSITE_COMPOSE_PROJECT: ${{ vars.KAORI_WEBSITE_COMPOSE_PROJECT || 'kaori-website' }}
+      WEBSITE_STATE_DIR: ${{ vars.KAORI_WEBSITE_STATE_DIR || '/var/lib/kaori-website/deploy-state' }}
+      WEBSITE_LOOPBACK_PORT: ${{ vars.KAORI_WEBSITE_LOOPBACK_PORT || '18080' }}
       WEBSITE_DEPLOY_ROOT: ${{ vars.KAORI_WEBSITE_HOST_DEPLOY_ROOT }}
       WEBSITE_SSH_KEY: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY }}
       WEBSITE_SSH_PASSPHRASE: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PASSPHRASE }}
       WEBSITE_KNOWN_HOSTS: ${{ secrets.KAORI_WEBSITE_HOST_KNOWN_HOSTS }}
-      # Maintainer-controlled, release-scoped authorization for public UAT on request push.
-      PUBLIC_UAT_APPROVED_SHA: ${{ vars.KAORI_WEBSITE_PUBLIC_UAT_APPROVED_SHA }}
-      PUBLIC_UAT_APPROVED_TAG: ${{ vars.KAORI_WEBSITE_PUBLIC_UAT_APPROVED_TAG }}
-      PUBLIC_UAT_APPROVAL_ISSUE: ${{ vars.KAORI_WEBSITE_PUBLIC_UAT_APPROVAL_ISSUE }}
     steps:
       - name: Checkout exact approved source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -70,44 +69,11 @@ jobs:
           accepted="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
           [[ "$accepted" =~ ^[a-f0-9]{40}$ && "$GITHUB_SHA" == "$accepted" ]] || fail 'UAT request SHA does not match current admitted staging'
           [[ "$(git rev-parse HEAD)" == "$accepted" ]] || fail 'UAT checkout does not match accepted staging'
-          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
-            [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual UAT must target staging'
-            tag="$REQUEST_TAG"
-            approval="$REQUEST_APPROVAL"
-            edge="$REQUEST_PUBLIC_EDGE"
-          elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
-            [[ "$GITHUB_REF" == refs/heads/kaori/uat-request ]] || fail 'only kaori/uat-request may trigger UAT on push'
-            releases="$(curl -fsS "${headers[@]}" "$api/releases?per_page=100")"
-            matches="$(jq -c --arg sha "$accepted" '[.[] | select(.prerelease == true and .target_commitish == $sha) | select(.tag_name | test("^v[0-9]+[.][0-9]+[.][0-9]+-rc[.][1-9][0-9]*$"))]' <<<"$releases")"
-            [[ "$(jq length <<<"$matches")" == 1 ]] || fail 'exactly one signed RC prerelease must exist for current staging SHA before requesting UAT'
-            tag="$(jq -r '.[0].tag_name' <<<"$matches")"
-            tag_sha="$(curl -fsS "${headers[@]}" "$api/git/ref/tags/$tag" | jq -r '.object.sha')"
-            [[ "$tag_sha" == "$accepted" ]] || fail 'RC tag does not identify accepted staging SHA'
-            publisher="$(curl -fsS "${headers[@]}" "$api/actions/workflows/publish-staging-image.yml/runs?per_page=100")"
-            jq -e --arg sha "$accepted" '[.workflow_runs[] | select(.head_sha == $sha and .status == "completed" and .conclusion == "success")] | length > 0' <<<"$publisher" >/dev/null || fail 'successful signed RC publisher run missing for this source'
-            pull_requests="$(curl -fsS "${headers[@]}" "$api/commits/$accepted/pulls")"
-            number="$(jq -r --arg sha "$accepted" '[.[] | select(.merge_commit_sha == $sha and .base.ref == "kaori/staging" and .merged_at != null)] | first.number // empty' <<<"$pull_requests")"
-            [[ "$number" =~ ^[0-9]+$ ]] || fail 'cannot identify merged staging PR that authorizes this UAT request'
-            # A merged source PR is necessary but never sufficient public-deploy authority.
-            [[ "$PUBLIC_UAT_APPROVED_SHA" == "$accepted" ]] || fail 'public UAT approval SHA missing or stale'
-            [[ "$PUBLIC_UAT_APPROVED_TAG" == "$tag" ]] || fail 'public UAT approval RC tag missing or stale'
-            [[ "$PUBLIC_UAT_APPROVAL_ISSUE" =~ ^[1-9][0-9]*$ ]] || fail 'public UAT approval issue missing or invalid'
-            issue="$(curl -fsS "${headers[@]}" "$api/issues/$PUBLIC_UAT_APPROVAL_ISSUE")" ||
-              fail 'public UAT approval issue is unavailable'
-            [[ "$(jq -r '.state' <<<"$issue")" == open ]] || fail 'public UAT approval issue must be open'
-            [[ "$(jq -r '.pull_request // empty' <<<"$issue")" == "" ]] || fail 'public UAT approval must be an issue, not a PR'
-            authorization="$(jq -r '.body // empty' <<<"$issue")"
-            grep -Fxq 'Public UAT authorization: APPROVED' <<<"$authorization" ||
-              fail 'public UAT approval marker is missing'
-            grep -Fxq "Source SHA: $accepted" <<<"$authorization" ||
-              fail 'public UAT approval issue does not authorize this source SHA'
-            grep -Fxq "RC tag: $tag" <<<"$authorization" ||
-              fail 'public UAT approval issue does not authorize this RC'
-            approval="https://github.com/$GITHUB_REPOSITORY/issues/$PUBLIC_UAT_APPROVAL_ISSUE"
-            edge=1
-          else
-            fail 'unsupported UAT request event'
-          fi
+          [[ "$GITHUB_EVENT_NAME" == workflow_dispatch && "$GITHUB_REF" == refs/heads/kaori/staging ]] ||
+            fail 'manual UAT requires protected staging and staging Environment'
+          tag="$REQUEST_TAG"
+          approval="$REQUEST_APPROVAL"
+          edge="$REQUEST_PUBLIC_EDGE"
           [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'UAT candidate tag is invalid'
           [[ "$approval" =~ ^https://github.com/OXY7O/kaori-website/(pull|issues)/[0-9]+$ ]] || fail 'explicit merged PR or issue authorization required'
           [[ "$edge" == 0 || "$edge" == 1 ]] || fail 'invalid public edge option'

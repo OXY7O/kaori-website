@@ -3,7 +3,14 @@ set -Eeuo pipefail
 mode="${1:?expected preflight or deploy}"
 [[ "$mode" == preflight || "$mode" == deploy ]] || { echo 'BLOCK: unsupported operation' >&2; exit 1; }
 fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
-if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging &&
+production_deploy=false
+if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/main ]]; then
+  [[ "$GITHUB_WORKFLOW_REF" == "$GITHUB_REPOSITORY/.github/workflows/quality.yml@refs/heads/main" ]] ||
+    fail 'production deployment must originate from canonical protected main workflow'
+  [[ "${APPROVAL_REF:-}" =~ ^https://github.com/OXY7O/kaori-website/pull/[1-9][0-9]*$ ]] ||
+    fail 'production deploy requires reviewed promotion PR authority'
+  production_deploy=true
+elif [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging &&
       "$(printenv KAORI_WEBSITE_STAGING_AUTO || true)" == 1 ]]; then
   [[ "$GITHUB_WORKFLOW_REF" == "$GITHUB_REPOSITORY/.github/workflows/quality.yml@refs/heads/kaori/staging" ]] ||
     fail 'staging auto-deploy must originate from canonical admission workflow'
@@ -11,24 +18,23 @@ if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging 
     fail 'staging auto-deploy requires existing single public edge'
   [[ "$(printenv APPROVAL_REF || true)" == https://github.com/OXY7O/kaori-website/issues/202 ]] ||
     fail 'staging auto-deploy authority must match approved workstream'
-elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
-  [[ "$GITHUB_REF" == refs/heads/kaori/uat-request ]] || fail 'push UAT request must use kaori/uat-request'
-  [[ "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" == 1 ]] ||
-    fail 'public UAT request requires explicit approved existing-edge attachment'
-  [[ -n "${PUBLIC_UAT_APPROVED_SHA:-}" && "$PUBLIC_UAT_APPROVED_SHA" == "${ACCEPTED_SHA:-}" ]] ||
-    fail 'public UAT request approval SHA missing or stale'
-  [[ -n "${PUBLIC_UAT_APPROVED_TAG:-}" && "$PUBLIC_UAT_APPROVED_TAG" == "${RC_TAG:-}" ]] ||
-    fail 'public UAT request approval tag missing or stale'
-  [[ "${PUBLIC_UAT_APPROVAL_ISSUE:-}" =~ ^[1-9][0-9]*$ ]] ||
-    fail 'public UAT request approval issue missing'
-  [[ "${APPROVAL_REF:-}" == "https://github.com/OXY7O/kaori-website/issues/$PUBLIC_UAT_APPROVAL_ISSUE" ]] ||
-    fail 'public UAT request approval reference mismatch'
 elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual UAT dispatch must use kaori/staging'
 else
   fail 'unsupported UAT request event'
 fi
-[[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || fail 'staged source SHA mismatch'
+if [[ "$production_deploy" == true ]]; then
+  [[ "$(git rev-parse HEAD)" == "${GITHUB_SHA:-}" ]] ||
+    fail 'production deployment checkout must be exact approved main'
+  git merge-base --is-ancestor "$ACCEPTED_SHA" HEAD ||
+    fail 'accepted RC is not on promoted main lineage'
+  for path in Dockerfile .dockerignore package.json package-lock.json astro.config.mjs tsconfig.json src public deploy; do
+    git diff --quiet "$ACCEPTED_SHA" HEAD -- "$path" ||
+      fail "production runtime inputs drifted since accepted RC: $path"
+  done
+else
+  [[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || fail 'staged source SHA mismatch'
+fi
 [[ "$RC_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'invalid prerelease tag'
 [[ "$APPROVAL_REF" =~ ^https://github.com/OXY7O/kaori-website/(issues|pull)/[0-9]+ ]] || fail 'explicit GitHub authorization reference is required'
 [[ "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" =~ ^[01]$ ]] || fail 'public edge deployment option must be 0 or 1'
@@ -60,8 +66,13 @@ fi
 command -v ssh-keygen >/dev/null && command -v ssh >/dev/null && command -v scp >/dev/null || fail 'SSH runner dependencies missing'
 api="https://api.github.com/repos/$GITHUB_REPOSITORY"
 headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
-current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
-[[ "$current" == "$ACCEPTED_SHA" ]] || fail 'staging changed since dispatch'
+if [[ "$production_deploy" == true ]]; then
+  current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/main" | jq -r '.object.sha')"
+  [[ "$current" == "$GITHUB_SHA" ]] || fail 'main changed since protected production approval'
+else
+  current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
+  [[ "$current" == "$ACCEPTED_SHA" ]] || fail 'staging changed since dispatch'
+fi
 release_file="$(mktemp)"
 http_status="$(curl -sS -o "$release_file" -w '%{http_code}' "${headers[@]}" "$api/releases/tags/$RC_TAG")"
 if [[ "$http_status" == 404 ]]; then
@@ -82,10 +93,10 @@ image_ref="$REGISTRY_IMAGE@$digest"
 echo "Accepted RC $RC_TAG: source $ACCEPTED_SHA; digest $digest"
 if [[ "$mode" == preflight ]]; then
   echo 'PASS: source, immutable prerelease evidence and required credential names are present'
-  if [[ "$GITHUB_REF" == refs/heads/kaori/staging ]]; then
+  if [[ "$production_deploy" == true ]]; then
+    echo 'PASS: protected main production Environment deployment of accepted signed RC digest'
+  elif [[ "$GITHUB_REF" == refs/heads/kaori/staging ]]; then
     echo 'PASS: authorized protected staging auto-deployment of signed public RC'
-  elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
-    echo 'PASS: request-branch public UAT matched exact approval SHA, tag and issue'
   else
     echo 'NOTE: manual approval_reference is an audit pointer, not an automated reviewer/branch-protection gate'
   fi

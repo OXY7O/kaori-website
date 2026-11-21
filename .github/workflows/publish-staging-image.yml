@@ -1,9 +1,6 @@
 name: Release Candidate
 run-name: "Release Candidate · ${{ inputs.candidate_tag || github.ref_name }}"
 on:
-  push:
-    branches:
-      - kaori/rc-request
   workflow_dispatch:
     inputs:
       candidate_tag:
@@ -21,6 +18,9 @@ jobs:
   publish:
     name: Publish Release Candidate
     runs-on: [self-hosted, linux, x64, platform-ci]
+    environment:
+      name: staging
+      url: https://kaori.cloud
     timeout-minutes: 120
     env:
       REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
@@ -50,21 +50,12 @@ jobs:
           current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
           [[ "$current" =~ ^[a-f0-9]{40}$ && "$GITHUB_SHA" == "$current" ]] || fail 'RC request differs from current staging SHA'
           [[ "$(git rev-parse HEAD)" == "$current" ]] || fail 'RC checkout differs from accepted staging'
-          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
-            [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual RC must target staging'
-            tag="$REQUEST_TAG"
-            [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'invalid requested RC tag'
-          elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
-            [[ "$GITHUB_REF" == refs/heads/kaori/rc-request ]] || fail 'only kaori/rc-request can push RC request'
-            existing="$(git tag --points-at "$current" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$' || true)"
-            if [[ -n "$existing" ]]; then
-              [[ "$(printf '%s\n' "$existing" | wc -l)" -eq 1 ]] || fail 'multiple RC tags on exact staging SHA'
-              status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/releases/tags/$existing")"
-              if [[ "$status" == 200 ]]; then
-                release="$(curl -fsS "${headers[@]}" "$api/releases/tags/$existing")"
-                [[ "$(jq -r '.prerelease' <<<"$release")" == true && "$(jq -r '.target_commitish' <<<"$release")" == "$current" ]] || fail 'published RC identity mismatch'
-                [[ "$(jq -r '.body // ""' <<<"$release")" == *'Immutable digest: sha256:'* ]] || fail 'published RC missing immutable evidence'
-                printf 'tag=%s\nshould_publish=false\n' "$existing" >> "$GITHUB_OUTPUT"
+          [[ "$GITHUB_EVENT_NAME" == workflow_dispatch && "$GITHUB_REF" == refs/heads/kaori/staging ]] ||
+            fail 'manual RC requires protected staging and staging Environment'
+          tag="$REQUEST_TAG"
+          [[ "$tag" =~ ^v[0-9]+[.][0-9]+[.][0-9]+-rc[.][1-9][0-9]*$ ]] ||
+            fail 'invalid requested RC tag'
+          printf 'tag=%s\nshould_publish=false\n' "$existing" >> "$GITHUB_OUTPUT"
                 printf 'PASS: RC %s already published; no duplicate\n' "$existing"
                 exit 0
               fi
