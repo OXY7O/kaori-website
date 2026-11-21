@@ -65,9 +65,9 @@ test("publication depends on merged staging promotion, trusted Human UAT and imm
     "Trivy security and signed SBOM/provenance: PASS",
     "cosign/cosign:v3.1.3 verify",
     '--type "$kind"',
-    "KAORI_WEBSITE_IMAGE=$expected_image",
-    "KAORI_WEBSITE_SOURCE_SHA=$expected_sha",
-    "KAORI_WEBSITE_VERSION=$expected_rc",
+    'current_image" == "$expected_image"',
+    'current_sha" == "$expected_sha"',
+    'current_version" == "$expected_rc"',
     "edge-public",
     "deploy-state/release.env",
   ]) {
@@ -75,6 +75,43 @@ test("publication depends on merged staging promotion, trusted Human UAT and imm
   }
   assert.doesNotMatch(publisher, /docker build|docker push|docker compose up/);
   assert.doesNotMatch(publisher, /KAORI_WEBSITE_STABLE_RELEASE_94|ACCEPTED_DIGEST/);
+});
+
+test("production Environment configuration selects runtime without topology mode", () => {
+  for (const marker of [
+    "WEBSITE_COMPOSE_PROJECT:",
+    "WEBSITE_STATE_DIR:",
+    "WEBSITE_LOOPBACK_PORT:",
+    "KAORI_WEBSITE_ATTACH_EXISTING_EDGE:",
+  ]) {
+    assert.ok(fullAdmission.includes(marker), marker);
+  }
+  assert.match(publisher, /runtime_project="\$\{WEBSITE_COMPOSE_PROJECT:-kaori-website\}"/);
+  assert.match(
+    publisher,
+    /runtime_state="\$\{WEBSITE_STATE_DIR:-\/var\/lib\/kaori-website\/deploy-state\}"/,
+  );
+  assert.match(publisher, /runtime_port="\$\{WEBSITE_LOOPBACK_PORT:-18080\}"/);
+  assert.match(publisher, /runtime_edge="\$\{KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-1\}"/);
+  assert.match(publisher, /COMPOSE_PROJECT_NAME="\$runtime_project"/);
+  assert.doesNotMatch(publisher, /DEPLOYMENT_TOPOLOGY|SPLIT_HOST_ENABLED/);
+});
+
+test("signed stable runtime is verified or replaced without rebuilding", () => {
+  const signature = publisher.indexOf("for kind in spdxjson slsaprovenance1");
+  const probe = publisher.indexOf('target_probe="$(probe_target)"');
+  const deployment = publisher.indexOf("bash scripts/release/deploy-release.sh deploy");
+  assert.ok(signature >= 0 && probe > signature && deployment > probe);
+  assert.match(publisher, /TARGET_STATUS:READY/);
+  assert.match(publisher, /TARGET_STATUS:DEPLOY/);
+  assert.match(publisher, /production current container is unhealthy; manual recovery required/);
+  assert.match(publisher, /production current receipt is invalid/);
+  assert.match(publisher, /production target needs an independently prepared prior receipt/);
+  assert.match(publisher, /production post-deployment digest is not accepted/);
+  assert.match(publisher, /production target requires independently admitted provider edge/);
+  assert.match(publisher, /target_action=verified/);
+  assert.match(publisher, /target_action=replaced/);
+  assert.doesNotMatch(publisher, /docker build|docker push|docker compose up/);
 });
 
 test("production promotion uses latest reviewer state for the reviewed staging head", () => {
