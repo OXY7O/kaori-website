@@ -104,8 +104,9 @@ The current shared-edge attachment path remains authorized only for
 the canonical `kaori-website` public runtime; a noncanonical target
 may be deployed privately after operator provisioning and explicit
 authorization, but a different public route requires a separately
-approved provider-owned edge configuration. Neither this work nor production reconciliation changes GitHub
-Environment branch policies or automatically enables deployment.
+approved provider-owned edge configuration. Neither this work nor production
+reconciliation changes GitHub Environment branch policies or automatically
+enables deployment.
 
 ### Stable target reconciliation — Website #239
 
