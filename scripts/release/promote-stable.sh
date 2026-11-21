@@ -17,7 +17,7 @@ done
   fail 'main checkout identity mismatch'
 api="https://api.github.com/repos/$GITHUB_REPOSITORY"
 api_get() {
-  curl --fail-with-body -fsS -H "Authorization: Bearer $GH_TOKEN" \
+  curl --fail-with-body -sS -H "Authorization: Bearer $GH_TOKEN" \
     -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' "$1"
 }
 api_status() {
@@ -244,7 +244,7 @@ if [[ "$existing" == 404 ]]; then
   payload="$(jq -n --arg tag "$stable_tag" --arg sha "$GITHUB_SHA" --arg body "$body" \
     '{tag_name:$tag,target_commitish:$sha,name:("KAORI Website "+$tag),body:$body,
       draft:false,prerelease:false,make_latest:"true"}')"
-  published="$(curl --fail-with-body -fsS -H "Authorization: Bearer $GH_TOKEN" \
+  published="$(curl --fail-with-body -sS -H "Authorization: Bearer $GH_TOKEN" \
     -H 'Accept: application/vnd.github+json' -H 'Content-Type: application/json' \
     -X POST --data "$payload" "$api/releases")" ||
     fail 'stable publication failed; inspect reserved tag before retry'
