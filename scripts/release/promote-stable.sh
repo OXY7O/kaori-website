@@ -4,13 +4,17 @@ fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 [[ $# -eq 1 ]] || fail 'usage: promote-stable.sh preflight|publish'
 mode="$1"
 [[ "$mode" == preflight || "$mode" == publish ]] || fail 'unsupported stable mode'
-for name in GH_TOKEN GITHUB_SHA GITHUB_REF GITHUB_REPOSITORY GITHUB_EVENT_NAME GITHUB_WORKFLOW_REF GITHUB_RUN_ID REGISTRY_HOST REGISTRY_IMAGE; do
+for name in GH_TOKEN GITHUB_SHA GITHUB_REF GITHUB_REPOSITORY GITHUB_EVENT_NAME GITHUB_WORKFLOW_REF GITHUB_RUN_ID REGISTRY_HOST REGISTRY_IMAGE PRODUCTION_STABLE_TAG PRODUCTION_PROMOTION_PR; do
   [[ -n "$(printenv "$name" || true)" ]] || fail "missing $name"
 done
-[[ "$GITHUB_REPOSITORY" == OXY7O/kaori-website && "$GITHUB_EVENT_NAME" == push &&
-   "$GITHUB_REF" == refs/heads/main ]] || fail 'only main push can publish stable'
-[[ "$GITHUB_WORKFLOW_REF" == OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/main ]] ||
-  fail 'canonical main Full Admission workflow identity required'
+[[ "$GITHUB_REPOSITORY" == OXY7O/kaori-website &&
+   "$GITHUB_EVENT_NAME" == workflow_dispatch && "$GITHUB_REF" == refs/heads/main ]] ||
+  fail 'only explicit main release dispatch can publish stable'
+[[ "$GITHUB_WORKFLOW_REF" == OXY7O/kaori-website/.github/workflows/release-production.yml@refs/heads/main ]] ||
+  fail 'canonical protected production release workflow identity required'
+[[ "$PRODUCTION_STABLE_TAG" =~ ^v[0-9]+[.][0-9]+[.][0-9]+$ &&
+   "$PRODUCTION_PROMOTION_PR" =~ ^[1-9][0-9]*$ ]] ||
+  fail 'explicit stable version and promotion PR are required'
 [[ "$REGISTRY_IMAGE" == "$REGISTRY_HOST/"* && "$REGISTRY_IMAGE" == */kaori-website ]] ||
   fail 'dedicated Website image authority missing'
 [[ "$GITHUB_SHA" =~ ^[a-f0-9]{40}$ && "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]] ||
@@ -27,18 +31,25 @@ api_status() {
 [[ "$(api_get "$api/git/ref/heads/main" | jq -r '.object.sha')" == "$GITHUB_SHA" ]] ||
   fail 'main advanced during production approval'
 
-# Recover the exact reviewed staging HEAD from this main merge, not a manual tag.
-merged="$(api_get "$api/commits/$GITHUB_SHA/pulls")" || fail 'merge evidence unavailable'
-prs="$(jq -c --arg sha "$GITHUB_SHA" '[.[] | select(
-  .merge_commit_sha == $sha and .merged_at != null and .base.ref == "main" and
+# The explicit request selects an independently reviewed staging promotion.
+# It may be an ancestor of current main if later changes are documentation-only;
+# any drift of Website build inputs is rejected below.
+pull="$(api_get "$api/pulls/$PRODUCTION_PROMOTION_PR")" || fail 'requested promotion PR absent'
+prs="$(jq -c '[.] | map(select(
+  .merged_at != null and .base.ref == "main" and
   .head.ref == "kaori/staging" and .head.repo.full_name == "OXY7O/kaori-website"
-)]' <<<"$merged")"
+))' <<<"$pull")"
 [[ "$(jq length <<<"$prs")" -eq 1 ]] || fail 'expected exactly one reviewed staging-to-main PR'
 pr="$(jq -r '.[0].number' <<<"$prs")"
+[[ "$pr" == "$PRODUCTION_PROMOTION_PR" ]] || fail 'requested PR identity mismatch'
 promotion_sha="$(jq -r '.[0].head.sha' <<<"$prs")"
+merge_sha="$(jq -r '.[0].merge_commit_sha' <<<"$prs")"
 author="$(jq -r '.[0].user.login' <<<"$prs")"
 merged_at="$(jq -r '.[0].merged_at' <<<"$prs")"
 pr_body="$(jq -r '.[0].body // ""' <<<"$prs")"
+[[ "$merge_sha" =~ ^[a-f0-9]{40}$ ]] || fail 'reviewed promotion merge SHA invalid'
+git merge-base --is-ancestor "$merge_sha" HEAD ||
+  fail 'requested staging promotion is not on current main lineage'
 [[ "$promotion_sha" =~ ^[a-f0-9]{40}$ ]] || fail 'promotion staging source invalid'
 git merge-base --is-ancestor "$promotion_sha" HEAD || fail 'reviewed promotion head is not a main ancestor'
 reviews="$(api_get "$api/pulls/$pr/reviews")" || fail 'promotion reviews unavailable'
@@ -50,7 +61,7 @@ jq -e --arg author "$author" --arg sha "$promotion_sha" '
 ' <<<"$reviews" >/dev/null ||
   fail 'current-head independent promotion reviewer approval missing'
 
-# The promotion PR records Human UAT once; no manual tag, workflow dispatch or per-RC variable.
+# The selected, independently reviewed promotion PR records accepted Human UAT once.
 evidence="$(grep -E '^Human UAT evidence: https://github[.]com/OXY7O/kaori-website/issues/[1-9][0-9]*#issuecomment-[1-9][0-9]*$' <<<"$pr_body" || true)"
 [[ "$(printf '%s\n' "$evidence" | grep -c '^Human UAT evidence:' || true)" -eq 1 ]] ||
   fail 'promotion PR requires one linked Human UAT approval comment'
@@ -88,6 +99,8 @@ done
 rc_sha="$accepted_sha"
 stable_tag="$(sed -E 's/-rc[.][1-9][0-9]*$//' <<<"$rc_tag")"
 [[ "$stable_tag" =~ ^v[0-9]+[.][0-9]+[.][0-9]+$ ]] || fail 'stable SemVer invalid'
+[[ "$stable_tag" == "$PRODUCTION_STABLE_TAG" ]] ||
+  fail 'requested stable tag differs from Human-Accepted signed RC version'
 
 rc="$(api_get "$api/releases/tags/$rc_tag")" || fail 'accepted signed RC absent'
 [[ "$(jq -r '.prerelease' <<<"$rc")" == true &&

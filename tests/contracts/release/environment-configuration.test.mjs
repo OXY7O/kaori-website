@@ -7,6 +7,7 @@ import test from "node:test";
 
 const workflowPaths = [
   ".github/workflows/quality.yml",
+  ".github/workflows/release-production.yml",
   ".github/workflows/publish-staging-image.yml",
   ".github/workflows/deploy-staging-host.yml",
   ".github/workflows/environment-credential-preflight.yml",
@@ -36,22 +37,34 @@ test("release workflows resolve configuration in protected runner steps, not at 
   );
 });
 
-test("activation comes from protected Environment and fails closed when absent", () => {
-  const yaml = workflows[0];
-  assert.match(yaml, /staging-release-activation:/);
-  assert.match(yaml, /KAORI_WEBSITE_AUTO_STAGING_ENABLED:-/);
-  assert.match(yaml, /needs\.staging-release-activation\.outputs\.enabled == 'true'/);
-  assert.match(yaml, /KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED:-/);
+test("source admission never requests production approval or stable release", () => {
+  const admission = workflows[0];
+  assert.match(admission, /push:\n    branches:\n      - kaori\/staging\n      - main/);
+  assert.doesNotMatch(admission, /stable-publication:/);
+  assert.doesNotMatch(admission, /name: production\n/);
+  assert.doesNotMatch(admission, /KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED/);
+  assert.match(admission, /staging-release-activation:/);
+  assert.match(admission, /KAORI_WEBSITE_AUTO_STAGING_ENABLED:-/);
+  assert.match(admission, /needs\.staging-release-activation\.outputs\.enabled == 'true'/);
   assert.match(
-    yaml,
+    admission,
     /KAORI_WEBSITE_AUTO_STAGING_ENABLED: \$\{\{ vars\.KAORI_WEBSITE_AUTO_STAGING_ENABLED \}\}/,
   );
-  assert.match(
-    yaml,
-    /KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED: \$\{\{ vars\.KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED \}\}/,
-  );
-  assert.match(yaml, /steps\.activation\.outputs\.enabled == 'true'/);
-  assert.match(yaml, /name: production\n\s+url: https:\/\/kaori\.cloud/);
+});
+
+test("only explicit main dispatch enters protected production release", () => {
+  const production = workflows[1];
+  assert.match(production, /on:\n  workflow_dispatch:/);
+  assert.doesNotMatch(production, /\n  push:/);
+  assert.match(production, /name: Validate Explicit Release Request/);
+  assert.match(production, /name: Release Accepted Artifact to Production/);
+  assert.match(production, /name: production\n      url: https:\/\/kaori\.cloud/);
+  assert.match(production, /inputs\.stable_tag/);
+  assert.match(production, /inputs\.promotion_pr/);
+  assert.match(production, /head_sha=\$GITHUB_SHA/);
+  assert.match(production, /scripts\/release\/promote-stable\.sh preflight/);
+  assert.match(production, /scripts\/release\/promote-stable\.sh publish/);
+  assert.doesNotMatch(production, /KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED/);
 });
 
 function check(mode, overrides = {}) {
