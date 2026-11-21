@@ -165,18 +165,17 @@ jobs:
     name: Release Configuration
     needs: route
     if: ${{ needs.route.outputs.release-config == 'true' }}
-    runs-on: [self-hosted, linux, x64, platform-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
-    env:
-      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
-      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
     steps:
-      - name: Verify independent KAORI Website image repository
+      - name: Checkout exact trusted work SHA
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.KAORI_WEBSITE_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Verify release Environment wiring without deployment credentials
         shell: bash
         run: |
           set -Eeuo pipefail
-          [[ -n "$REGISTRY_HOST" && -n "$REGISTRY_IMAGE" ]] || { echo 'BLOCK: registry repository Variables missing' >&2; exit 1; }
-          [[ "$REGISTRY_HOST" != *://* && "$REGISTRY_HOST" != *' '* ]] || { echo 'BLOCK: registry host invalid' >&2; exit 1; }
-          [[ "$REGISTRY_IMAGE" == "$REGISTRY_HOST/"* && "$REGISTRY_IMAGE" == */kaori-website ]] || { echo 'BLOCK: image namespace must be dedicated to KAORI Website, ending /kaori-website' >&2; exit 1; }
-          [[ "$REGISTRY_IMAGE" != *' '* && "$REGISTRY_IMAGE" != *':'* ]] || { echo 'BLOCK: registry image must not be mutable tag or malformed' >&2; exit 1; }
-          printf 'PASS: website registry Variables identify an independent /kaori-website repository. Values withheld.\n'
+          bash -n scripts/release/resolve-environment.sh
+          node --test tests/contracts/release/environment-configuration.test.mjs
