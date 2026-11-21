@@ -76,7 +76,8 @@ signed digest and deployment adapters**, plus provider-owned edge
 cutover. A code or adapter change may be necessary at that point;
 it must be issue-scoped, reviewed, tested, and UAT-accepted before
 activation. Never infer successful two-VM operation from the current
-one-slot release evidence.
+one-slot release evidence. The optional separate-host adapter is
+tracked under [Website #234](https://github.com/OXY7O/kaori-website/issues/234).
 
 ## Container and development smoke
 
