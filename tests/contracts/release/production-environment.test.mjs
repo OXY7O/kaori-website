@@ -7,6 +7,7 @@ import test from "node:test";
 
 const fullAdmission = readFileSync(".github/workflows/quality.yml", "utf8");
 const publisher = readFileSync("scripts/release/promote-stable.sh", "utf8");
+const candidatePublisher = readFileSync("scripts/release/publish-candidate.sh", "utf8");
 
 function rejectPreflight(overrides = {}) {
   return spawnSync("bash", [resolve("scripts/release/promote-stable.sh"), "preflight"], {
@@ -34,6 +35,15 @@ test("production GET and POST use compatible fail-closed curl flags", () => {
   assert.match(publisher, /api_get\(\) \{\s*curl --fail-with-body -sS /);
   assert.match(publisher, /published="\$\(curl --fail-with-body -sS /);
   assert.doesNotMatch(publisher, /curl --fail-with-body -fsS/);
+});
+
+test("staging recurring rights use compatible fail-closed curl flags", () => {
+  const calls = candidatePublisher.match(/curl --fail-with-body -sS /g) || [];
+  assert.equal(calls.length, 2);
+  assert.match(candidatePublisher, /issue_data="\$\(curl --fail-with-body -sS /);
+  assert.match(candidatePublisher, /comments_data="\$\(curl --fail-with-body -sS /);
+  assert.doesNotMatch(candidatePublisher, /curl --fail-with-body -fsS/);
+  assert.match(candidatePublisher, /verify_recurring_publication_rights/);
 });
 
 test("only main with a production environment may publish same-digest stable", () => {
