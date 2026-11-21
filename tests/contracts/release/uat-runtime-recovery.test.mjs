@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
@@ -213,7 +220,10 @@ test("production runtime target rejects invalid project or mismatched state befo
   const cases = [
     ["kaori-app", "production project must be a distinct Website namespace"],
     ["kaori-website-uat", "production project must be a distinct Website namespace"],
-    ["kaori-website-preview", "production state must belong to the configured Website project"],
+    [
+      "kaori-website-preview",
+      "production state must belong to the configured Website project",
+    ],
   ];
   for (const [project, reason] of cases) {
     const result = run(
