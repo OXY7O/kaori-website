@@ -126,7 +126,7 @@ test("manual deployment inputs remain explicit and staging-bound", () => {
   assert.match(workflow, /candidate_tag:/);
   assert.match(workflow, /approval_reference:/);
   assert.match(workflow, /publish_existing_edge:/);
-  assert.match(workflow, /\[\[ "\$GITHUB_REF" == refs\/heads\/kaori\/staging \]\]/);
+  assert.match(workflow, /manual UAT requires protected staging and staging Environment/);
   assert.match(workflow, /edge="\$REQUEST_PUBLIC_EDGE"/);
   assert.match(adapter, /GITHUB_EVENT_NAME" == workflow_dispatch/);
 });
