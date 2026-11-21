@@ -40,10 +40,12 @@ reuse Website-specific implementation, host credentials, or public ingress.
 - **Stale RC protection:** If a newer staging RC has displaced the accepted
   live digest, stable publication must fail closed until the correct artifact,
   acceptance, and runtime evidence are reconciled.
-- **Activation:** The existing `KAORI_WEBSITE_AUTO_STAGING_ENABLED` and
-  `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` switches are independent and
-  default-off. Enabling either never substitutes for release rights,
-  Environment protection, signed evidence, or human authorization.
+- **Activation:** The `KAORI_WEBSITE_AUTO_STAGING_ENABLED` and
+  `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` switches are independent,
+  Environment-scoped and default-off. Both are read on the runner after
+  the protected Environment boundary. A main push may request production
+  reviewer approval even when its switch is false; no publication occurs.
+  Neither switch substitutes for rights, signed evidence or human acceptance.
 
 GitHub `staging` and `production` are **logical governance/credential
 scopes**, not statements that two servers already exist. They share the

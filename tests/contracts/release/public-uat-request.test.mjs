@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import test from "node:test";
 
 const workflow = readFileSync(".github/workflows/deploy-staging-host.yml", "utf8");
+const environmentConfig = readFileSync("scripts/release/resolve-environment.sh", "utf8");
 const candidateWorkflow = readFileSync(".github/workflows/publish-staging-image.yml", "utf8");
 const adapter = readFileSync("scripts/release/deploy-release.sh", "utf8");
 const admission = readFileSync(".github/workflows/quality.yml", "utf8");
@@ -84,9 +85,10 @@ test("manual RC and UAT fallbacks require the protected staging Environment", ()
   assert.doesNotMatch(workflow, /kaori\/uat-request/);
   assert.doesNotMatch(candidateWorkflow, /kaori\/rc-request/);
   assert.doesNotMatch(workflow, /PUBLIC_UAT_APPROVED_SHA|PUBLIC_UAT_APPROVED_TAG/);
-  assert.match(workflow, /KAORI_WEBSITE_COMPOSE_PROJECT/);
-  assert.match(workflow, /KAORI_WEBSITE_STATE_DIR/);
-  assert.match(workflow, /KAORI_WEBSITE_LOOPBACK_PORT/);
+  assert.match(workflow, /scripts\/release\/resolve-environment\.sh deployment/);
+  assert.match(environmentConfig, /put WEBSITE_COMPOSE_PROJECT/);
+  assert.match(environmentConfig, /put WEBSITE_STATE_DIR/);
+  assert.match(environmentConfig, /put WEBSITE_LOOPBACK_PORT/);
   assert.match(workflow, /group: kaori-website-release-deploy/);
   assert.match(candidateWorkflow, /group: kaori-website-rc/);
   assert.match(workflow, /approval_reference:/);
@@ -138,7 +140,7 @@ test("admitted protected staging is the only automatic signing trigger", () => {
     admission,
     /needs: \[promotion-source, full-admission, container-admission, browser-evidence\]/,
   );
-  assert.match(admission, /KAORI_WEBSITE_AUTO_STAGING_ENABLED == 'true'/);
+  assert.match(admission, /KAORI_WEBSITE_AUTO_STAGING_ENABLED:-/);
   assert.match(admission, /environment:\n      name: staging/);
   assert.match(admission, /group: kaori-website-release-deploy/);
   assert.match(admission, /Select unique signed candidate or verify existing release/);
@@ -155,9 +157,10 @@ test("admitted protected staging is the only automatic signing trigger", () => {
 
 test("canonical staging deploy receives operator-configured runtime identity", () => {
   assert.match(admission, /name: staging\n      url: https:\/\/kaori\.cloud/);
-  assert.match(admission, /WEBSITE_COMPOSE_PROJECT: /);
-  assert.match(admission, /WEBSITE_STATE_DIR: /);
-  assert.match(admission, /WEBSITE_LOOPBACK_PORT: /);
+  assert.match(admission, /scripts\/release\/resolve-environment\.sh deployment/);
+  assert.match(environmentConfig, /put WEBSITE_COMPOSE_PROJECT/);
+  assert.match(environmentConfig, /put WEBSITE_STATE_DIR/);
+  assert.match(environmentConfig, /put WEBSITE_LOOPBACK_PORT/);
   assert.match(adapter, /runtime_project="\$\{WEBSITE_COMPOSE_PROJECT:-kaori-website\}"/);
   assert.match(
     adapter,

@@ -23,7 +23,7 @@ permissions:
 
 concurrency:
   group: kaori-website-admission-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && vars.KAORI_WEBSITE_AUTO_STAGING_ENABLED != 'true' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   KAORI_WEBSITE_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -199,11 +199,38 @@ jobs:
           [[ "$owner" =~ ^[0-9]+:[0-9]+$ ]] || exit 1
           chown -R "$owner" "$GITHUB_WORKSPACE"
 
+  staging-release-activation:
+    name: Staging Release Activation
+    needs: [promotion-source, full-admission, container-admission, browser-evidence]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/kaori/staging' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment:
+      name: staging
+    permissions:
+      contents: read
+    outputs:
+      enabled: ${{ steps.activation.outputs.enabled }}
+    steps:
+      - name: Resolve protected staging activation on runner
+        id: activation
+        shell: bash
+        env:
+          KAORI_WEBSITE_AUTO_STAGING_ENABLED: ${{ vars.KAORI_WEBSITE_AUTO_STAGING_ENABLED }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "${KAORI_WEBSITE_AUTO_STAGING_ENABLED:-}" == true ]]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo 'Staging RC publication disabled in protected Environment.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   stable-publication:
     name: Publish Human Accepted Stable Release
     needs: [promotion-source, full-admission, container-admission, browser-evidence]
     if: >-
-      ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED == 'true' }}
+      ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: [self-hosted, linux, x64, platform-ci]
     environment:
       name: production
@@ -220,36 +247,58 @@ jobs:
       issues: read
     env:
       GH_TOKEN: ${{ github.token }}
-      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
-      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
       REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
       REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
-      WEBSITE_HOST: ${{ vars.KAORI_WEBSITE_HOST }}
-      WEBSITE_SSH_PORT: ${{ vars.KAORI_WEBSITE_HOST_PORT }}
-      WEBSITE_SSH_USER: ${{ vars.KAORI_WEBSITE_HOST_USER }}
-      WEBSITE_COMPOSE_PROJECT: ${{ vars.KAORI_WEBSITE_COMPOSE_PROJECT || 'kaori-website' }}
-      WEBSITE_STATE_DIR: ${{ vars.KAORI_WEBSITE_STATE_DIR || '/var/lib/kaori-website/deploy-state' }}
-      WEBSITE_LOOPBACK_PORT: ${{ vars.KAORI_WEBSITE_LOOPBACK_PORT || '18080' }}
-      KAORI_WEBSITE_ATTACH_EXISTING_EDGE: ${{ vars.KAORI_WEBSITE_ATTACH_EXISTING_EDGE || '1' }}
-      WEBSITE_DEPLOY_ROOT: ${{ vars.KAORI_WEBSITE_HOST_DEPLOY_ROOT }}
       WEBSITE_SSH_KEY: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY }}
       WEBSITE_SSH_PASSPHRASE: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PASSPHRASE }}
       WEBSITE_KNOWN_HOSTS: ${{ secrets.KAORI_WEBSITE_HOST_KNOWN_HOSTS }}
     steps:
+      - name: Check protected production activation
+        id: activation
+        shell: bash
+        env:
+          KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED: ${{ vars.KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "${KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED:-}" == true ]]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo 'Stable publication inactive: production Environment activation disabled.' >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Checkout exact approved main with full promotion lineage
+        if: steps.activation.outputs.enabled == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
+      - name: Resolve protected Environment configuration
+        if: steps.activation.outputs.enabled == 'true'
+        shell: bash
+        env:
+          KAORI_WEBSITE_DOCKER_REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+          KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+          KAORI_WEBSITE_HOST: ${{ vars.KAORI_WEBSITE_HOST }}
+          KAORI_WEBSITE_HOST_PORT: ${{ vars.KAORI_WEBSITE_HOST_PORT }}
+          KAORI_WEBSITE_HOST_USER: ${{ vars.KAORI_WEBSITE_HOST_USER }}
+          KAORI_WEBSITE_HOST_DEPLOY_ROOT: ${{ vars.KAORI_WEBSITE_HOST_DEPLOY_ROOT }}
+          KAORI_WEBSITE_COMPOSE_PROJECT: ${{ vars.KAORI_WEBSITE_COMPOSE_PROJECT }}
+          KAORI_WEBSITE_STATE_DIR: ${{ vars.KAORI_WEBSITE_STATE_DIR }}
+          KAORI_WEBSITE_LOOPBACK_PORT: ${{ vars.KAORI_WEBSITE_LOOPBACK_PORT }}
+          KAORI_WEBSITE_ATTACH_EXISTING_EDGE: ${{ vars.KAORI_WEBSITE_ATTACH_EXISTING_EDGE }}
+        run: bash scripts/release/resolve-environment.sh deployment
       - name: Verify exact promotion, independent Human UAT and signed RC
+        if: steps.activation.outputs.enabled == 'true'
         shell: bash
         run: bash scripts/release/promote-stable.sh preflight
       - name: Reverify accepted OCI digest and running public slot, publish stable without rebuild
+        if: steps.activation.outputs.enabled == 'true'
         shell: bash
         run: bash scripts/release/promote-stable.sh publish
       - name: Record production Environment acceptance boundary
+        if: steps.activation.outputs.enabled == 'true'
         shell: bash
         run: |
           printf 'Approved production Environment run: %s\n' "$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
@@ -257,9 +306,14 @@ jobs:
 
   staging-rc-publish:
     name: Publish Accepted Staging RC
-    needs: [promotion-source, full-admission, container-admission, browser-evidence]
+    needs:
+      - promotion-source
+      - full-admission
+      - container-admission
+      - browser-evidence
+      - staging-release-activation
     if: >-
-      ${{ github.event_name == 'push' && github.ref == 'refs/heads/kaori/staging' && vars.KAORI_WEBSITE_AUTO_STAGING_ENABLED == 'true' }}
+      ${{ github.event_name == 'push' && github.ref == 'refs/heads/kaori/staging' && needs.staging-release-activation.outputs.enabled == 'true' }}
     runs-on: [self-hosted, linux, x64, platform-ci]
     environment:
       name: staging
@@ -278,8 +332,6 @@ jobs:
       ACCEPTED_SHA: ${{ github.sha }}
       GH_TOKEN: ${{ github.token }}
       KAORI_WEBSITE_STAGING_AUTO: "1"
-      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
-      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
       REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
       REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
     steps:
@@ -290,6 +342,12 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
+      - name: Resolve protected Environment configuration
+        shell: bash
+        env:
+          KAORI_WEBSITE_DOCKER_REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+          KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+        run: bash scripts/release/resolve-environment.sh registry
       - name: Verify approved source-scoped public publication rights
         shell: bash
         run: bash scripts/release/publish-candidate.sh rights
@@ -355,7 +413,8 @@ jobs:
   staging-rc-deploy:
     name: Deploy Accepted Staging RC
     needs: [staging-rc-publish]
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/kaori/staging' && vars.KAORI_WEBSITE_AUTO_STAGING_ENABLED == 'true' && needs.staging-rc-publish.result == 'success' }}
+    if: >-
+      ${{ github.event_name == 'push' && github.ref == 'refs/heads/kaori/staging' && needs.staging-rc-publish.result == 'success' && needs.staging-rc-publish.outputs.tag != '' }}
     runs-on: [self-hosted, linux, x64, kaori-ci]
     environment:
       name: staging
@@ -374,17 +433,8 @@ jobs:
       RC_TAG: ${{ needs.staging-rc-publish.outputs.tag }}
       APPROVAL_REF: https://github.com/OXY7O/kaori-website/issues/202
       KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "1"
-      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
-      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
       REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
       REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
-      WEBSITE_HOST: ${{ vars.KAORI_WEBSITE_HOST }}
-      WEBSITE_SSH_PORT: ${{ vars.KAORI_WEBSITE_HOST_PORT }}
-      WEBSITE_SSH_USER: ${{ vars.KAORI_WEBSITE_HOST_USER }}
-      WEBSITE_COMPOSE_PROJECT: ${{ vars.KAORI_WEBSITE_COMPOSE_PROJECT || 'kaori-website' }}
-      WEBSITE_STATE_DIR: ${{ vars.KAORI_WEBSITE_STATE_DIR || '/var/lib/kaori-website/deploy-state' }}
-      WEBSITE_LOOPBACK_PORT: ${{ vars.KAORI_WEBSITE_LOOPBACK_PORT || '18080' }}
-      WEBSITE_DEPLOY_ROOT: ${{ vars.KAORI_WEBSITE_HOST_DEPLOY_ROOT }}
       WEBSITE_SSH_KEY: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY }}
       WEBSITE_SSH_PASSPHRASE: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PASSPHRASE }}
       WEBSITE_KNOWN_HOSTS: ${{ secrets.KAORI_WEBSITE_HOST_KNOWN_HOSTS }}
@@ -395,6 +445,20 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Resolve protected Environment configuration
+        shell: bash
+        env:
+          KAORI_WEBSITE_DOCKER_REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+          KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+          KAORI_WEBSITE_HOST: ${{ vars.KAORI_WEBSITE_HOST }}
+          KAORI_WEBSITE_HOST_PORT: ${{ vars.KAORI_WEBSITE_HOST_PORT }}
+          KAORI_WEBSITE_HOST_USER: ${{ vars.KAORI_WEBSITE_HOST_USER }}
+          KAORI_WEBSITE_HOST_DEPLOY_ROOT: ${{ vars.KAORI_WEBSITE_HOST_DEPLOY_ROOT }}
+          KAORI_WEBSITE_COMPOSE_PROJECT: ${{ vars.KAORI_WEBSITE_COMPOSE_PROJECT }}
+          KAORI_WEBSITE_STATE_DIR: ${{ vars.KAORI_WEBSITE_STATE_DIR }}
+          KAORI_WEBSITE_LOOPBACK_PORT: ${{ vars.KAORI_WEBSITE_LOOPBACK_PORT }}
+          KAORI_WEBSITE_ATTACH_EXISTING_EDGE: ${{ vars.KAORI_WEBSITE_ATTACH_EXISTING_EDGE }}
+        run: bash scripts/release/resolve-environment.sh deployment
       - name: Reverify recurring publication rights before public deployment
         shell: bash
         run: bash scripts/release/publish-candidate.sh rights
