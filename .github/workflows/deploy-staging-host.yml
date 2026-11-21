@@ -47,6 +47,17 @@ jobs:
           persist-credentials: false
       - name: Resolve protected Environment configuration
         shell: bash
+        env:
+          KAORI_WEBSITE_DOCKER_REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+          KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
+          KAORI_WEBSITE_HOST: ${{ vars.KAORI_WEBSITE_HOST }}
+          KAORI_WEBSITE_HOST_PORT: ${{ vars.KAORI_WEBSITE_HOST_PORT }}
+          KAORI_WEBSITE_HOST_USER: ${{ vars.KAORI_WEBSITE_HOST_USER }}
+          KAORI_WEBSITE_HOST_DEPLOY_ROOT: ${{ vars.KAORI_WEBSITE_HOST_DEPLOY_ROOT }}
+          KAORI_WEBSITE_COMPOSE_PROJECT: ${{ vars.KAORI_WEBSITE_COMPOSE_PROJECT }}
+          KAORI_WEBSITE_STATE_DIR: ${{ vars.KAORI_WEBSITE_STATE_DIR }}
+          KAORI_WEBSITE_LOOPBACK_PORT: ${{ vars.KAORI_WEBSITE_LOOPBACK_PORT }}
+          KAORI_WEBSITE_ATTACH_EXISTING_EDGE: ${{ vars.KAORI_WEBSITE_ATTACH_EXISTING_EDGE }}
         run: bash scripts/release/resolve-environment.sh deployment
       - name: Resolve source-pinned UAT request and signed RC
         id: request
