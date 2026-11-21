@@ -39,7 +39,8 @@ test("production deployment adapter is guarded by protected main identity", () =
     [
       {
         GITHUB_REF: "refs/heads/main",
-        GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/kaori/staging",
+        GITHUB_WORKFLOW_REF:
+          "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/kaori/staging",
         APPROVAL_REF: approved,
       },
       "production deployment must originate from canonical protected main workflow",
