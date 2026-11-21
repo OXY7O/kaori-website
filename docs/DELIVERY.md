@@ -12,6 +12,55 @@ Follows the KAORI application delivery model, adapted to a static Astro site.
 8. Promote only through `kaori/staging` → `main` PR. Preserve the accepted image digest.
 9. Record post-promotion verification, release metadata and rollback reference.
 
+## KAORI Website reference release topology
+
+**Approved operating contract (21 November 2026): two protected branches, two
+GitHub governance Environments, and one active public Website runtime on the
+current VM.** This deliberately shared slot is the reference delivery pattern
+for KAORI Application and KAORI Docs, not a requirement that those products
+reuse Website-specific implementation, host credentials, or public ingress.
+
+- **Staging source:** Only issue-scoped reviewed changes enter protected
+  `kaori/staging`. The exact integrated source must pass Full Admission before
+  an intentional signed `vX.Y.Z-rc.N` release is published.
+- **Staging runtime:** An authorized RC may replace the existing
+  `kaori-website` container at `https://kaori.cloud`. The previously
+  committed immutable digest/receipt remains the rollback authority.
+  This RC is publicly visible **before** stable-production approval.
+- **Human UAT:** Verify the deployed RC's SHA, digest, runtime/edge health,
+  browser and accessibility behavior, and relevant security evidence.
+  Record explicit release-bound acceptance; CI success is not Human UAT.
+- **Production source:** Promote only through an independently approved
+  `kaori/staging → main` PR and the main-target admission. The protected
+  GitHub `production` Environment applies its own reviewer/approval boundary.
+- **Stable release:** Publish `vX.Y.Z` from that accepted RC's **exact signed
+  OCI digest**, without rebuilding or retagging application bits. Today the
+  production step verifies the same running shared slot: it does **not**
+  launch a second container or silently redeploy the host.
+- **Stale RC protection:** If a newer staging RC has displaced the accepted
+  live digest, stable publication must fail closed until the correct artifact,
+  acceptance, and runtime evidence are reconciled.
+- **Activation:** The existing `KAORI_WEBSITE_AUTO_STAGING_ENABLED` and
+  `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` switches are independent and
+  default-off. Enabling either never substitutes for release rights,
+  Environment protection, signed evidence, or human authorization.
+
+GitHub `staging` and `production` are **logical governance/credential
+scopes**, not statements that two servers already exist. They share the
+current public Website slot and release/deploy concurrency boundary. The
+accepted v0.1.2 stable release from v0.1.2-rc.11 demonstrates same-digest
+promotion without a second production deployment.
+
+**Future separate VM:** Keep the same branch, admission, RC, UAT, immutable
+digest, review, and stable-version contract. Per-Environment host/SSH
+configuration can select different approved targets, but the existing stable
+publisher currently **verifies an already running RC** and does not
+bootstrap/deploy a separate production host. DNS, shared-edge routing,
+target preparation, host-specific receipts, and a reviewed separate-host
+deployment path require independent admission before a two-VM cutover.
+Do not claim that setting new host variables alone provides working
+production migration today. See [deployment boundaries](DEPLOYMENT.md#reference-host-topology-and-portability).
+
 Do not import irrelevant Flask/PostgreSQL/Celery checks or weaken required security and browser gates. Use path-aware work-branch checks to avoid expensive full-build/deploy cycles for copy edits while preserving the staging admission boundary.
 
 The GitHub Project **KAORI Website** tracks work using the existing KAORI Status, Type, Priority, Story Point, Sprint and relationship taxonomy. Project custom fields and native parent/child association must be set through GitHub UI if connector actions do not expose them.
