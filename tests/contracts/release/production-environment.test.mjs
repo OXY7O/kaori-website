@@ -137,15 +137,24 @@ test("unadmitted production split host fails closed before any API or SSH", () =
   assert.match(fullAdmission, /WEBSITE_STAGING_HOST:/);
   const cases = [
     [
-      { KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY: "invalid", KAORI_WEBSITE_SPLIT_HOST_ENABLED: "false" },
+      {
+        KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY: "invalid",
+        KAORI_WEBSITE_SPLIT_HOST_ENABLED: "false",
+      },
       "unsupported Website deployment topology",
     ],
     [
-      { KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY: "single-slot", KAORI_WEBSITE_SPLIT_HOST_ENABLED: "true" },
+      {
+        KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY: "single-slot",
+        KAORI_WEBSITE_SPLIT_HOST_ENABLED: "true",
+      },
       "split-host activation conflicts with approved single-slot topology",
     ],
     [
-      { KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY: "separate-host", KAORI_WEBSITE_SPLIT_HOST_ENABLED: "false" },
+      {
+        KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY: "separate-host",
+        KAORI_WEBSITE_SPLIT_HOST_ENABLED: "false",
+      },
       "separate-host topology requires explicit production activation",
     ],
     [
@@ -171,7 +180,10 @@ test("unadmitted production split host fails closed before any API or SSH", () =
     const result = rejectPreflight(overrides);
     assert.notEqual(result.status, 0);
     assert.ok(result.stderr.includes("BLOCK: " + message), result.stderr);
-    assert.doesNotMatch(result.stdout + result.stderr, /curl|ssh-agent|docker run|stable release published/i);
+    assert.doesNotMatch(
+      result.stdout + result.stderr,
+      /curl|ssh-agent|docker run|stable release published/i,
+    );
   }
 });
 
