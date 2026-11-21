@@ -27,7 +27,7 @@ fi
 verify_recurring_publication_rights() {
   local issue_data comments_data closed_at count
   local authority="https://api.github.com/repos/OXY7O/KAORI/issues/4939"
-  issue_data="$(curl --fail-with-body -fsS "${headers[@]}" "$authority")" ||
+  issue_data="$(curl --fail-with-body -sS "${headers[@]}" "$authority")" ||
     fail 'standing publication authority issue unavailable'
   jq -e '.state == "closed" and .state_reason == "completed" and
     (.closed_at | type == "string")' <<<"$issue_data" >/dev/null ||
@@ -36,7 +36,7 @@ verify_recurring_publication_rights() {
   count="$(jq -r '.comments // -1' <<<"$issue_data")"
   [[ "$count" =~ ^[0-9]+$ && "$count" -le 100 ]] ||
     fail 'standing publication approval comment coverage unavailable'
-  comments_data="$(curl --fail-with-body -fsS "${headers[@]}" "$authority/comments?per_page=100")" ||
+  comments_data="$(curl --fail-with-body -sS "${headers[@]}" "$authority/comments?per_page=100")" ||
     fail 'standing publication owner evidence unavailable'
   # Exactly one authenticated owner permission must predate closure. Reject
   # incomplete pagination, late edits, revoked authority and owner impersonation.
