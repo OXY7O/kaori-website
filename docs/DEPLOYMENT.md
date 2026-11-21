@@ -367,6 +367,7 @@ retired production auto-activation switch; it is not consumed by the workflow.
    The unprivileged request gate verifies version, permitted initiator, exact
    current main Full Admission, and the merged promotion's Human UAT reference
    **before** requesting native `production` Environment approval.
+
 6. After Doni/another authorized independent reviewer approves that
    **specific release run**, the restricted runner revalidates independent
    source review, signed RC/Digest/SBOM/provenance, the trusted UAT marker,
