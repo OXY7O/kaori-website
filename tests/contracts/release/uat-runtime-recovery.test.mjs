@@ -1,13 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
@@ -219,14 +212,8 @@ test("production target rejects invalid project or state", (t) => {
   };
   const cases = [
     ["kaori-app", "production project must be a distinct Website namespace"],
-    [
-      "kaori-website-uat",
-      "production project must be a distinct Website namespace",
-    ],
-    [
-      "kaori-website-preview",
-      "production state must belong to the configured Website project",
-    ],
+    ["kaori-website-uat", "production project must be a distinct Website namespace"],
+    ["kaori-website-preview", "production state must belong to the configured Website project"],
   ];
   for (const [project, reason] of cases) {
     const result = run(
@@ -236,10 +223,7 @@ test("production target rejects invalid project or state", (t) => {
     );
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, new RegExp(reason));
-    assert.equal(
-      readFileSync(env.MOCK_RUNNING_IMAGE, "utf8").trim(),
-      candidateImage,
-    );
+    assert.equal(readFileSync(env.MOCK_RUNNING_IMAGE, "utf8").trim(), candidateImage);
     assert.equal(existsSync(join(state, "release.env")), false);
   }
 });
@@ -270,11 +254,7 @@ test("independent Website project uses dedicated state and port", (t) => {
   });
   assert.notEqual(badPort.status, 0);
   assert.match(badPort.stderr, /production loopback port must be between/);
-  const deployed = run(
-    path,
-    [candidateImage, candidateSha, candidateVersion],
-    target,
-  );
+  const deployed = run(path, [candidateImage, candidateSha, candidateVersion], target);
   assert.equal(deployed.status, 0, deployed.stderr);
   assert.match(deployed.stdout, /PASS: website release committed/);
   assert.match(
