@@ -104,10 +104,45 @@ The current shared-edge attachment path remains authorized only for
 the canonical `kaori-website` public runtime; a noncanonical target
 may be deployed privately after operator provisioning and explicit
 authorization, but a different public route requires a separately
-approved provider-owned edge configuration. This work does not alter
-GitHub Environment branch policies, automatically enable deployment,
-or implement production stable reconciliation to a new runtime.
-That final stable-target step remains governed by [#234](https://github.com/OXY7O/kaori-website/issues/234).
+approved provider-owned edge configuration. Neither this work nor production reconciliation changes GitHub
+Environment branch policies or automatically enables deployment.
+
+### Stable target reconciliation — Website #239
+
+On protected `main`, the `production` GitHub Environment selects its
+host, pinned SSH trust, Compose project, receipt directory, loopback port,
+and existing-edge authority. After independent UAT and main promotion
+approval, the stable publisher verifies the **original signed RC digest**,
+SBOM/provenance, and actual configured target before publishing stable
+`vX.Y.Z`. The on-host OCI build label remains the original `-rc.N`:
+stable is the GitHub release identity, not a rebuilt image.
+
+For a healthy, receipt-backed target already running the accepted digest
+and source, the publisher verifies and **does not redeploy**. When its
+committed receipt and healthy container correspond to a *different*
+digest, the existing release adapter can replace it with the accepted RC
+digest, preserve the previous receipt for rollback, reattach the
+**already-approved canonical** Website edge, and verify the new digest
+before creating stable release metadata. Thus, when operator
+configuration points both Environments to the same Website runtime,
+staging RC and production promotion can replace each other over time,
+without explicit single/multi-slot rules.
+
+Current fail-closed limits are intentional: production automatic
+replacement requires an existing valid receipt, an independently
+prepared deployment root, a healthy prior runtime, a pinned host
+identity, existing approved `edge-public` registration, and an exact
+matching immutable rollback path. An uninitialized host, unhealthy
+container, untrusted receipt, noncanonical project/edge registration, or
+unauthorized provider routing is **not** auto-provisioned or accepted.
+The latter require separately approved host commissioning and UAT before
+they can join the release train.
+
+These changes are source-only until independently reviewed and merged;
+`KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED=false` remains the operator's
+safe default. This workstream remains governed by
+[Website #234](https://github.com/OXY7O/kaori-website/issues/234) and
+[child #239](https://github.com/OXY7O/kaori-website/issues/239).
 
 ## Container and development smoke
 
