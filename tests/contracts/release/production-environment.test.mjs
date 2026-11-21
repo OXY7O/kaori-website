@@ -6,6 +6,7 @@ import { join, resolve } from "node:path";
 import test from "node:test";
 
 const fullAdmission = readFileSync(".github/workflows/quality.yml", "utf8");
+const releaseWorkflow = readFileSync(".github/workflows/release-production.yml", "utf8");
 const environmentConfig = readFileSync("scripts/release/resolve-environment.sh", "utf8");
 const publisher = readFileSync("scripts/release/promote-stable.sh", "utf8");
 const candidatePublisher = readFileSync("scripts/release/publish-candidate.sh", "utf8");
@@ -20,8 +21,10 @@ function rejectPreflight(overrides = {}) {
       GITHUB_SHA: "a".repeat(40),
       GITHUB_REF: "refs/heads/main",
       GITHUB_REPOSITORY: "OXY7O/kaori-website",
-      GITHUB_EVENT_NAME: "push",
-      GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/main",
+      GITHUB_EVENT_NAME: "workflow_dispatch",
+      GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/release-production.yml@refs/heads/main",
+      PRODUCTION_STABLE_TAG: "v0.1.3",
+      PRODUCTION_PROMOTION_PR: "219",
       GITHUB_RUN_ID: "123",
       REGISTRY_HOST: "docker.io",
       REGISTRY_IMAGE: "docker.io/example/kaori-website",
@@ -47,23 +50,26 @@ test("staging recurring rights use compatible fail-closed curl flags", () => {
   assert.match(candidatePublisher, /verify_recurring_publication_rights/);
 });
 
-test("only main with a production environment may publish same-digest stable", () => {
-  assert.match(fullAdmission, /name: Publish Human Accepted Stable Release/);
-  assert.match(fullAdmission, /name: production\n      url: https:\/\/kaori\.cloud/);
-  assert.match(fullAdmission, /KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED:-/);
-  assert.match(fullAdmission, /group: kaori-website-release-deploy/);
-  assert.match(
-    fullAdmission,
-    /needs: \[promotion-source, full-admission, container-admission, browser-evidence\]/,
-  );
-  assert.match(fullAdmission, /scripts\/release\/promote-stable\.sh preflight/);
-  assert.match(fullAdmission, /scripts\/release\/promote-stable\.sh publish/);
-  assert.doesNotMatch(fullAdmission, /KAORI_WEBSITE_STABLE_RELEASE_94/);
+test("only explicit protected main release dispatch can publish same-digest stable", () => {
+  assert.match(fullAdmission, /push:\n    branches:\n      - kaori\/staging\n      - main/);
+  assert.doesNotMatch(fullAdmission, /stable-publication:|name: production\n/);
+  assert.match(releaseWorkflow, /on:\n  workflow_dispatch:/);
+  assert.match(releaseWorkflow, /name: production\n      url: https:\/\/kaori\.cloud/);
+  assert.match(releaseWorkflow, /name: Validate Explicit Release Request/);
+  assert.match(releaseWorkflow, /group: kaori-website-release-deploy/);
+  assert.match(releaseWorkflow, /needs: release-request/);
+  assert.match(releaseWorkflow, /head_sha=\$GITHUB_SHA/);
+  assert.match(releaseWorkflow, /scripts\/release\/promote-stable\.sh preflight/);
+  assert.match(releaseWorkflow, /scripts\/release\/promote-stable\.sh publish/);
+  assert.doesNotMatch(releaseWorkflow, /KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED/);
+  assert.doesNotMatch(releaseWorkflow, /\n  push:/);
 });
 
 test("publication depends on merged staging promotion, trusted Human UAT and immutable RC identity", () => {
   for (const marker of [
-    "api/commits/$GITHUB_SHA/pulls",
+    "api/pulls/$PRODUCTION_PROMOTION_PR",
+    'git merge-base --is-ancestor "$merge_sha" HEAD',
+    "requested stable tag differs from Human-Accepted signed RC version",
     "current-head independent promotion reviewer approval missing",
     "Human UAT evidence:",
     "KAORI_WEBSITE_UAT_ACCEPTED:",
@@ -97,7 +103,7 @@ test("production Environment configuration selects runtime without topology mode
   ]) {
     assert.ok(environmentConfig.includes(marker), marker);
   }
-  assert.match(fullAdmission, /scripts\/release\/resolve-environment\.sh deployment/);
+  assert.match(releaseWorkflow, /scripts\/release\/resolve-environment\.sh deployment/);
   assert.match(publisher, /runtime_project="\$\{WEBSITE_COMPOSE_PROJECT:-kaori-website\}"/);
   assert.match(
     publisher,
@@ -152,18 +158,17 @@ test("production promotion uses latest reviewer state for the reviewed staging h
   assert.equal(evaluate([review("reviewer", "APPROVED"), review("reviewer", "DISMISSED")]), false);
 });
 
-test("invalid production workflow identity fails before API, SSH and release mutation", () => {
+test("non-dispatch, wrong workflow and malformed release requests fail before API/SSH", () => {
   const cases = [
-    [{ GITHUB_REF: "refs/heads/kaori/staging" }, "only main push can publish stable"],
-    [{ GITHUB_EVENT_NAME: "workflow_dispatch" }, "only main push can publish stable"],
-    [{ GITHUB_REPOSITORY: "OXY7O/KAORI" }, "only main push can publish stable"],
+    [{ GITHUB_REF: "refs/heads/kaori/staging" }, "only explicit main release dispatch can publish stable"],
+    [{ GITHUB_EVENT_NAME: "push" }, "only explicit main release dispatch can publish stable"],
+    [{ GITHUB_REPOSITORY: "OXY7O/KAORI" }, "only explicit main release dispatch can publish stable"],
     [
-      {
-        GITHUB_WORKFLOW_REF:
-          "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/kaori/staging",
-      },
-      "canonical main Full Admission workflow identity required",
+      { GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/main" },
+      "canonical protected production release workflow identity required",
     ],
+    [{ PRODUCTION_STABLE_TAG: "v0.1.3-rc.2" }, "explicit stable version and promotion PR are required"],
+    [{ PRODUCTION_PROMOTION_PR: "../219" }, "explicit stable version and promotion PR are required"],
     [
       { REGISTRY_IMAGE: "docker.io/example/kaori-app" },
       "dedicated Website image authority missing",
@@ -173,10 +178,7 @@ test("invalid production workflow identity fails before API, SSH and release mut
     const result = rejectPreflight(overrides);
     assert.notEqual(result.status, 0);
     assert.ok(result.stderr.includes("BLOCK: " + message), result.stderr);
-    assert.doesNotMatch(
-      result.stdout + result.stderr,
-      /curl|docker run|ssh-agent|stable release published/i,
-    );
+    assert.doesNotMatch(result.stdout + result.stderr, /ssh-agent|stable release published/i);
   }
 });
 
