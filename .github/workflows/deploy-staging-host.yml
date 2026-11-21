@@ -33,17 +33,8 @@ jobs:
     env:
       ACCEPTED_SHA: ${{ github.sha }}
       GH_TOKEN: ${{ github.token }}
-      REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
-      REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
       REGISTRY_USER: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME }}
       REGISTRY_PASSWORD: ${{ secrets.KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD }}
-      WEBSITE_HOST: ${{ vars.KAORI_WEBSITE_HOST }}
-      WEBSITE_SSH_PORT: ${{ vars.KAORI_WEBSITE_HOST_PORT }}
-      WEBSITE_SSH_USER: ${{ vars.KAORI_WEBSITE_HOST_USER }}
-      WEBSITE_COMPOSE_PROJECT: ${{ vars.KAORI_WEBSITE_COMPOSE_PROJECT || 'kaori-website' }}
-      WEBSITE_STATE_DIR: ${{ vars.KAORI_WEBSITE_STATE_DIR || '/var/lib/kaori-website/deploy-state' }}
-      WEBSITE_LOOPBACK_PORT: ${{ vars.KAORI_WEBSITE_LOOPBACK_PORT || '18080' }}
-      WEBSITE_DEPLOY_ROOT: ${{ vars.KAORI_WEBSITE_HOST_DEPLOY_ROOT }}
       WEBSITE_SSH_KEY: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY }}
       WEBSITE_SSH_PASSPHRASE: ${{ secrets.KAORI_WEBSITE_HOST_SSH_PASSPHRASE }}
       WEBSITE_KNOWN_HOSTS: ${{ secrets.KAORI_WEBSITE_HOST_KNOWN_HOSTS }}
@@ -54,6 +45,9 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Resolve protected Environment configuration
+        shell: bash
+        run: bash scripts/release/resolve-environment.sh deployment
       - name: Resolve source-pinned UAT request and signed RC
         id: request
         shell: bash
