@@ -35,33 +35,36 @@ function preflight(overrides = {}) {
   });
 }
 
-test("production deployment adapter is guarded by protected main identity", () => {
+test("production deployment adapter accepts only explicit main release workflow", () => {
   const approved = "https://github.com/OXY7O/kaori-website/pull/235";
+  const releaseIdentity = "OXY7O/kaori-website/.github/workflows/release-production.yml@refs/heads/main";
+  const validRequest = {
+    GITHUB_EVENT_NAME: "workflow_dispatch",
+    GITHUB_REF: "refs/heads/main",
+    GITHUB_REPOSITORY: "OXY7O/kaori-website",
+    PRODUCTION_PROMOTION_PR: "235",
+    PRODUCTION_STABLE_TAG: "v0.1.2",
+  };
   const cases = [
     [
-      {
-        GITHUB_REF: "refs/heads/main",
-        GITHUB_WORKFLOW_REF:
-          "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/kaori/staging",
-        APPROVAL_REF: approved,
-      },
-      "production deployment must originate from canonical protected main workflow",
+      { ...validRequest, GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/main", APPROVAL_REF: approved },
+      "production deployment must originate from canonical explicit release workflow",
     ],
     [
-      {
-        GITHUB_REF: "refs/heads/main",
-        GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/main",
-        APPROVAL_REF: "",
-      },
+      { ...validRequest, GITHUB_WORKFLOW_REF: releaseIdentity, APPROVAL_REF: "" },
       "production deploy requires reviewed promotion PR authority",
     ],
     [
-      {
-        GITHUB_REF: "refs/heads/main",
-        GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/main",
-        APPROVAL_REF: "https://github.com/OXY7O/kaori-website/issues/235",
-      },
+      { ...validRequest, GITHUB_WORKFLOW_REF: releaseIdentity, APPROVAL_REF: "https://github.com/OXY7O/kaori-website/issues/235" },
       "production deploy requires reviewed promotion PR authority",
+    ],
+    [
+      { ...validRequest, GITHUB_WORKFLOW_REF: releaseIdentity, PRODUCTION_STABLE_TAG: "v0.1.2-rc.9", APPROVAL_REF: approved },
+      "production deploy requires explicit stable tag",
+    ],
+    [
+      { GITHUB_EVENT_NAME: "push", GITHUB_REF: "refs/heads/main", GITHUB_WORKFLOW_REF: releaseIdentity, APPROVAL_REF: approved },
+      "unsupported UAT request event",
     ],
   ];
   for (const [overrides, message] of cases) {
@@ -73,6 +76,7 @@ test("production deployment adapter is guarded by protected main identity", () =
   assert.match(adapter, /git merge-base --is-ancestor "\$ACCEPTED_SHA" HEAD/);
   assert.match(adapter, /production runtime inputs drifted since accepted RC/);
   assert.match(adapter, /main changed since protected production approval/);
+  assert.match(adapter, /production stable identity does not match accepted signed RC/);
 });
 
 test("manual RC and UAT fallbacks require the protected staging Environment", () => {
