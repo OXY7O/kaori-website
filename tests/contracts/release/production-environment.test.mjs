@@ -264,9 +264,17 @@ test("production runtime probe follows receipt health and effective target", (t)
     "esac",
   ].join("\n");
   writeFileSync(join(bin, "docker"), fakeDocker, { mode: 0o755 });
-  writeFileSync(join(state, "previous-release.env"), "KAORI_WEBSITE_IMAGE=" + oldImage + "\n");
+  writeFileSync(
+    join(state, "previous-release.env"),
+    "KAORI_WEBSITE_IMAGE=" + oldImage + "\n",
+  );
   const runtimeImage = join(state, "running-image");
-  const execute = (image, sha, version, { health = "healthy", missingReceipt = false } = {}) => {
+  const execute = (
+    image,
+    sha,
+    version,
+    { health = "healthy", missingReceipt = false } = {},
+  ) => {
     writeFileSync(runtimeImage, image);
     const receipt = join(state, "release.env");
     if (missingReceipt) {
