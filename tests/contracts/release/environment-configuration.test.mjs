@@ -14,13 +14,21 @@ const workflowPaths = [
 const workflows = workflowPaths.map((path) => readFileSync(path, "utf8"));
 const developer = readFileSync(".github/workflows/developer-check.yml", "utf8");
 
-test("release workflows do not evaluate repository Variables before Environment selection", () => {
-  for (const yaml of [...workflows, developer])
-    assert.doesNotMatch(yaml, /\$\{\{\s*vars\.KAORI_WEBSITE_/);
+test("release workflows resolve configuration in protected runner steps, not at job scheduling", () => {
   for (const yaml of workflows) {
     assert.match(yaml, /environment:\n\s+name:/);
+    assert.match(
+      yaml,
+      /- name: Resolve protected Environment configuration\n[\s\S]*?env:\n\s+KAORI_WEBSITE_DOCKER_REGISTRY_HOST: \$\{\{ vars\.KAORI_WEBSITE_DOCKER_REGISTRY_HOST \}\}/,
+    );
+    assert.match(
+      yaml,
+      /KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE: \$\{\{ vars\.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE \}\}/,
+    );
     assert.match(yaml, /scripts\/release\/resolve-environment\.sh/);
+    assert.doesNotMatch(yaml, /^\s{6}(REGISTRY_HOST|REGISTRY_IMAGE|WEBSITE_HOST): \$\{\{ vars\./m);
   }
+  assert.doesNotMatch(developer, /\$\{\{\s*vars\.KAORI_WEBSITE_/);
   assert.doesNotMatch(developer, /environment:\n\s+name: staging/);
   assert.match(
     developer,
@@ -34,6 +42,14 @@ test("activation comes from protected Environment and fails closed when absent",
   assert.match(yaml, /KAORI_WEBSITE_AUTO_STAGING_ENABLED:-/);
   assert.match(yaml, /needs\.staging-release-activation\.outputs\.enabled == 'true'/);
   assert.match(yaml, /KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED:-/);
+  assert.match(
+    yaml,
+    /KAORI_WEBSITE_AUTO_STAGING_ENABLED: \$\{\{ vars\.KAORI_WEBSITE_AUTO_STAGING_ENABLED \}\}/,
+  );
+  assert.match(
+    yaml,
+    /KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED: \$\{\{ vars\.KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED \}\}/,
+  );
   assert.match(yaml, /steps\.activation\.outputs\.enabled == 'true'/);
   assert.match(yaml, /name: production\n\s+url: https:\/\/kaori\.cloud/);
 });
