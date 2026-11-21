@@ -131,6 +131,50 @@ test("invalid production workflow identity fails before API, SSH and release mut
   }
 });
 
+test("unadmitted production split host fails closed before any API or SSH", () => {
+  assert.match(fullAdmission, /KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY:/);
+  assert.match(fullAdmission, /KAORI_WEBSITE_SPLIT_HOST_ENABLED:/);
+  assert.match(fullAdmission, /WEBSITE_STAGING_HOST:/);
+  const cases = [
+    [
+      { KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY: "invalid", KAORI_WEBSITE_SPLIT_HOST_ENABLED: "false" },
+      "unsupported Website deployment topology",
+    ],
+    [
+      { KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY: "single-slot", KAORI_WEBSITE_SPLIT_HOST_ENABLED: "true" },
+      "split-host activation conflicts with approved single-slot topology",
+    ],
+    [
+      { KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY: "separate-host", KAORI_WEBSITE_SPLIT_HOST_ENABLED: "false" },
+      "separate-host topology requires explicit production activation",
+    ],
+    [
+      {
+        KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY: "separate-host",
+        KAORI_WEBSITE_SPLIT_HOST_ENABLED: "true",
+        WEBSITE_HOST: "same.internal",
+        WEBSITE_STAGING_HOST: "same.internal",
+      },
+      "separate-host production target must differ from staging host",
+    ],
+    [
+      {
+        KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY: "separate-host",
+        KAORI_WEBSITE_SPLIT_HOST_ENABLED: "true",
+        WEBSITE_HOST: "production.internal",
+        WEBSITE_STAGING_HOST: "staging.internal",
+      },
+      "separate-host stable deployment is not admitted",
+    ],
+  ];
+  for (const [overrides, message] of cases) {
+    const result = rejectPreflight(overrides);
+    assert.notEqual(result.status, 0);
+    assert.ok(result.stderr.includes("BLOCK: " + message), result.stderr);
+    assert.doesNotMatch(result.stdout + result.stderr, /curl|ssh-agent|docker run|stable release published/i);
+  }
+});
+
 test("stable lineage binds Human UAT to an ancestor, not to subsequent source-only staging HEAD", () => {
   assert.match(publisher, /promotion_sha="\$\(jq -r '\.\[0\]\.head\.sha'/);
   assert.match(publisher, /--arg sha "\$promotion_sha"/);
