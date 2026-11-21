@@ -79,6 +79,19 @@ activation. Never infer successful two-VM operation from the current
 one-slot release evidence. The optional separate-host adapter is
 tracked under [Website #234](https://github.com/OXY7O/kaori-website/issues/234).
 
+### Split-host activation contract — #234
+
+The stable publisher continues to select `single-slot` by default.
+`KAORI_WEBSITE_DEPLOYMENT_TOPOLOGY=separate-host` is deliberately **not
+activatable yet**, even when the separate opt-in
+`KAORI_WEBSITE_SPLIT_HOST_ENABLED=true` and a distinct
+`KAORI_WEBSITE_STAGING_HOST` are supplied. Its preflight fails closed
+before publishing or mutating a host until the deployment adapter, rollback,
+provider edge verification, and dedicated non-public production-like UAT
+have been independently admitted. The extra variables express a bounded
+future configuration interface; their presence alone is not a deployment
+capability or authorization.
+
 ## Container and development smoke
 
 ```bash
