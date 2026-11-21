@@ -69,7 +69,7 @@ test("publication depends on merged staging promotion, trusted Human UAT and imm
     'current_sha" == "$expected_sha"',
     'current_version" == "$expected_rc"',
     "edge-public",
-    "deploy-state/release.env",
+    'receipt="$runtime_state/release.env"',
   ]) {
     assert.ok(publisher.includes(marker), marker);
   }
