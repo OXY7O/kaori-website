@@ -42,9 +42,12 @@ do not currently correspond to independently running services.
   `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` are independent Environment-scoped
   opt-in switches; neither overrides rights, branch protection,
   Environment review, SHA/digest evidence, health, or Human UAT.
-  GitHub Environment Variables are available on the runner after job startup;
-  `scripts/release/resolve-environment.sh` maps them into existing adapter
-  names without pre-job `vars` evaluation. The Developer Check has no release
+  GitHub Environment configuration Variables are referenced through `vars`
+  in the step-level `env` map after the protected Environment has been selected.
+  `scripts/release/resolve-environment.sh` maps these runner inputs into
+  existing adapter names; it never relies on implicit shell exports or pre-job
+  evaluation. Repository-level fallback must be removed only after scoped
+  values are independently verified. The Developer Check has no release
   credentials. A main push can request protected production reviewer approval
   before reading the switch; if false, stable publication remains inactive.
 
