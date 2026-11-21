@@ -33,6 +33,45 @@ function preflight(overrides = {}) {
   });
 }
 
+test("production deployment adapter is guarded by protected main identity", () => {
+  const approved = "https://github.com/OXY7O/kaori-website/pull/235";
+  const cases = [
+    [
+      {
+        GITHUB_REF: "refs/heads/main",
+        GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/kaori/staging",
+        APPROVAL_REF: approved,
+      },
+      "production deployment must originate from canonical protected main workflow",
+    ],
+    [
+      {
+        GITHUB_REF: "refs/heads/main",
+        GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/main",
+        APPROVAL_REF: "",
+      },
+      "production deploy requires reviewed promotion PR authority",
+    ],
+    [
+      {
+        GITHUB_REF: "refs/heads/main",
+        GITHUB_WORKFLOW_REF: "OXY7O/kaori-website/.github/workflows/quality.yml@refs/heads/main",
+        APPROVAL_REF: "https://github.com/OXY7O/kaori-website/issues/235",
+      },
+      "production deploy requires reviewed promotion PR authority",
+    ],
+  ];
+  for (const [overrides, message] of cases) {
+    const result = preflight(overrides);
+    assert.notEqual(result.status, 0);
+    assert.ok(result.stderr.includes("BLOCK: " + message), result.stderr);
+    assert.doesNotMatch(result.stdout + result.stderr, /Accepted RC|ssh-agent|docker login/);
+  }
+  assert.match(adapter, /git merge-base --is-ancestor "\$ACCEPTED_SHA" HEAD/);
+  assert.match(adapter, /production runtime inputs drifted since accepted RC/);
+  assert.match(adapter, /main changed since protected production approval/);
+});
+
 test("public request route requires release-scoped GitHub authorization", () => {
   assert.match(workflow, /kaori\/uat-request/);
   assert.match(workflow, /vars\.KAORI_WEBSITE_PUBLIC_UAT_APPROVED_SHA/);
