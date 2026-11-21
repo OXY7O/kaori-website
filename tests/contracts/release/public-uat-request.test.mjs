@@ -111,7 +111,7 @@ test("approved request selects existing single public slot, not parallel UAT", (
     adapter,
     /runtime_env=production\nremote_release="\$WEBSITE_DEPLOY_ROOT\/releases\/\$ACCEPTED_SHA"/,
   );
-  assert.match(adapter, /remote_state_dir=\/var\/lib\/kaori-website\/deploy-state/);
+  assert.match(adapter, /remote_state_dir="\$\{WEBSITE_STATE_DIR:-\/var\/lib\/kaori-website\/deploy-state\}"/);
   assert.match(adapter, /reattach-existing-site\.sh" preflight/);
   assert.match(adapter, /reattach-existing-site\.sh" attach/);
   assert.match(adapter, /export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1/);
