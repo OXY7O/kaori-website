@@ -37,6 +37,9 @@ jobs:
           persist-credentials: false
       - name: Resolve protected Environment configuration
         shell: bash
+        env:
+          KAORI_WEBSITE_DOCKER_REGISTRY_HOST: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_HOST }}
+          KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE: ${{ vars.KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE }}
         run: bash scripts/release/resolve-environment.sh registry
       - name: Resolve exact admitted RC request
         id: candidate
