@@ -230,3 +230,99 @@ test("git ancestry and shipped-input drift fail closed for prior accepted RC", (
   const unrelated = ok("rev-parse", "HEAD");
   assert.equal(git("merge-base", "--is-ancestor", unrelated, promotion).status, 1);
 });
+
+
+test("production runtime probe follows receipt health and effective target", (t) => {
+  const match = publisher.match(/cat <<'REMOTE_PROBE'\n([\s\S]*?)\nREMOTE_PROBE/);
+  assert.ok(match, "expected canonical read-only remote production probe");
+  const dir = mkdtempSync(join(tmpdir(), "kaori-production-probe-"));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const bin = join(dir, "bin");
+  const state = join(dir, "state");
+  const root = join(dir, "root");
+  const acceptedSha = "a".repeat(40);
+  const previousSha = "b".repeat(40);
+  const expected = "registry.example/kaori-website@sha256:" + "c".repeat(64);
+  const oldImage = "registry.example/kaori-website@sha256:" + "d".repeat(64);
+  mkdirSync(bin);
+  mkdirSync(state);
+  mkdirSync(join(root, "releases", acceptedSha, "server"), { recursive: true });
+  const verifier = join(root, "releases", acceptedSha, "server", "verify.sh");
+  writeFileSync(verifier, "#!/usr/bin/env bash\nprintf 'PASS: isolated verifier\\n'\n");
+  const fakeDocker = [
+    "#!/usr/bin/env bash",
+    "set -Eeuo pipefail",
+    "case \"$1\" in",
+    "  ps) printf 'abcdef012345\\n' ;;",
+    "  inspect)",
+    "    case \"$3\" in",
+    "      '{{.Config.Image}}') cat \"$MOCK_RUNNING_IMAGE\" ;;",
+    "      *Health*) printf '%s\\n' \"$MOCK_HEALTH\" ;;",
+    "      *edge-public*) printf 'true\\n' ;;",
+    "      *) exit 91 ;;",
+    "    esac ;;",
+    "  *) exit 92 ;;",
+    "esac",
+  ].join("\n");
+  writeFileSync(join(bin, "docker"), fakeDocker, { mode: 0o755 });
+  writeFileSync(
+    join(state, "previous-release.env"),
+    "KAORI_WEBSITE_IMAGE=" + oldImage + "\n",
+  );
+  const runtimeImage = join(state, "running-image");
+  const execute = (image, sha, version, { health = "healthy", missingReceipt = false } = {}) => {
+    writeFileSync(runtimeImage, image);
+    const receipt = join(state, "release.env");
+    if (missingReceipt) {
+      rmSync(receipt, { force: true });
+    } else {
+      writeFileSync(
+        receipt,
+        [
+          "KAORI_WEBSITE_IMAGE=" + image,
+          "KAORI_WEBSITE_SOURCE_SHA=" + sha,
+          "KAORI_WEBSITE_VERSION=" + version,
+          "",
+        ].join("\n"),
+      );
+    }
+    const input = [
+      "set -Eeuo pipefail",
+      "expected_image=" + JSON.stringify(expected),
+      "expected_sha=" + JSON.stringify(acceptedSha),
+      "expected_rc=v0.1.2-rc.6",
+      "root=" + JSON.stringify(root),
+      "runtime_state=" + JSON.stringify(state),
+      "runtime_project=kaori-website",
+      "runtime_port=18080",
+      "runtime_edge=1",
+      match[1],
+    ].join("\n");
+    return spawnSync("bash", ["-s"], {
+      input,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PATH: bin + ":" + process.env.PATH,
+        MOCK_RUNNING_IMAGE: runtimeImage,
+        MOCK_HEALTH: health,
+      },
+    });
+  };
+  const same = execute(expected, acceptedSha, "v0.1.2-rc.6");
+  assert.equal(same.status, 0, same.stderr);
+  assert.match(same.stdout, /TARGET_STATUS:READY/);
+  const changed = execute(oldImage, previousSha, "v0.1.2-rc.5");
+  assert.equal(changed.status, 0, changed.stderr);
+  assert.match(changed.stdout, /TARGET_STATUS:DEPLOY/);
+  const unhealthy = execute(oldImage, previousSha, "v0.1.2-rc.5", {
+    health: "unhealthy",
+  });
+  assert.notEqual(unhealthy.status, 0);
+  assert.match(unhealthy.stderr, /production current container is unhealthy/);
+  const unmanaged = execute(oldImage, previousSha, "v0.1.2-rc.5", {
+    missingReceipt: true,
+  });
+  assert.notEqual(unmanaged.status, 0);
+  assert.match(unmanaged.stderr, /production target needs an independently prepared prior receipt/);
+});
