@@ -39,9 +39,14 @@ do not currently correspond to independently running services.
   Website images. An RC is never treated as automatically approved for
   production just because it is publicly accessible.
 - **Safety:** `KAORI_WEBSITE_AUTO_STAGING_ENABLED` and
-  `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` are independent opt-in
-  switches; neither overrides actual rights, branch protection,
+  `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` are independent Environment-scoped
+  opt-in switches; neither overrides rights, branch protection,
   Environment review, SHA/digest evidence, health, or Human UAT.
+  GitHub Environment Variables are available on the runner after job startup;
+  `scripts/release/resolve-environment.sh` maps them into existing adapter
+  names without pre-job `vars` evaluation. The Developer Check has no release
+  credentials. A main push can request protected production reviewer approval
+  before reading the switch; if false, stable publication remains inactive.
 
 ### Moving to separate VMs later
 
