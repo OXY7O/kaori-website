@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
@@ -224,7 +224,7 @@ test("production runtime target rejects invalid project or mismatched state befo
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, new RegExp(reason));
     assert.equal(readFileSync(env.MOCK_RUNNING_IMAGE, "utf8").trim(), candidateImage);
-    assert.equal(readFileSync(join(state, "release.env"), "utf8").length > 0, false);
+    assert.equal(existsSync(join(state, "release.env")), false);
   }
 });
 
