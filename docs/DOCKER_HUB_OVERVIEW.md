@@ -6,9 +6,7 @@ The public introduction to **KAORI — Knowledge, Automation, Operations, Resili
 
 [Explore KAORI](https://kaori.cloud) · [Open Application](https://app.kaori.cloud) · [Documentation](https://docs.kaori.cloud/) · [Source repository](https://github.com/OXY7O/kaori-website) · [Releases](https://github.com/OXY7O/kaori-website/releases)
 
-![Infrastructure Operations](https://img.shields.io/badge/Focus-Infrastructure%20Operations-7C3AED)
-![Evidence Driven](https://img.shields.io/badge/Principle-Evidence--Driven-475569)
-![Governed Workflows](https://img.shields.io/badge/Approach-Governed%20Workflows-0F766E)
+**Infrastructure Operations** · **Evidence-Driven** · **Governed Workflows**
 
 ---
 
