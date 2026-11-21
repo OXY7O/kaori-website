@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import test from "node:test";
 
 const workflow = readFileSync(".github/workflows/deploy-staging-host.yml", "utf8");
+const candidateWorkflow = readFileSync(".github/workflows/publish-staging-image.yml", "utf8");
 const adapter = readFileSync("scripts/release/deploy-release.sh", "utf8");
 const admission = readFileSync(".github/workflows/quality.yml", "utf8");
 const publisher = readFileSync("scripts/release/publish-candidate.sh", "utf8");
@@ -73,76 +74,30 @@ test("production deployment adapter is guarded by protected main identity", () =
   assert.match(adapter, /main changed since protected production approval/);
 });
 
-test("public request route requires release-scoped GitHub authorization", () => {
-  assert.match(workflow, /kaori\/uat-request/);
-  assert.match(workflow, /vars\.KAORI_WEBSITE_PUBLIC_UAT_APPROVED_SHA/);
-  assert.match(workflow, /vars\.KAORI_WEBSITE_PUBLIC_UAT_APPROVED_TAG/);
-  assert.match(workflow, /vars\.KAORI_WEBSITE_PUBLIC_UAT_APPROVAL_ISSUE/);
-  assert.match(workflow, /public UAT approval SHA missing or stale/);
-  assert.match(workflow, /public UAT approval RC tag missing or stale/);
-  assert.match(workflow, /public UAT approval issue missing or invalid/);
-  assert.match(workflow, /Public UAT authorization: APPROVED/);
-  assert.match(workflow, /Source SHA: \$accepted/);
-  assert.match(workflow, /RC tag: \$tag/);
-  assert.match(workflow, /\[\[ "\$\(jq -r '\.state' <<<"\$issue"\)" == open \]\]/);
-  assert.match(
-    workflow,
-    /approval="https:\/\/github\.com\/\$GITHUB_REPOSITORY\/issues\/\$PUBLIC_UAT_APPROVAL_ISSUE"/,
-  );
-  assert.match(workflow, /edge=1/);
-  assert.doesNotMatch(
-    workflow,
-    /approval="https:\/\/github\.com\/\$GITHUB_REPOSITORY\/pull\/\$number"\s*edge=1/,
-  );
+test("manual RC and UAT fallbacks require the protected staging Environment", () => {
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /environment:\n      name: staging/);
+  assert.match(candidateWorkflow, /workflow_dispatch:/);
+  assert.match(candidateWorkflow, /environment:\n      name: staging/);
+  assert.match(workflow, /manual UAT requires protected staging and staging Environment/);
+  assert.match(candidateWorkflow, /manual RC requires protected staging and staging Environment/);
+  assert.doesNotMatch(workflow, /kaori\/uat-request/);
+  assert.doesNotMatch(candidateWorkflow, /kaori\/rc-request/);
+  assert.doesNotMatch(workflow, /PUBLIC_UAT_APPROVED_SHA|PUBLIC_UAT_APPROVED_TAG/);
+  assert.match(workflow, /KAORI_WEBSITE_COMPOSE_PROJECT/);
+  assert.match(workflow, /KAORI_WEBSITE_STATE_DIR/);
+  assert.match(workflow, /KAORI_WEBSITE_LOOPBACK_PORT/);
+  assert.match(workflow, /group: kaori-website-release-deploy/);
+  assert.match(candidateWorkflow, /group: kaori-website-rc/);
+  assert.match(workflow, /approval_reference:/);
 });
 
-test("branch request blocks unapproved and stale public cutover before SSH", () => {
-  const cases = [
-    {
-      name: "no public edge",
-      overrides: { KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "0" },
-      error: "public UAT request requires explicit approved existing-edge attachment",
-    },
-    {
-      name: "missing SHA",
-      overrides: { PUBLIC_UAT_APPROVED_SHA: "" },
-      error: "public UAT request approval SHA missing or stale",
-    },
-    {
-      name: "stale SHA",
-      overrides: { PUBLIC_UAT_APPROVED_SHA: "b".repeat(40) },
-      error: "public UAT request approval SHA missing or stale",
-    },
-    {
-      name: "wrong RC",
-      overrides: { PUBLIC_UAT_APPROVED_TAG: "v0.1.2-rc.8" },
-      error: "public UAT request approval tag missing or stale",
-    },
-    {
-      name: "missing issue",
-      overrides: { PUBLIC_UAT_APPROVAL_ISSUE: "" },
-      error: "public UAT request approval issue missing",
-    },
-    {
-      name: "wrong reference",
-      overrides: { APPROVAL_REF: "https://github.com/OXY7O/kaori-website/pull/193" },
-      error: "public UAT request approval reference mismatch",
-    },
-    {
-      name: "wrong ref",
-      overrides: { GITHUB_REF: "refs/heads/feature/other" },
-      error: "push UAT request must use kaori/uat-request",
-    },
-  ];
-  for (const { name, overrides, error } of cases) {
-    const result = preflight(overrides);
-    assert.notEqual(result.status, 0, name);
-    assert.ok(result.stderr.includes("BLOCK: " + error), name);
-    assert.doesNotMatch(
-      result.stdout + result.stderr,
-      /Accepted RC|ssh-agent|Release container deployed/,
-      name,
-    );
+test("retired request-branch push rejects before SSH or Docker mutation", () => {
+  for (const ref of ["refs/heads/kaori/uat-request", "refs/heads/feature/other"]) {
+    const result = preflight({ GITHUB_REF: ref });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /BLOCK: unsupported UAT request event/);
+    assert.doesNotMatch(result.stdout + result.stderr, /Accepted RC|ssh-agent|docker login/);
   }
 });
 
