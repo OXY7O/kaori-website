@@ -210,7 +210,7 @@ test("invalid prior release receipt blocks before container replacement", (t) =>
   assert.equal(readFileSync(env.MOCK_RUNNING_IMAGE, "utf8"), priorImage);
 });
 
-test("production runtime target rejects invalid project or mismatched state before Docker mutation", (t) => {
+test("production target rejects invalid project or state", (t) => {
   const { env, state, scriptDir } = fixture(t);
   const base = {
     ...env,
@@ -219,7 +219,10 @@ test("production runtime target rejects invalid project or mismatched state befo
   };
   const cases = [
     ["kaori-app", "production project must be a distinct Website namespace"],
-    ["kaori-website-uat", "production project must be a distinct Website namespace"],
+    [
+      "kaori-website-uat",
+      "production project must be a distinct Website namespace",
+    ],
     [
       "kaori-website-preview",
       "production state must belong to the configured Website project",
@@ -233,12 +236,15 @@ test("production runtime target rejects invalid project or mismatched state befo
     );
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, new RegExp(reason));
-    assert.equal(readFileSync(env.MOCK_RUNNING_IMAGE, "utf8").trim(), candidateImage);
+    assert.equal(
+      readFileSync(env.MOCK_RUNNING_IMAGE, "utf8").trim(),
+      candidateImage,
+    );
     assert.equal(existsSync(join(state, "release.env")), false);
   }
 });
 
-test("independent project identity can run on same host with dedicated state and loopback", (t) => {
+test("independent Website project uses dedicated state and port", (t) => {
   const { env, state, scriptDir } = fixture(t);
   const path = join(scriptDir, "deploy.sh");
   const source = readFileSync(path, "utf8");
@@ -264,7 +270,11 @@ test("independent project identity can run on same host with dedicated state and
   });
   assert.notEqual(badPort.status, 0);
   assert.match(badPort.stderr, /production loopback port must be between/);
-  const deployed = run(path, [candidateImage, candidateSha, candidateVersion], target);
+  const deployed = run(
+    path,
+    [candidateImage, candidateSha, candidateVersion],
+    target,
+  );
   assert.equal(deployed.status, 0, deployed.stderr);
   assert.match(deployed.stdout, /PASS: website release committed/);
   assert.match(
