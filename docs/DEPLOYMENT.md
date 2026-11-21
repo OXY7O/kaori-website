@@ -30,10 +30,14 @@ do not currently correspond to independently running services.
   can temporarily replace a stable release on the public site, by
   explicit accepted operational policy.
 - **Production:** A reviewed `kaori/staging → main` promotion and
-  accepted Human UAT authorize protected `production` Environment
-  approval. The stable publisher verifies that the **same signed RC
-  digest is already healthy in the one slot** and publishes `vX.Y.Z`
-  metadata without rebuilding, retagging, or changing the running host.
+  release-specific Human UAT authorize a separately protected `production`
+  Environment review. When the configured, healthy receipt-backed runtime
+  already runs the accepted signed RC digest, the publisher records stable
+  `vX.Y.Z` metadata without redeployment. If the running signed digest
+  differs, the existing governed adapter may replace it with the accepted
+  immutable RC **only after independent production authorization, safety
+  preflight, rollback evidence and post-deployment health verification**.
+  Neither path rebuilds or retags the image.
 - **Rollback:** `/var/lib/kaori-website/deploy-state/release.env`
   and `previous-release.env` identify current and prior immutable
   Website images. An RC is never treated as automatically approved for
@@ -69,14 +73,13 @@ Environment scopes to configure distinct target values, as appropriate:
 - Provider-controlled routing: approved DNS/TLS/SNI, shared-edge
   site registration, network attachment, and public endpoint checks.
 
-**Current limitation:** Configurable SSH destination does **not** yet
-mean the production release job can install a stable artifact on a new
-server. `scripts/release/promote-stable.sh` only checks the signed
-RC digest already running on the configured target and requires the
-existing `edge-public` attachment, fixed Website Compose/receipt
-contract, and shared-edge registration. It has **no separated-production
-bootstrap/deploy operation**. Changing only the Environment variables
-would make a fresh production VM fail preflight, not deploy it.
+**Current limitation:** A configurable SSH destination does **not**
+commission an unmanaged VM or authorize a new DNS/TLS/edge path.
+`scripts/release/promote-stable.sh` can reconcile an already prepared,
+healthy, receipt-backed target using the accepted signed RC and reviewed
+deployment adapter. It fails closed for a fresh/unmanaged VM, missing
+rollback/receipt evidence, wrong project identity or an unapproved public
+edge. Changing only Environment variables cannot bootstrap that target.
 
 Before any split, separately review and validate target provisioning,
 production deployment/rollback and receipt handoff using the **existing
@@ -192,19 +195,29 @@ Production image/Compose use an unprivileged server, health endpoint at `/health
 
 ## Repository Actions configuration
 
-The existing manual candidate publisher and deployment fallback retain
-issue-scoped authorization. The proposed automated jobs explicitly use
-`staging` and `production` GitHub Environments and must receive their
-intended scoped credentials only after administrator verification. The two
-**repository-level** one-time switches
-`KAORI_WEBSITE_AUTO_STAGING_ENABLED` and
-`KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` must remain false/absent pending
-separate #202/#203 acceptance; setting them is not a substitute for rights,
-rollback, UAT or an actual production approval gate. No prior accepted RC
-authorizes recurring public release by default.
+The manual candidate publisher and deployment fallback retain issue-scoped
+authorization. Admitted automated release jobs bind to protected GitHub
+Environments `staging` and `production`. Configuration Variables are read
+through step-level `vars.*` mappings **after** the Environment boundary;
+runtime credentials are Environment-scoped Secrets, not repository Secrets.
+The two activation controls `KAORI_WEBSITE_AUTO_STAGING_ENABLED` (staging)
+and `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` (production) are explicitly
+Environment-scoped and default to `false`. Enabling one does not grant
+publication rights, bypass Human UAT or replace independent production review.
 
-- Variables: `KAORI_WEBSITE_DOCKER_REGISTRY_HOST`, `KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE`, `KAORI_WEBSITE_HOST`, `KAORI_WEBSITE_HOST_PORT`, `KAORI_WEBSITE_HOST_USER`, `KAORI_WEBSITE_HOST_DEPLOY_ROOT`, `KAORI_WEBSITE_PUBLIC_DOMAIN`.
-- Secrets: `KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME`, `KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD`, `KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY`, `KAORI_WEBSITE_HOST_SSH_PASSPHRASE` when the private key is encrypted, and `KAORI_WEBSITE_HOST_KNOWN_HOSTS` pinned out of band.
+- Required Variables in **each** Environment: `KAORI_WEBSITE_DOCKER_REGISTRY_HOST`, `KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE`, `KAORI_WEBSITE_HOST`, `KAORI_WEBSITE_HOST_PORT`, `KAORI_WEBSITE_HOST_USER`, and `KAORI_WEBSITE_HOST_DEPLOY_ROOT`.
+- Optional Environment target overrides: `KAORI_WEBSITE_COMPOSE_PROJECT`, `KAORI_WEBSITE_STATE_DIR`, `KAORI_WEBSITE_LOOPBACK_PORT`, and `KAORI_WEBSITE_ATTACH_EXISTING_EDGE`, only for approved target topology.
+- Secrets scoped to the Environment: `KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME`, `KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD`, `KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY`, `KAORI_WEBSITE_HOST_SSH_PASSPHRASE` when required, and `KAORI_WEBSITE_HOST_KNOWN_HOSTS` pinned out of band.
+- `KAORI_WEBSITE_PUBLIC_DOMAIN` is a retired repository-level value; current release workflows do not consume it. The canonical public domain and edge acceptance remain governed by the reviewed deployment adapter and provider-owned routing.
+
+**Retirement gate — Website #247:** First confirm required Variables exist
+in **both** protected Environments and each activation switch is `false`
+in its intended scope. Confirm native release approvals and read-only
+staging/production credential preflight against the intended target.
+Then delete the nine historical repository Actions Variables through
+authenticated operator GitHub CLI and read back a zero Variable count.
+Do not delete Environment-scoped Variables or Secrets. Re-run read-only
+credential preflight after retirement; preserve no-mutation evidence.
 
 Reuse the KAORI Application's **registry host**, if appropriate, but not its image repository identity or runtime secrets. Use an independently scoped registry robot account and website deployment SSH identity. No database/API credentials are needed for static Astro output.
 
@@ -309,9 +322,13 @@ digest, not a second server/Compose project or a forced redeployment.
 configure `production` with deployment branch `main` only, designated
 required reviewer(s), prevent self-review, and prevent administrator bypass.
 Verify the actual reviewer gate blocks the job before credentials and stable
-publication. Make the necessary repository/environment-scoped
-`KAORI_WEBSITE_*` registry/SSH variables and secrets available, without
-exposing values. GitHub connector cannot independently verify these settings. The one-time repository switch `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED=true` must not be treated as release authority until these settings, accepted staging deployment, rollback, scoped publication rights and fresh exact-RC Human UAT evidence are confirmed.
+publication. Populate protected **Environment-scoped**, not repository-level,
+`KAORI_WEBSITE_*` registry/SSH Variables and Secrets without exposing
+secret contents. The repository Actions Variable fallback is retired under
+Website #247. The production Environment activation switch must remain
+`false` unless an independently approved, release-specific operational
+change authorizes deployment or stable publication. An approval to enter
+the Environment is not itself a release activation.
 
 **Normal promotion:**
 
@@ -429,7 +446,7 @@ Visit `http://127.0.0.1:18080/` locally to inspect desktop/mobile layout, theme 
 
 ## Repository image namespace preflight for issue #10
 
-The first release candidate publication attempt failed at the required Trivy vulnerability gate; it did not publish an OCI tag or deploy to VPS. A separate security workstream #12 updated the runtime image and enforced a release-equivalent Trivy check during Docker smoke. The repo-level Variable `KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE` is **still an operator-owned prerequisite**: it MUST end with `/kaori-website`, separate from the KAORI Application image. Both publisher and SSH deployment adapter now reject other image repository paths. Current publisher and release deployment preflight checks require this namespace; correction evidence is recorded in issue #10.
+The first release candidate publication attempt failed at the required Trivy vulnerability gate; it did not publish an OCI tag or deploy to VPS. A separate security workstream #12 updated the runtime image and enforced a release-equivalent Trivy check during Docker smoke. The protected Environment Variable `KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE` is **an operator-owned prerequisite**: it MUST end with `/kaori-website`, separate from the KAORI Application image. Both publisher and SSH deployment adapter now reject other image repository paths. Current publisher and release deployment preflight checks require this namespace; correction evidence is recorded in issue #10.
 
 ## Private ingress incident and correction (#15)
 
