@@ -1,80 +1,81 @@
 # KAORI Website
 
-**The public gateway to evidence-driven infrastructure operations.**
+**Meet KAORI. Operate with Clarity.**
 
-[Explore KAORI](https://kaori.cloud) · [Open Application](https://app.kaori.cloud) · [GitHub source](https://github.com/OXY7O/kaori-website)
+Infrastructure operations are spread across systems, teams, and workflows. **KAORI — Knowledge, Automation, Operations, Resilience & Intelligence** connects operational context and committed evidence, helping teams understand infrastructure relationships, make informed decisions, and coordinate governed work while their existing tools remain authoritative.
 
-![Astro 7](https://img.shields.io/badge/Astro-7-7C3AED)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6)
-![Static website](https://img.shields.io/badge/Delivery-Static%20HTML-475569)
-![NGINX](https://img.shields.io/badge/Runtime-Unprivileged%20NGINX-0F766E)
+[Explore KAORI](https://kaori.cloud) · [Open Application](https://app.kaori.cloud) · [Documentation](https://docs.kaori.cloud/) · [Source code](https://github.com/OXY7O/kaori-website)
+
+![Infrastructure Operations](https://img.shields.io/badge/Focus-Infrastructure%20Operations-7C3AED)
+![Evidence-Driven](https://img.shields.io/badge/Principle-Evidence--Driven-475569)
+![Governed Workflows](https://img.shields.io/badge/Approach-Governed%20Workflows-0F766E)
 
 ---
 
-## Meet the KAORI platform
+## Why KAORI
 
-**KAORI Website** is the public-facing introduction to **KAORI — Knowledge, Automation, Operations, Resilience & Intelligence**. It explains how KAORI turns committed infrastructure evidence into a clearer operational picture while preserving the authority of external systems.
+**Operate with context, not isolated tools.** KAORI brings related infrastructure information and committed evidence into a more coherent operational picture. Its product direction centers on four connected experiences:
 
-The website provides a concise journey from **discovering the platform** to **opening the authenticated application**. It does not display live infrastructure data or perform operational changes.
+- **Infrastructure visibility** — understand assets, inventory, dependencies, and relationships.
+- **Operational workflows** — coordinate selected actions with authorization, validation, and evidence.
+- **Analytics and intelligence** — relate operational signals and historical context to support decisions.
+- **Governance and audit** — make change history, accountability, and operational responsibility traceable.
 
-### Built for a focused experience
+These are the platform capabilities presented by the public Website; individual feature availability and deployment requirements are governed by the KAORI Application.
 
-| Experience                  | Purpose                                                                                                                                     |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Product introduction**    | Communicate the KAORI mission and operating principles.                                                                                     |
-| **Platform capabilities**   | Explain infrastructure inventory, connected observability, correlation, intelligence and governance without promising unqualified features. |
-| **Connected ecosystem**     | Clarify that Kubernetes and external monitoring, registry and automation providers remain authoritative.                                    |
-| **Application entry point** | Direct authorized users to the separate KAORI Application.                                                                                  |
+## How it works
 
-## Container profile
+**External systems stay authoritative. KAORI connects the operational context.**
 
-This is the **Website image**, not the KAORI Application image.
+1. **Observe** infrastructure context from existing systems.
+2. **Relate** signals, assets, and committed evidence across domains.
+3. **Act with governance** through controlled workflows, validation, and auditability.
 
-|                           |                                                                              |
-| :------------------------ | :--------------------------------------------------------------------------- |
-| **Repository**            | `lethisaputri/kaori-website`                                                 |
-| **Application**           | Prebuilt static Astro frontend                                               |
-| **Runtime**               | Unprivileged NGINX serving static files                                      |
-| **Internal HTTP**         | Port `8080` with `/healthz`                                                  |
-| **Authentication / data** | No application login, database, Redis or live provider connections           |
-| **Public site**           | [kaori.cloud](https://kaori.cloud) via separately governed shared HTTPS edge |
+KAORI is not a replacement for Kubernetes, monitoring, registries, source control, or automation engines. It adds the cross-domain context and operational coordination that isolated tools cannot provide alone.
 
-The runtime is intentionally isolated from KAORI's authenticated application, data stores and provider integrations. Production deployment follows the approved Website Compose/release adapter rather than an ad hoc public `docker run`.
+## What this image delivers
 
-## Pull an approved image
+This Docker Hub repository distributes the **public KAORI Website** — the product introduction at [kaori.cloud](https://kaori.cloud), **not** the authenticated KAORI Application.
 
-Use the **exact immutable digest** from accepted release evidence:
+- **For visitors:** discover the KAORI vision, operating principles, capabilities, and connected ecosystem.
+- **For operators:** deploy the public informational website through the approved Website release and Compose procedure.
+- **Runtime boundary:** static website served by unprivileged NGINX on internal HTTP port `8080` with `/healthz`; no application login, database, or live infrastructure provider connections.
+
+To use the operational product, follow [Open Application](https://app.kaori.cloud). The Website image cannot perform infrastructure mutations.
+
+## Images and release guidance
+
+Select a release from [KAORI Website releases](https://github.com/OXY7O/kaori-website/releases) and use its **approved immutable image digest**:
 
 ```bash
 docker pull lethisaputri/kaori-website@sha256:<approved-digest>
 ```
 
-Replace `<approved-digest>` with the complete approved SHA-256 manifest digest. This is an identity illustration; it is not a ready-to-run deployment command.
+Replace `<approved-digest>` with the complete SHA-256 digest from accepted release evidence. This pull example is **not** a standalone production deployment procedure.
 
-| Reference          | Meaning                                                     |
-| :----------------- | :---------------------------------------------------------- |
-| `vX.Y.Z-rc.N`      | Release candidate for governed validation and UAT.          |
-| `vX.Y.Z`           | Stable release after the required acceptance and promotion. |
-| `@sha256:<digest>` | Immutable deployment and rollback identity.                 |
-| `latest`           | Not an approved release-selection contract.                 |
+- `vX.Y.Z-rc.N` — release candidate for controlled validation and UAT.
+- `vX.Y.Z` — stable release following the required acceptance and promotion.
+- `@sha256:<digest>` — immutable deployment and rollback identity.
+- `latest` — not the approved release-selection contract.
 
-**Build once, verify the digest, promote without rebuilding.** An image visible on Docker Hub is not by itself proof of staging or production acceptance.
+**Build once. Verify the digest. Promote without rebuilding.** Use the governed [deployment and rollback procedure](https://github.com/OXY7O/kaori-website/blob/main/docs/DEPLOYMENT.md), not an ad hoc public `docker run`.
 
-## Project and release links
+## Explore and get support
 
-- [Website](https://kaori.cloud) — public product introduction
-- [Application](https://app.kaori.cloud) — separate authenticated operations platform
-- [Source repository](https://github.com/OXY7O/kaori-website) — implementation and source-level documentation
-- [GitHub Releases](https://github.com/OXY7O/kaori-website/releases) — release tags and evidence
-- [Deployment and rollback](https://github.com/OXY7O/kaori-website/blob/main/docs/DEPLOYMENT.md) — governed delivery procedure
-- [Report a Website security issue privately](https://github.com/OXY7O/kaori-website/security/advisories/new)
+- [KAORI public website](https://kaori.cloud) — product introduction and navigation.
+- [KAORI Application](https://app.kaori.cloud) — separate authenticated operations platform.
+- [Documentation](https://docs.kaori.cloud/) — documentation entry point.
+- [GitHub source](https://github.com/OXY7O/kaori-website) — Website implementation and engineering documentation.
+- [Releases](https://github.com/OXY7O/kaori-website/releases) — version and release evidence.
+- [Report a Website issue](https://github.com/OXY7O/kaori-website/issues) — public, sanitized defect reports.
+- [Report a security vulnerability privately](https://github.com/OXY7O/kaori-website/security/advisories/new) — confidential vulnerability reporting.
 
-## Security, licensing and brand
+## Security, rights, and attribution
 
-The container is a static public website, not an API gateway or a privileged operations component. Keep production credentials and private infrastructure data outside the image and public content. Verify scan, SBOM, signature and provenance evidence against the **specific accepted digest**.
+The Website is an informational frontend, not an operations API or an infrastructure integration. Do not put credentials or private infrastructure information in public content. Verify any image security claims against the **exact accepted digest**.
 
-Software licensing and third-party attributions follow the **exact source/release being used**; consult its repository license and notices. KAORI/OXY7O names, marks, approved logo and artwork remain separately protected; public image availability does not convey trademark rights or authorization to publish operational information.
+KAORI-authored Website **source code** is licensed under [Apache-2.0](https://github.com/OXY7O/kaori-website/blob/main/LICENSE), subject to its [NOTICE](https://github.com/OXY7O/kaori-website/blob/main/NOTICE). KAORI/OXY7O names, logos, artwork, and separately licensed third-party materials are not covered by that software grant. Public image availability is not permission to reuse protected brand assets or disclose operational information.
 
 ---
 
-**KAORI — Observe the context. Understand the evidence. Operate with confidence.**
+**KAORI — Operate with Clarity.**
