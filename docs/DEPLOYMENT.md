@@ -104,10 +104,33 @@ The current shared-edge attachment path remains authorized only for
 the canonical `kaori-website` public runtime; a noncanonical target
 may be deployed privately after operator provisioning and explicit
 authorization, but a different public route requires a separately
-approved provider-owned edge configuration. This work does not alter
-GitHub Environment branch policies, automatically enable deployment,
-or implement production stable reconciliation to a new runtime.
-That final stable-target step remains governed by [#234](https://github.com/OXY7O/kaori-website/issues/234).
+approved provider-owned edge configuration. Neither this work nor production
+reconciliation changes GitHub Environment branch policies or automatically
+enables deployment.
+
+### Stable target reconciliation — Website #239
+
+The protected `main` workflow selects its deployment target from GitHub
+Environment `production`. Operators may point both Environments at the
+same Website runtime or configure distinct targets. There is no slot mode.
+
+The stable publisher verifies the accepted signed RC digest and its
+SBOM/provenance before reconciling the configured runtime.
+
+- **Digest already running:** verify health, receipt and rollback; do not redeploy.
+- **Different healthy digest:** reuse the existing signed-RC deployment adapter.
+- **After replacement:** reverify the exact digest before publishing stable.
+- **Unmanaged runtime:** reject missing receipts, unhealthy containers and invalid identity.
+- **Public routing:** use only the previously approved canonical Website edge.
+
+The OCI image retains its original `-rc.N` build label. The stable
+`vX.Y.Z` name is release metadata, not a reason to rebuild or retag.
+
+A new VM still requires host commissioning and independent UAT.
+Noncanonical routing and a missing prior receipt are not auto-approved.
+Provider-owned DNS, TLS and shared-edge registration are outside this job.
+See [#234](https://github.com/OXY7O/kaori-website/issues/234) and
+[#239](https://github.com/OXY7O/kaori-website/issues/239).
 
 ## Container and development smoke
 
