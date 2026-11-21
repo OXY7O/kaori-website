@@ -110,40 +110,27 @@ enables deployment.
 
 ### Stable target reconciliation — Website #239
 
-On protected `main`, the `production` GitHub Environment selects its
-host, pinned SSH trust, Compose project, receipt directory, loopback port,
-and existing-edge authority. After independent UAT and main promotion
-approval, the stable publisher verifies the **original signed RC digest**,
-SBOM/provenance, and actual configured target before publishing stable
-`vX.Y.Z`. The on-host OCI build label remains the original `-rc.N`:
-stable is the GitHub release identity, not a rebuilt image.
+The protected `main` workflow selects its deployment target from GitHub
+Environment `production`. Operators may point both Environments at the
+same Website runtime or configure distinct targets. There is no slot mode.
 
-For a healthy, receipt-backed target already running the accepted digest
-and source, the publisher verifies and **does not redeploy**. When its
-committed receipt and healthy container correspond to a *different*
-digest, the existing release adapter can replace it with the accepted RC
-digest, preserve the previous receipt for rollback, reattach the
-**already-approved canonical** Website edge, and verify the new digest
-before creating stable release metadata. Thus, when operator
-configuration points both Environments to the same Website runtime,
-staging RC and production promotion can replace each other over time,
-without explicit single/multi-slot rules.
+The stable publisher verifies the accepted signed RC digest and its
+SBOM/provenance before reconciling the configured runtime.
 
-Current fail-closed limits are intentional: production automatic
-replacement requires an existing valid receipt, an independently
-prepared deployment root, a healthy prior runtime, a pinned host
-identity, existing approved `edge-public` registration, and an exact
-matching immutable rollback path. An uninitialized host, unhealthy
-container, untrusted receipt, noncanonical project/edge registration, or
-unauthorized provider routing is **not** auto-provisioned or accepted.
-The latter require separately approved host commissioning and UAT before
-they can join the release train.
+- **Digest already running:** verify health, receipt and rollback; do not redeploy.
+- **Different healthy digest:** reuse the existing signed-RC deployment adapter.
+- **After replacement:** reverify the exact digest before publishing stable.
+- **Unmanaged runtime:** reject missing receipts, unhealthy containers and invalid identity.
+- **Public routing:** use only the previously approved canonical Website edge.
 
-These changes are source-only until independently reviewed and merged;
-`KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED=false` remains the operator's
-safe default. This workstream remains governed by
-[Website #234](https://github.com/OXY7O/kaori-website/issues/234) and
-[child #239](https://github.com/OXY7O/kaori-website/issues/239).
+The OCI image retains its original `-rc.N` build label. The stable
+`vX.Y.Z` name is release metadata, not a reason to rebuild or retag.
+
+A new VM still requires host commissioning and independent UAT.
+Noncanonical routing and a missing prior receipt are not auto-approved.
+Provider-owned DNS, TLS and shared-edge registration are outside this job.
+See [#234](https://github.com/OXY7O/kaori-website/issues/234) and
+[#239](https://github.com/OXY7O/kaori-website/issues/239).
 
 ## Container and development smoke
 
