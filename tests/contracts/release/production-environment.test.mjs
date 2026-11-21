@@ -28,6 +28,17 @@ function rejectPreflight(overrides = {}) {
   });
 }
 
+test("production release GET and POST curl flags are compatible and fail-closed", () => {
+  const calls = publisher.split("\n").filter((line) => line.includes("curl --fail-with-body"));
+  assert.equal(calls.length, 2, "both authenticated GET and stable-release POST must fail on HTTP error");
+  for (const call of calls) {
+    assert.match(call, /curl --fail-with-body -sS\b/);
+    assert.doesNotMatch(call, /curl --fail-with-body -f/);
+  }
+  assert.match(publisher, /api_get\(\) \{\s*curl --fail-with-body -sS /);
+  assert.match(publisher, /published="\$\(curl --fail-with-body -sS /);
+});
+
 test("only main with a production environment may publish same-digest stable", () => {
   assert.match(fullAdmission, /name: Publish Human Accepted Stable Release/);
   assert.match(fullAdmission, /name: production\n      url: https:\/\/kaori\.cloud/);
