@@ -134,6 +134,12 @@ jobs:
           set -Eeuo pipefail
           test -s dist/index.html
           test -s dist/branding/kaori-logo.svg
+          test -s dist/licenses/inter/OFL-1.1.txt
+          cmp node_modules/@fontsource-variable/inter/LICENSE dist/licenses/inter/OFL-1.1.txt
+          test -s dist/licenses/lucide/LICENSE.txt
+          grep -Fq 'ISC License' dist/licenses/lucide/LICENSE.txt
+          grep -Fq 'The MIT License (MIT) (for the icons listed above)' dist/licenses/lucide/LICENSE.txt
+          grep -Fq 'Copyright (c) 2013-present Cole Bemis' dist/licenses/lucide/LICENSE.txt
           grep -qi 'kaori' dist/index.html
 
   container-smoke:

@@ -26,11 +26,11 @@ The website uses **Astro 7, TypeScript 5, Tailwind CSS 4, and Inter**, with the 
 - `src/pages/` — public pages and content.
 - `src/components/` — header, footer, icons, and reusable page sections.
 - `src/layouts/` and `src/styles/` — page structure, responsive styling, and light/dark themes.
-- `public/branding/` — approved KAORI logo and illustration assets.
+- `public/branding/` — active KAORI logo and KAORI-directed AI-assisted Hero illustration assets.
 - `docs/` — development, design, delivery, and deployment reference.
 - `deploy/server/` — standalone static website container configuration.
 
-Brand assets and visual conventions follow the KAORI Application. Use the approved logo, Violet tokens, Inter typography, and Lucide-style icons rather than creating a separate website design system. See [homepage review guidelines](docs/HOMEPAGE_REVIEW.md).
+Brand assets and visual conventions follow the KAORI Application. Use the approved logo, Violet tokens, Inter typography, and Lucide-style icons rather than creating a separate website design system. See [homepage review guidelines](docs/HOMEPAGE_REVIEW.md). The legacy operations-fabric illustration was retired from this Website because the current frontend no longer uses it; the KAORI Application is unaffected. The origin of the active AI-assisted Hero artwork and logo is recorded in that review, but ownership, trademark scope, AI-service terms, third-party attribution, and any source-code license grant remain subject to the [KAORI public-source rights audit](https://github.com/OXY7O/KAORI/issues/4212).
 
 ## Get started
 
