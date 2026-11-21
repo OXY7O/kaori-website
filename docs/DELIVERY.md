@@ -59,7 +59,9 @@ bootstrap/deploy a separate production host. DNS, shared-edge routing,
 target preparation, host-specific receipts, and a reviewed separate-host
 deployment path require independent admission before a two-VM cutover.
 Do not claim that setting new host variables alone provides working
-production migration today. See [deployment boundaries](DEPLOYMENT.md#reference-host-topology-and-portability).
+production migration today. The bounded implementation authority is
+[Website #234](https://github.com/OXY7O/kaori-website/issues/234).
+See [deployment boundaries](DEPLOYMENT.md#reference-host-topology-and-portability).
 
 Do not import irrelevant Flask/PostgreSQL/Celery checks or weaken required security and browser gates. Use path-aware work-branch checks to avoid expensive full-build/deploy cycles for copy edits while preserving the staging admission boundary.
 
