@@ -30,7 +30,7 @@ The website uses **Astro 7, TypeScript 5, Tailwind CSS 4, and Inter**, with the 
 - `docs/` — development, design, delivery, and deployment reference.
 - `deploy/server/` — standalone static website container configuration.
 
-Brand assets and visual conventions follow the KAORI Application. Use the approved logo, Violet tokens, Inter typography, and Lucide-style icons rather than creating a separate website design system. See [homepage review guidelines](docs/HOMEPAGE_REVIEW.md). The legacy operations-fabric illustration was retired from this Website because the current frontend no longer uses it; the KAORI Application is unaffected. The origin of the active AI-assisted Hero artwork and logo is recorded in that review, but ownership, trademark scope, AI-service terms, third-party attribution, and any source-code license grant remain subject to the [KAORI public-source rights audit](https://github.com/OXY7O/KAORI/issues/4212).
+Brand assets and visual conventions follow the KAORI Application. Use the approved logo, Violet tokens, Inter typography, and Lucide-style icons rather than creating a separate website design system. See [homepage review guidelines](docs/HOMEPAGE_REVIEW.md). The legacy operations-fabric illustration was retired from this Website because the current frontend no longer uses it; the KAORI Application is unaffected. The active Hero artwork and logo provenance is recorded in that review. **The Website software source is licensed under Apache-2.0** ([LICENSE](LICENSE)); KAORI/OXY7O names, logo, brand imagery and independently licensed third-party fonts/icons are outside that software license. See [NOTICE](NOTICE) and the original [KAORI rights audit](https://github.com/OXY7O/KAORI/issues/4212) for residual security and attribution scope.
 
 ## Get started
 
@@ -70,7 +70,7 @@ See [CI/CD](docs/CI_CD.md), [delivery workflow](docs/DELIVERY.md), and [deployme
 
 ## Community pull requests
 
-**Start here:** [External fork walkthrough and merge-conflict recovery](docs/DEVELOPMENT.md#external-fork-prs--controlled-pre-launch-procedure). This repository is public, but **external contributor launch and relicensing remain on hold** until the [KAORI rights audit](https://github.com/OXY7O/KAORI/issues/4212) and [community approval](https://github.com/OXY7O/KAORI/issues/4217) are accepted. These instructions currently support maintainer-authorized testing and proposal review; visibility does not grant rights to redistribute KAORI code or branding.
+**Start here:** [External fork walkthrough and merge-conflict recovery](docs/DEVELOPMENT.md#external-fork-prs--controlled-pre-launch-procedure). This repository's **source code uses Apache-2.0** ([LICENSE](LICENSE)); **external contributor intake still requires governed acceptance** under [KAORI #4217](https://github.com/OXY7O/KAORI/issues/4217). These instructions currently support maintainer-authorized testing and proposal review; visibility does not grant rights to redistribute KAORI code or branding.
 
 For an approved test/proposal: **fork the repository → fetch `OXY7O/kaori-website:kaori/staging` as `upstream` → create a new branch from `upstream/kaori/staging` (not your fork's `main`) → make one scoped change → open a PR with base `OXY7O:kaori/staging` and head `YOUR_FORK:YOUR_BRANCH`.** Avoid reusing a fork branch that contains old `main` commits: that can cause conflicts even for a one-line README edit. See the linked guide for exact Git commands and the GitHub PR picker.
 
@@ -84,4 +84,8 @@ For **non-security Website defects or feedback**, use the [Website issue tracker
 
 To **report a Website vulnerability**, use [GitHub's private vulnerability reporting form for this repository](https://github.com/OXY7O/kaori-website/security/advisories/new); this repository's private reporting capability was verified enabled on 2026-11-08. Do **not** publish vulnerability details in a public issue, discussion, pull request, or email thread. If that private form is unavailable, consult the [organization security routing guidance](https://github.com/OXY7O/.github/blob/main/SECURITY.md) and contact authorized maintainers through a confirmed confidential route. Reports for the KAORI Application or Docs belong to their own repositories and private channels.
 
-The shared [OXY7O contributing policy](https://github.com/OXY7O/.github/blob/main/CONTRIBUTING.md) is the organization fallback; local repository policy and the accepted issue → review → staging/UAT → promotion workflow take precedence. Public visibility is not an open-source license grant while the separately governed rights audit remains pending.
+The shared [OXY7O contributing policy](https://github.com/OXY7O/.github/blob/main/CONTRIBUTING.md) is the organization fallback; local repository policy and the accepted issue → review → staging/UAT → promotion workflow take precedence. The Apache-2.0 source license is not a grant to use KAORI branding or third-party protected assets; public contribution acceptance and production changes remain separately governed.
+
+## Source license and brand
+
+KAORI-authored Website source code is licensed under [Apache License 2.0](LICENSE). [NOTICE](NOTICE) identifies the rights holder, independent reviewer, brand exclusions and existing [Inter](public/licenses/inter/OFL-1.1.txt) and [Lucide](public/licenses/lucide/LICENSE) license notices. The source license does not publish or relicense protected artwork or launch untrusted contributor access.
