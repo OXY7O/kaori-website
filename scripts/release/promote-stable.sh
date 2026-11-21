@@ -185,53 +185,74 @@ agent_started=true
 export SSH_ASKPASS="$tmp/askpass" SSH_ASKPASS_REQUIRE=force DISPLAY=:0
 setsid -w ssh-add "$tmp/key" </dev/null >/dev/null
 
-# Read-only remote verification uses canonical existing server verify.sh.
-{
-  printf 'set -Eeuo pipefail\n'
-  printf 'expected_image=%q\nexpected_sha=%q\nexpected_rc=%q\nroot=%q\n' \
-    "$image_ref" "$rc_sha" "$rc_tag" "$WEBSITE_DEPLOY_ROOT"
-  printf 'runtime_state=%q\nruntime_project=%q\nruntime_port=%q\nruntime_edge=%q\n' \
-    "$runtime_state" "$runtime_project" "$runtime_port" "$runtime_edge"
-  cat <<'REMOTE'
+# Read-only probe of the actual configured production runtime. An existing
+# matching digest must not be redeployed; a healthy different accepted runtime
+# can be replaced only AFTER OCI signature/attestation verification below.
+probe_target() {
+  {
+    printf 'set -Eeuo pipefail\n'
+    printf 'expected_image=%q\nexpected_sha=%q\nexpected_rc=%q\nroot=%q\n' \
+      "$image_ref" "$rc_sha" "$rc_tag" "$WEBSITE_DEPLOY_ROOT"
+    printf 'runtime_state=%q\nruntime_project=%q\nruntime_port=%q\nruntime_edge=%q\n' \
+      "$runtime_state" "$runtime_project" "$runtime_port" "$runtime_edge"
+    cat <<'REMOTE_PROBE'
+fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
+[[ -d "$root" && ! -L "$root" && -w "$root" ]] ||
+  fail 'production target root is not prepared'
+[[ -d "$runtime_state" && ! -L "$runtime_state" && -r "$runtime_state" &&
+   -w "$runtime_state" ]] || fail 'production receipt directory is not prepared'
 receipt="$runtime_state/release.env"
 previous="$runtime_state/previous-release.env"
-[[ -f "$receipt" && ! -L "$receipt" ]] || { echo 'BLOCK: release receipt missing'; exit 1; }
-[[ -s "$previous" && ! -L "$previous" ]] ||
-  { echo 'BLOCK: previous immutable rollback receipt missing'; exit 1; }
-previous_image="$(grep '^KAORI_WEBSITE_IMAGE=' "$previous" | cut -d= -f2-)"
-[[ "$previous_image" =~ @sha256:[a-f0-9]{64}$ ]] ||
-  { echo 'BLOCK: previous immutable rollback digest evidence invalid'; exit 1; }
-grep -Fxq "KAORI_WEBSITE_IMAGE=$expected_image" "$receipt" ||
-  { echo 'BLOCK: public slot digest changed since accepted RC'; exit 1; }
-grep -Fxq "KAORI_WEBSITE_SOURCE_SHA=$expected_sha" "$receipt" ||
-  { echo 'BLOCK: public slot source differs from Human Accepted RC'; exit 1; }
-grep -Fxq "KAORI_WEBSITE_VERSION=$expected_rc" "$receipt" ||
-  { echo 'BLOCK: public slot build version differs from accepted RC'; exit 1; }
-export KAORI_WEBSITE_IMAGE="$expected_image"
-export KAORI_WEBSITE_EXPECTED_VERSION="$expected_rc"
-export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1
-export KAORI_WEBSITE_RUNTIME_ENV=production
-export KAORI_WEBSITE_STATE_DIR="$runtime_state"
-export KAORI_WEBSITE_LOOPBACK_PORT="$runtime_port"
-export COMPOSE_PROJECT_NAME="$runtime_project"
-bash "$root/releases/$expected_sha/server/verify.sh"
+[[ -f "$receipt" && ! -L "$receipt" ]] ||
+  fail 'production target needs an independently prepared prior receipt and rollback'
+current_image="$(grep '^KAORI_WEBSITE_IMAGE=' "$receipt" | cut -d= -f2-)"
+current_sha="$(grep '^KAORI_WEBSITE_SOURCE_SHA=' "$receipt" | cut -d= -f2-)"
+current_version="$(grep '^KAORI_WEBSITE_VERSION=' "$receipt" | cut -d= -f2-)"
+[[ "$current_image" =~ @sha256:[a-f0-9]{64}$ &&
+   "$current_sha" =~ ^[a-f0-9]{40}$ &&
+   "$current_version" =~ ^v[0-9]+[.][0-9]+[.][0-9]+(-rc[.][1-9][0-9]*)?$ ]] ||
+  fail 'production current receipt is invalid; never replace an unmanaged image'
 web="$(docker ps --filter "label=com.docker.compose.project=$runtime_project" \
   --filter label=com.docker.compose.service=web --format '{{.ID}}')"
-[[ "$web" =~ ^[a-f0-9]{12,64}$ ]] || { echo 'BLOCK: multiple or missing public Website'; exit 1; }
-if [[ "$runtime_edge" == 1 ]]; then
-  [[ "$(docker inspect --format '{{if index .NetworkSettings.Networks "edge-public"}}true{{else}}false{{end}}' "$web")" == true ]] ||
-    { echo 'BLOCK: accepted Website is detached from existing shared edge'; exit 1; }
+[[ "$web" =~ ^[a-f0-9]{12,64}$ ]] ||
+  fail 'production current container is missing or ambiguous'
+[[ "$(docker inspect --format '{{.Config.Image}}' "$web")" == "$current_image" ]] ||
+  fail 'production live image differs from its committed receipt'
+[[ "$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' "$web")" == healthy ]] ||
+  fail 'production current container is unhealthy; manual recovery required'
+if [[ "$current_image" == "$expected_image" &&
+      "$current_sha" == "$expected_sha" &&
+      "$current_version" == "$expected_rc" ]]; then
+  [[ -s "$previous" && ! -L "$previous" ]] ||
+    fail 'previous immutable rollback receipt missing'
+  previous_image="$(grep '^KAORI_WEBSITE_IMAGE=' "$previous" | cut -d= -f2-)"
+  [[ "$previous_image" =~ @sha256:[a-f0-9]{64}$ ]] ||
+    fail 'previous immutable rollback digest evidence invalid'
+  export KAORI_WEBSITE_IMAGE="$expected_image"
+  export KAORI_WEBSITE_EXPECTED_VERSION="$expected_rc"
+  export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1
+  export KAORI_WEBSITE_RUNTIME_ENV=production
+  export KAORI_WEBSITE_STATE_DIR="$runtime_state"
+  export KAORI_WEBSITE_LOOPBACK_PORT="$runtime_port"
+  export COMPOSE_PROJECT_NAME="$runtime_project"
+  bash "$root/releases/$expected_sha/server/verify.sh" ||
+    fail 'configured production runtime verification failed'
+  if [[ "$runtime_edge" == 1 ]]; then
+    [[ "$(docker inspect --format '{{if index .NetworkSettings.Networks "edge-public"}}true{{else}}false{{end}}' "$web")" == true ]] ||
+      fail 'accepted Website is detached from existing shared edge'
+  else
+    fail 'configured production runtime has no approved edge evidence yet'
+  fi
+  echo 'TARGET_STATUS:READY'
 else
-  # Provider-owned routing for other runtime identities has not yet been
-  # admitted. Never publish stable against an unrelated public endpoint.
-  echo 'BLOCK: configured production runtime has no approved edge evidence yet' >&2
-  exit 1
+  # The previous signed image remains rollback authority during replacement.
+  echo 'TARGET_STATUS:DEPLOY'
 fi
-echo 'PASS: configured production Website digest, source, health, receipt and edge match'
-REMOTE
-} | ssh -p "$port" -i "$tmp/key" -o BatchMode=yes -o IdentitiesOnly=yes \
-  -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$tmp/known_hosts" \
-  "$WEBSITE_SSH_USER@$WEBSITE_HOST" 'bash -se'
+REMOTE_PROBE
+  } | ssh -p "$port" -i "$tmp/key" -o BatchMode=yes -o IdentitiesOnly=yes \
+    -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$tmp/known_hosts" \
+    "$WEBSITE_SSH_USER@$WEBSITE_HOST" 'bash -se'
+}
 
 # Independently validate the exact subject signed by the current or legacy RC publisher.
 printf '%s' "$REGISTRY_PASSWORD" | DOCKER_CONFIG="$tmp/docker" docker login "$REGISTRY_HOST" \
@@ -257,6 +278,31 @@ for kind in spdxjson slsaprovenance1; do
     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
     "$image_ref" >"$tmp/$kind.json" || fail "signed $kind attestation failed"
 done
+# Never mutate a target before accepted digest signature AND both attestations.
+# Existing same-digest production runtime remains unchanged. A different
+# healthy, receipt-backed runtime is reconciled using the existing RC adapter.
+[[ "$runtime_edge" == 1 ]] ||
+  fail 'production target requires independently admitted provider edge before deployment'
+target_probe="$(probe_target)" || fail 'production runtime read-only probe failed'
+target_action=verified
+if grep -Fxq 'TARGET_STATUS:DEPLOY' <<<"$target_probe"; then
+  echo 'NOTE: configured production target differs from accepted signed RC; governed replacement required'
+  ACCEPTED_SHA="$rc_sha" RC_TAG="$rc_tag" \
+    APPROVAL_REF="https://github.com/OXY7O/kaori-website/pull/$pr" \
+    bash scripts/release/deploy-release.sh preflight
+  ACCEPTED_SHA="$rc_sha" RC_TAG="$rc_tag" \
+    APPROVAL_REF="https://github.com/OXY7O/kaori-website/pull/$pr" \
+    bash scripts/release/deploy-release.sh deploy
+  verified_probe="$(probe_target)" || fail 'production post-deployment verification failed'
+  grep -Fxq 'TARGET_STATUS:READY' <<<"$verified_probe" ||
+    fail 'production post-deployment digest is not accepted'
+  target_action=replaced
+elif grep -Fxq 'TARGET_STATUS:READY' <<<"$target_probe"; then
+  echo 'PASS: configured production runtime already runs accepted digest; no replacement'
+else
+  fail 'production runtime probe returned an unknown result'
+fi
+
 for domain in kaori.cloud app.kaori.cloud docs.kaori.cloud; do
   curl -fLsS --connect-timeout 10 --max-time 25 -o /dev/null "https://$domain/" ||
     fail "trusted HTTPS readiness failed for $domain"
@@ -271,7 +317,7 @@ if [[ "$existing" == 404 ]]; then
      "Immutable digest: " + $digest, "Deployment authority: " + $image,
      "Human UAT evidence: " + $uat, "Merged promotion PR: #" + $pr,
      "Production environment approved run: " + $run,
-     "Exact live RC digest and signed OCI attestations reverified; no rebuild/retag or host mutation."] | join("\n")')"
+     "Exact live RC digest and signed OCI attestations reverified; no rebuild or retag."] | join("\n")')"
   payload="$(jq -n --arg tag "$stable_tag" --arg sha "$GITHUB_SHA" --arg body "$body" \
     '{tag_name:$tag,target_commitish:$sha,name:("KAORI Website "+$tag),body:$body,
       draft:false,prerelease:false,make_latest:"true"}')"
@@ -286,7 +332,7 @@ else
 fi
 [[ "$(api_get "$api/git/ref/tags/$stable_tag" | jq -r '.object.sha')" == "$GITHUB_SHA" ]] ||
   fail 'stable tag does not identify exact accepted main'
-printf 'PASS: accepted stable %s from RC %s at signed digest %s; no image build or host mutation\n' \
-  "$stable_tag" "$rc_tag" "$digest"
+printf 'PASS: accepted stable %s from RC %s at signed digest %s; runtime %s, no image rebuild\n' \
+  "$stable_tag" "$rc_tag" "$digest" "$target_action"
 printf 'Stable Release: %s\nMain SHA: %s\nRC: %s\nImmutable OCI: %s\n' \
   "$stable_tag" "$GITHUB_SHA" "$rc_tag" "$image_ref" >>"$GITHUB_STEP_SUMMARY"
