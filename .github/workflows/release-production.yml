@@ -126,6 +126,10 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
+      - name: Set up pinned Node for reviewed release-note validation
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v4.4.0
+        with:
+          node-version: "22.23.2"
       - name: Resolve protected Environment configuration
         shell: bash
         env:
