@@ -1,0 +1,18 @@
+# GitHub's read-only generated release-notes DRAFT; never auto-publish it.
+# Editors rewrite the public summary in docs/releases/vX.Y.Z.md for review.
+# Categories reuse existing KAORI Website labels; no new taxonomy.
+changelog:
+  categories:
+    - title: "Website and Documentation"
+      labels:
+        - "documentation"
+    - title: "Security and Reliability"
+      labels:
+        - "quality:security"
+        - "quality:reliability"
+    - title: "Engineering and CI"
+      labels:
+        - "scope:ci"
+    - title: "Other Changes"
+      labels:
+        - "*"

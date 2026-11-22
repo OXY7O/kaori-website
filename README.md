@@ -9,7 +9,7 @@
     <img alt="Full Admission on main" src="https://github.com/OXY7O/kaori-website/actions/workflows/quality.yml/badge.svg?branch=main" />
   </a>
   <a href="https://github.com/OXY7O/kaori-website/releases/latest">
-    <img alt="Latest stable release" src="https://img.shields.io/github/v/release/OXY7O/kaori-website?label=stable&amp;include_prereleases=false" />
+    <img alt="Latest stable release" src="https://img.shields.io/github/v/release/OXY7O/kaori-website?label=stable" />
   </a>
   <a href="LICENSE">
     <img alt="Software source license: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue" />

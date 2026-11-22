@@ -101,6 +101,14 @@ stable_tag="$(sed -E 's/-rc[.][1-9][0-9]*$//' <<<"$rc_tag")"
 [[ "$stable_tag" =~ ^v[0-9]+[.][0-9]+[.][0-9]+$ ]] || fail 'stable SemVer invalid'
 [[ "$stable_tag" == "$PRODUCTION_STABLE_TAG" ]] ||
   fail 'requested stable tag differs from Human-Accepted signed RC version'
+# Both unprivileged request validation and privileged production runner require
+# a human-reviewed notes file bound to the accepted staging promotion PR.
+notes_pr="$(node scripts/release/release-notes.mjs promotion-pr "$stable_tag")" ||
+  fail 'reviewed release notes not available for requested stable tag'
+[[ "$notes_pr" == "$pr" ]] ||
+  fail 'reviewed release notes select a different promotion PR'
+node scripts/release/release-notes.mjs verify "$stable_tag" "$pr" >/dev/null ||
+  fail 'release notes human acceptance is invalid'
 
 rc="$(api_get "$api/releases/tags/$rc_tag")" || fail 'accepted signed RC absent'
 [[ "$(jq -r '.prerelease' <<<"$rc")" == true &&
@@ -322,15 +330,20 @@ for domain in kaori.cloud app.kaori.cloud docs.kaori.cloud; do
 done
 
 if [[ "$existing" == 404 ]]; then
-  body="$(jq -n --arg stable "$stable_tag" --arg main "$GITHUB_SHA" \
+  # Public release notes are reviewed before this run; immutable runtime
+  # details are appended only after successful signed target reconciliation.
+  public_notes="$(node scripts/release/release-notes.mjs body "$stable_tag" "$pr")" ||
+    fail 'reviewed public release notes cannot be rendered'
+  technical="$(jq -rn --arg stable "$stable_tag" --arg main "$GITHUB_SHA" \
     --arg rc "$rc_tag" --arg rcsha "$rc_sha" --arg digest "$digest" \
     --arg image "$image_ref" --arg uat "$evidence_url" --arg pr "$pr" --arg run "$GITHUB_RUN_ID" '
-    ["KAORI Website stable artifact: " + $stable, "Stable main SHA: " + $main,
-     "Accepted RC: " + $rc, "Accepted RC source SHA: " + $rcsha,
-     "Immutable digest: " + $digest, "Deployment authority: " + $image,
-     "Human UAT evidence: " + $uat, "Merged promotion PR: #" + $pr,
-     "Production environment approved run: " + $run,
-     "Exact live RC digest and signed OCI attestations reverified; no rebuild or retag."] | join("\n")')"
+    ["- Stable release: " + $stable, "- Verified main source: " + $main,
+     "- Signed staging candidate: " + $rc, "- Candidate source SHA: " + $rcsha,
+     "- Immutable digest: " + $digest, "- Deployment authority: " + $image,
+     "- Human UAT evidence: " + $uat, "- Approved promotion PR: #" + $pr,
+     "- Protected production approval run: " + $run,
+     "- Signed image and OCI attestations reverified; no rebuild or retag."] | join("\n")')"
+  body="$(printf '%s\n\n---\n\n## Technical Evidence\n\n%s\n' "$public_notes" "$technical")"
   payload="$(jq -n --arg tag "$stable_tag" --arg sha "$GITHUB_SHA" --arg body "$body" \
     '{tag_name:$tag,target_commitish:$sha,name:("KAORI Website "+$tag),body:$body,
       draft:false,prerelease:false,make_latest:"true"}')"
