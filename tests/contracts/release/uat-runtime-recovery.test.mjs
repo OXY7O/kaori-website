@@ -47,7 +47,7 @@ case "$1" in
       *".HostConfig.ReadonlyRootfs"*) printf 'true\n' ;;
       *".HostConfig.Privileged"*) printf 'false\n' ;;
       *".HostConfig.CapDrop"*)
-        if [[ "${MOCK_CAP_DROP_BAD:-0}" == 1 ]]; then
+        if [[ "$MOCK_CAP_DROP_BAD" == 1 ]]; then
           printf '[]\n'
         else
           printf '["ALL"]\n'
@@ -61,7 +61,7 @@ case "$1" in
   exec)
     case "$3" in
       id) printf '101\n' ;;
-      sh) [[ "${MOCK_PROC_ISOLATION_BAD:-0}" != 1 ]] ;;
+      sh) [[ "$MOCK_PROC_ISOLATION_BAD" != 1 ]] ;;
       wget)
         url="$7"
         if [[ "$url" == */healthz ]]; then
@@ -149,6 +149,8 @@ function fixture(t, { failCandidate = false } = {}) {
       MOCK_PRIOR_HTML: join(state, "prior.html"),
       MOCK_CANDIDATE_SHA: candidateSha,
       MOCK_FAIL_CANDIDATE: failCandidate ? "1" : "0",
+      MOCK_CAP_DROP_BAD: "0",
+      MOCK_PROC_ISOLATION_BAD: "0",
     },
   };
 }
