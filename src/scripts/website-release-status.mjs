@@ -5,9 +5,11 @@ const candidate = /^(v[0-9]+\.[0-9]+\.[0-9]+)-rc\.[1-9][0-9]*$/;
 const sha = /^[a-f0-9]{40}$/;
 const digest = /^sha256:[a-f0-9]{64}$/;
 
-export function verifiedWebsiteStable(metadata, currentBuild, currentSource) {
+export function verifiedWebsiteStable(metadata, active, currentBuild, currentSource) {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
+  if (!active || typeof active !== "object" || Array.isArray(active)) return null;
   if (metadata.schema !== 1 || metadata.status !== "stable") return null;
+  if (active.schema !== 1 || active.status !== "active") return null;
   if (typeof currentBuild !== "string" || typeof currentSource !== "string") return null;
   const built = candidate.exec(currentBuild);
   if (!built || !sha.test(currentSource)) return null;
