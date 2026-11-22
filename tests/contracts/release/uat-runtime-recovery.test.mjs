@@ -43,12 +43,25 @@ case "$1" in
           printf 'healthy\n'
         fi
         ;;
+      *".Config.User"*) printf '101:101\n' ;;
+      *".HostConfig.ReadonlyRootfs"*) printf 'true\n' ;;
+      *".HostConfig.Privileged"*) printf 'false\n' ;;
+      *".HostConfig.CapDrop"*)
+        if [[ "${MOCK_CAP_DROP_BAD:-0}" == 1 ]]; then
+          printf '[]\n'
+        else
+          printf '["ALL"]\n'
+        fi
+        ;;
+      *".HostConfig.SecurityOpt"*) printf '["no-new-privileges:true"]\n' ;;
+      *".Mounts"*) printf '[]\n' ;;
       *) exit 73 ;;
     esac
     ;;
   exec)
     case "$3" in
       id) printf '101\n' ;;
+      sh) [[ "${MOCK_PROC_ISOLATION_BAD:-0}" != 1 ]] ;;
       wget)
         url="$7"
         if [[ "$url" == */healthz ]]; then
@@ -154,6 +167,23 @@ test("UAT verifier consumes large homepage without pipefail SIGPIPE", (t) => {
   const result = run("deploy/server/verify.sh", [], env);
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /PASS: isolated UAT Website footer build version v0\.1\.2-rc\.6/);
+});
+
+test("UAT verifier fails closed if Linux capability isolation is absent", (t) => {
+  const { env } = fixture(t);
+  const missingCapabilities = run("deploy/server/verify.sh", [], {
+    ...env,
+    MOCK_CAP_DROP_BAD: "1",
+  });
+  assert.notEqual(missingCapabilities.status, 0);
+  assert.match(missingCapabilities.stderr, /BLOCK: Website container must drop all Linux capabilities/);
+
+  const unsafeProcess = run("deploy/server/verify.sh", [], {
+    ...env,
+    MOCK_PROC_ISOLATION_BAD: "1",
+  });
+  assert.notEqual(unsafeProcess.status, 0);
+  assert.match(unsafeProcess.stderr, /BLOCK: effective Website process privileges differ/);
 });
 
 test("UAT verifier rejects wrong expected signed build version", (t) => {
