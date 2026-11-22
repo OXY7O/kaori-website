@@ -82,14 +82,15 @@ const websiteBuildSource = import.meta.env.PUBLIC_KAORI_WEBSITE_BUILD_SHA ?? "";
     const build = label.dataset.buildVersion ?? "";
     const source = label.dataset.buildSha ?? "";
     if (/^v\d+\.\d+\.\d+-rc\.[1-9]\d*$/.test(build) && /^[a-f0-9]{40}$/.test(source)) {
-      fetch("/.well-known/kaori-website/release.json", {
-        cache: "no-store",
-        credentials: "same-origin",
-        redirect: "error",
-      })
-        .then(async (response) => (response.ok ? response.json() : null))
-        .then((metadata: unknown) => {
-          const stable = verifiedWebsiteStable(metadata, build, source);
+      const receipt = (file: string) =>
+        fetch(`/.well-known/kaori-website/${file}.json`, {
+          cache: "no-store",
+          credentials: "same-origin",
+          redirect: "error",
+        }).then(async (response) => (response.ok ? response.json() : null));
+      Promise.all([receipt("release"), receipt("active")])
+        .then(([metadata, active]: unknown[]) => {
+          const stable = verifiedWebsiteStable(metadata, active, build, source);
           if (stable) label.textContent = `Website stable ${stable}`;
         })
         .catch(() => {
