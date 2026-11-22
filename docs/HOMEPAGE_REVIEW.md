@@ -32,6 +32,13 @@ Single public informational Home Page at `https://kaori.cloud` only. It is not a
 
 ## Visual acceptance pending
 
+**Historical foundational checklist (#3):** These were the original homepage
+visual acceptance obligations, not a current release status dashboard. The
+maintainer subsequently accepted signed `v0.1.4-rc.1` on public
+`https://kaori.cloud` with version/digest-bound
+[Human UAT evidence](https://github.com/OXY7O/kaori-website/issues/288#issuecomment-7079043214).
+Future RCs and changed experiences still require their own acceptance.
+
 - Desktop >=1280 light/dark
 - Tablet 768–1024 light/dark
 - Mobile 375–430 light/dark
@@ -41,7 +48,11 @@ Single public informational Home Page at `https://kaori.cloud` only. It is not a
 - Verify CTA destinations after application hostname and apex DNS/TLS publication; no broken destination links
 - Human acceptance after staging integration
 
-Developer source/build checks are distinct from release verification. Its original foundation prerequisite #2 has been integrated into staging; final browser verification and human acceptance remain pending.
+Developer source/build checks are distinct from release verification. At the
+original homepage #3 checkpoint, foundational prerequisite #2 had entered
+staging while that release's browser verification and human acceptance were
+still pending. Do not read this historical statement as cancelling the later
+release-specific v0.1.4-rc.1 Human Acceptance recorded under #288.
 
 ## Approved brand alignment implementation — issue #27
 

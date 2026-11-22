@@ -1,5 +1,15 @@
 # KAORI Website CI/CD
 
+**Operating status and historical evidence:** The authoritative current version is
+the latest approved [GitHub stable Release](https://github.com/OXY7O/kaori-website/releases/latest)
+and the running signed Website's committed release receipt. As of **22 November
+2026**, stable `v0.1.3` was the published stable while signed
+`v0.1.4-rc.1` had passed [public deployment](https://github.com/OXY7O/kaori-website/actions/runs/45021179497)
+and [Human Acceptance](https://github.com/OXY7O/kaori-website/issues/288#issuecomment-7079043214).
+Those dated records do **not** publish stable `v0.1.4`. Older RC.7/RC.10
+sections below are retained as **historical checkpoints**, not current
+release runbooks or a reason to request the same Human UAT again.
+
 **Authority:** This website follows `OXY7O/KAORI/docs/engineering/KAORI_DELIVERY_WORKFLOW.md` and `docs/setup/GITHUB_ACTIONS_CI_CD.md`, with domain-appropriate website validation.
 
 ## Runner ownership
@@ -96,7 +106,8 @@ Full admission checks must not be weakened or renamed to hide failures. Before m
 
 ## Source state — public RC.7 checkpoint (2026-11-08)
 
-The most recent **verified public release deployment** is signed [v0.1.2-rc.7](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.2-rc.7), from protected `kaori/staging@b77a8dc98d4b342e7002e251fe4ff0abc7149dbe`, immutable OCI digest `sha256:d686b54a219ea96d60a108bf947f9d0f540275c230171c92ede06a14c56cb10c`. [Exact-source Full Admission #42482112697](https://github.com/OXY7O/kaori-website/actions/runs/42482112697) passed all four mandatory nonpublishing jobs (156 browser tests; configured Trivy HIGH/CRITICAL scan: zero reported findings); [signed RC publisher #42484280809](https://github.com/OXY7O/kaori-website/actions/runs/42484280809) and [isolated private UAT #42484609068](https://github.com/OXY7O/kaori-website/actions/runs/42484609068) succeeded. Maintainer explicitly accepted six **private RC.7** Visual UAT checks.
+**Historical snapshot, not the latest live deployment.** At this checkpoint,
+the most recent **verified public release deployment** was signed [v0.1.2-rc.7](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.2-rc.7), from protected `kaori/staging@b77a8dc98d4b342e7002e251fe4ff0abc7149dbe`, immutable OCI digest `sha256:d686b54a219ea96d60a108bf947f9d0f540275c230171c92ede06a14c56cb10c`. [Exact-source Full Admission #42482112697](https://github.com/OXY7O/kaori-website/actions/runs/42482112697) passed all four mandatory nonpublishing jobs (156 browser tests; configured Trivy HIGH/CRITICAL scan: zero reported findings); [signed RC publisher #42484280809](https://github.com/OXY7O/kaori-website/actions/runs/42484280809) and [isolated private UAT #42484609068](https://github.com/OXY7O/kaori-website/actions/runs/42484609068) succeeded. Maintainer explicitly accepted six **private RC.7** Visual UAT checks.
 
 Under [specific public-cutover authority #158](https://github.com/OXY7O/kaori-website/issues/158), [manual public Release Deployment #42488631688](https://github.com/OXY7O/kaori-website/actions/runs/42488631688) completed SUCCESS on that same SHA and digest, with `publish_existing_edge=true`. The existing `kaori-website` public Compose slot, public footer `Website build v0.1.2-rc.7`, Website HTTPS readiness and independent Application/Docs HTTPS readiness passed recorded deployment checks. A subsequent fail-closed operator script returned the final marker `PASS: Public Website RC.7, Application and Docs readiness`; public `release.env` and prior signed **RC.5** rollback identity were exercised within that script, but full intermediate readback was not separately pasted.
 
@@ -148,12 +159,18 @@ Pull-request runs include their PR/branch label; explicit production runs show t
 
 **Check-context migration:** job display labels changed only, job IDs remain stable. The maintainer should inspect any manually configured GitHub ruleset/branch-protection required-check names, third-party status consumers and GitHub Project automation for references to the old display names. The private repository previously used compensating review procedures; do not assert branch protections are enforced without checking repository settings.
 
-**Operating state:** [stable v0.1.0](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0) is published on main, reusing the signed deployed RC.10 digest, without a new image build. This naming-only workstream does not redeploy that image, modify shared-edge runtime or make product changes. External provider names, immutability and signed-evidence authority remain unchanged.
+**Historical actions-display checkpoint:** [stable v0.1.0](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.0) was published on main, reusing the signed deployed RC.10 digest, without a new image build. This is not a current-stable-version statement. This naming-only workstream does not redeploy that image, modify shared-edge runtime or make product changes. External provider names, immutability and signed-evidence authority remain unchanged.
 
 ## Explicit Website release request branches — #122 / #195
 
+**Historical fallback only:** Modern release-specific Human UAT uses the
+existing public `https://kaori.cloud` Website and explicit protected staging
+Release Deployment authorization; old request-branch movements are not the
+normal acceptance route. Do not open a private SSH/browser tunnel or treat
+loopback as independent public acceptance.
+
 Legacy fallback RC and UAT use deliberate `kaori/rc-request` and `kaori/uat-request` branch pushes.
-Until #202 is explicitly activated, staging pushes run only Full Admission.
+At the original #122/#195 checkpoint, before #202 activation, staging pushes ran only Full Admission.
 The protected `staging` GitHub Environment may run the automated signed
 release/deployment train only after all four admission jobs have succeeded
 and the `KAORI_WEBSITE_AUTO_STAGING_ENABLED=true` protected Environment control
