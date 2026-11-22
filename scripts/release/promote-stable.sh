@@ -358,6 +358,81 @@ else
 fi
 [[ "$(api_get "$api/git/ref/tags/$stable_tag" | jq -r '.object.sha')" == "$GITHUB_SHA" ]] ||
   fail 'stable tag does not identify exact accepted main'
+# Publish public, same-origin status only AFTER GitHub's stable release exists
+# and the immutable accepted target has been independently reconciled.
+stable_info="$(api_get "$api/releases/tags/$stable_tag")" || fail 'published stable metadata unavailable'
+[[ "$(jq -r '.tag_name' <<<"$stable_info")" == "$stable_tag" &&
+   "$(jq -r '.prerelease' <<<"$stable_info")" == false &&
+   "$(jq -r '.draft' <<<"$stable_info")" == false &&
+   "$(jq -r '.target_commitish' <<<"$stable_info")" == "$GITHUB_SHA" ]] ||
+  fail 'published stable metadata differs from approved main identity'
+stable_body="$(jq -r '.body // ""' <<<"$stable_info")"
+[[ "$stable_body" == *"Immutable digest: $digest"* &&
+   "$stable_body" == *"Human UAT evidence: $evidence_url"* ]] ||
+  fail 'published stable evidence differs from accepted signed digest'
+published_at="$(jq -r '.published_at // ""' <<<"$stable_info")"
+[[ "$published_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T ]] ||
+  fail 'stable release has no published timestamp'
+manifest="$(jq -cn --arg stable "$stable_tag" --arg build "$rc_tag" \
+  --arg source "$rc_sha" --arg sha "$GITHUB_SHA" --arg digest "$digest" \
+  --arg published "$published_at" \
+  '{schema:1,status:"stable",stable_tag:$stable,build_tag:$build,
+    source_sha:$source,main_sha:$sha,image_digest:$digest,published_at:$published}')"
+# Remote checks revalidate the container, committed source/digest and
+# exact read-only bind mount, preventing a stale RC or arbitrary host path
+# from being announced as a stable Website. Never rebuild signed RC bytes.
+{
+  printf 'set -Eeuo pipefail\n'
+  printf 'runtime_state=%q\nruntime_project=%q\nexpected_image=%q\nexpected_sha=%q\nexpected_rc=%q\n' \
+    "$runtime_state" "$runtime_project" "$image_ref" "$rc_sha" "$rc_tag"
+  printf 'release_manifest=%q\n' "$manifest"
+  cat <<'REMOTE_STATUS'
+fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
+[[ -d "$runtime_state" && ! -L "$runtime_state" ]] ||
+  fail 'stable release receipt root is missing or symlinked'
+metadata_dir="$runtime_state/release-metadata"
+[[ -d "$metadata_dir" && ! -L "$metadata_dir" && -w "$metadata_dir" ]] ||
+  fail 'stable release metadata directory is not independently prepared'
+[[ ! -L "$metadata_dir/release.json" ]] ||
+  fail 'stable release metadata file is a symlink'
+receipt="$runtime_state/release.env"
+[[ -f "$receipt" && ! -L "$receipt" ]] ||
+  fail 'active signed image receipt missing'
+grep -Fxq "KAORI_WEBSITE_IMAGE=$expected_image" "$receipt" ||
+  fail 'current release receipt has a different signed OCI digest'
+grep -Fxq "KAORI_WEBSITE_SOURCE_SHA=$expected_sha" "$receipt" ||
+  fail 'current release receipt source differs from accepted RC'
+grep -Fxq "KAORI_WEBSITE_VERSION=$expected_rc" "$receipt" ||
+  fail 'current release receipt build differs from accepted RC'
+web="$(docker ps --filter "label=com.docker.compose.project=$runtime_project" \
+  --filter label=com.docker.compose.service=web --format '{{.ID}}')"
+[[ "$web" =~ ^[a-f0-9]{12,64}$ ]] ||
+  fail 'cannot identify exactly one stable Website container'
+[[ "$(docker inspect --format '{{.Config.Image}}' "$web")" == "$expected_image" ]] ||
+  fail 'running Website image does not match signed stable receipt'
+[[ "$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' "$web")" == healthy ]] ||
+  fail 'running Website container is unhealthy'
+mount="$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/usr/share/nginx/html/.well-known/kaori-website"}}{{.Source}}:{{.RW}}{{end}}{{end}}' "$web")"
+[[ "$mount" == "$metadata_dir:false" ]] ||
+  fail 'runtime does not serve the trusted read-only stable release mount'
+umask 022
+candidate="$(mktemp "$metadata_dir/.release.json.XXXXXXXX")" ||
+  fail 'cannot stage atomic stable status'
+trap 'rm -f -- "$candidate"' EXIT
+printf '%s\n' "$release_manifest" >"$candidate"
+chmod 0644 "$candidate"
+mv -f -- "$candidate" "$metadata_dir/release.json"
+trap - EXIT
+received="$(docker exec "$web" wget -q -O - http://127.0.0.1:8080/.well-known/kaori-website/release.json)" ||
+  fail 'running NGINX does not serve committed stable metadata'
+[[ "$received" == "$release_manifest" ]] ||
+  fail 'public stable metadata readback does not match protected receipt'
+echo 'PASS: same-origin stable receipt committed and verified against live signed digest'
+REMOTE_STATUS
+} | ssh -p "$port" -i "$tmp/key" -o BatchMode=yes -o IdentitiesOnly=yes \
+  -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$tmp/known_hosts" \
+  "$WEBSITE_SSH_USER@$WEBSITE_HOST" 'bash -se' ||
+  fail 'protected stable release published but live footer receipt not confirmed'
 printf 'PASS: accepted stable %s from RC %s at signed digest %s; runtime %s, no image rebuild\n' \
   "$stable_tag" "$rc_tag" "$digest" "$target_action"
 printf 'Stable Release: %s\nMain SHA: %s\nRC: %s\nImmutable OCI: %s\n' \
