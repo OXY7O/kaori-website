@@ -40,6 +40,15 @@ case "$runtime_env" in
 esac
 [[ -f "$compose_file" && ! -L "$compose_file" ]] || fail 'compose file missing or symlinked'
 [[ -d "$state_dir" && ! -L "$state_dir" && -w "$state_dir" ]] || fail 'website release state directory must be prepared and writable by deployment identity'
+# Stable status is an independently committed host receipt, not part of the OCI image.
+# A new candidate may have no release.json; the Website must show the RC fallback.
+metadata_dir="$state_dir/release-metadata"
+[[ ! -L "$metadata_dir" ]] || fail 'Website release-metadata directory must not be a symlink'
+if [[ ! -d "$metadata_dir" ]]; then
+    mkdir -m 0755 -- "$metadata_dir" || fail 'release metadata directory cannot be prepared'
+fi
+[[ -d "$metadata_dir" && ! -L "$metadata_dir" ]] || fail 'Website metadata path is not a directory'
+export KAORI_WEBSITE_RELEASE_METADATA_DIR="$metadata_dir"
 docker info >/dev/null || fail 'Docker daemon unavailable'
 compose_args=(-f "$compose_file")
 if [[ "${KAORI_WEBSITE_RELEASE_LOCAL_ONLY:-}" == 1 ]]; then
