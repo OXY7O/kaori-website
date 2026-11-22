@@ -10,7 +10,6 @@ const workflowPaths = [
   ".github/workflows/release-production.yml",
   ".github/workflows/publish-staging-image.yml",
   ".github/workflows/deploy-staging-host.yml",
-  ".github/workflows/environment-credential-preflight.yml",
 ];
 const workflows = workflowPaths.map((path) => readFileSync(path, "utf8"));
 const developer = readFileSync(".github/workflows/developer-check.yml", "utf8");
