@@ -8,12 +8,29 @@ Website application paths (existing deployment layout):
 
 - `/opt/kaori-website`: reviewed Compose and adapter scripts.
 - `/var/lib/kaori-website/deploy-state`: mode-restricted release receipt and previous release pointer.
-- Container project: `kaori-website`; internal upstream HTTP port **8080**, with **no host ports**.
+- Container project: `kaori-website`; internal upstream HTTP port **8080**. The approved release overlay may expose a **loopback-only host health port** (`127.0.0.1:18080`), never a public Website UAT entrypoint.
 - Edge DNS / Nginx / Certbot and host **80/443** remain owned by `/opt/shared-edge`, outside this repository.
 
-Never modify `/opt/kaori`, `/etc/kaori`, `/var/lib/kaori` or the KAORI application Compose project while deploying the website. The approved public hostname split is `kaori.cloud` for this website and `app.kaori.cloud` for the application (migration authority `OXY7O/KAORI#2210`). If the legacy apex edge registration still points to the application, reassignment requires a **separately reviewed shared-edge cutover**, safe rollback, and DNS/TLS evidence. The application and automation site registrations must remain intact.
+Never modify `/opt/kaori`, `/etc/kaori`, `/var/lib/kaori` or the KAORI application Compose project while deploying the website. The approved public hostname split is `kaori.cloud` for this website and `app.kaori.cloud` for the application (migration authority `OXY7O/KAORI#2210`). If the legacy apex edge registration still points to the application, reassignment requires a **separately reviewed shared-edge cutover**, safe rollback, and DNS/TLS evidence. The independent Application and Docs shared-edge registrations must remain intact.
 
 The same versioned **application deployment protocol** as KAORI is used: exact accepted staging SHA â Full Admission â build once â immutable OCI image digest â dedicated host SSH trust boundary â health verification â release verification evidence â human acceptance â promotion of the same digest to production. A docker image build or Astro CI success alone is **not** website release acceptance.
+
+## Current public UAT acceptance and host checks
+
+Normal Website Human UAT uses **only the real public DNS and trusted HTTPS**
+endpoint, `https://kaori.cloud`, for visual/browser and user-facing HTTP
+acceptance. The approved shared-edge adapter checks public Website footer,
+`/healthz`, Application and Docs HTTPS readiness and exact signed build identity.
+No SSL/SSH tunnel, private browser URL or `127.0.0.1:18083` is an alternative
+normal UAT route. Release deployment still uses pinned SSH as an **internal host
+transport**, and loopback probes and process capabilities remain **internal
+security/health checks**, not additional end-user acceptance endpoints.
+
+Historical private RC inspection and the optional isolated host security test
+under [#284](https://github.com/OXY7O/kaori-website/issues/284) are separate,
+release-specific exceptions. They do not change the public-only UAT policy
+accepted under [#195](https://github.com/OXY7O/kaori-website/issues/195) and
+[#288](https://github.com/OXY7O/kaori-website/issues/288).
 
 ## Reference host topology and portability
 
@@ -159,7 +176,7 @@ Only the independently reviewed **production Environment** stable promotion, **a
 
 The browser fetches only **same-origin**, no-store `/.well-known/kaori-website/active.json` and `release.json`. It shows `Website stable vX.Y.Z` only when both receipts match one another **and** the immutable embedded RC build tag/source SHA and digest syntax; it always preserves the separate build label. An absent, unreadable, stale, malformed or mismatched receipt yields `Stable release not verified`. A newer RC on the same public slot changes `active.json` and thus invalidates the previous `release.json`; a rollback also commits the recovered active image, so an unrelated stable cannot be displayed. A fresh signed candidate has no stable label until protected production publication. Browser JavaScript never queries GitHub, Docker, or protected registry credentials per visitor, and cannot itself independently verify a cryptographic OCI signature; host publication and approved producer attestations remain authoritative.
 
-The live published **v0.1.3** container was built before this source change and still embeds RC.2; neither its OCI bytes nor its running config are modified by merging #278. The new presentation is accepted only after signed next RC, independent host UAT, visual/accessibility evidence, protected promotion and explicit stable production Environment approval. Operator evidence must include `curl -fLsS https://kaori.cloud/.well-known/kaori-website/active.json` and `release.json` **after** publishing stable, matching exact signed digest/receipt, while preserving previous signed rollback state. NGINX returns `Cache-Control: no-store`, and does not expose host state or secret directories.
+**Historical #278 implementation checkpoint (before RC.1 publication):** The then-live **v0.1.3** container was built before this source change and still embedded RC.2; neither its OCI bytes nor its running config are modified by merging #278. The new presentation is accepted only after signed next RC, independent host UAT, visual/accessibility evidence, protected promotion and explicit stable production Environment approval. Operator evidence must include `curl -fLsS https://kaori.cloud/.well-known/kaori-website/active.json` and `release.json` **after** publishing stable, matching exact signed digest/receipt, while preserving previous signed rollback state. NGINX returns `Cache-Control: no-store`, and does not expose host state or secret directories.
 
 The OCI image retains its original `-rc.N` build label. The stable
 `vX.Y.Z` name is release metadata, not a reason to rebuild or retag.
@@ -452,7 +469,7 @@ identity. This is a **manual recovery path**, never an implicit bypass of
 staging admission, public-slot authorization or required production
 Environment review. No feature-branch dispatch is an automatic deployment.
 
-**Isolated manual security UAT (#284):** For a signed RC that has already passed protected staging Full Admission, an explicitly authorized manual `deploy-staging-host.yml` dispatch with `publish_existing_edge=false` now selects the existing **separate** Compose project `kaori-website-uat` and `/opt/kaori-website/uat/deploy-state`, with only `127.0.0.1:18083:8080` exposed to the host and no `edge-public` attachment. The adapter uses its existing UAT guards: pinned host trust, exact signed RC SHA/digest, separate path/symlink/port and minimum capacity checks, pre/post public container identity and health, signed release receipt/rollback, plus non-root/zero-capability process verification. This **still mutates the isolated UAT container and host state**, so obtain explicit operator authorization and valid release-specific signed candidate evidence first; a green CI check alone is insufficient. The UAT shares the host kernel and Docker daemon; it is not a separate VM or a security sandbox.
+**Special-purpose host-security exception ONLY (#284), not normal public Website Human UAT:** For a signed RC that has already passed protected staging Full Admission, an explicitly authorized manual `deploy-staging-host.yml` dispatch with `publish_existing_edge=false` now selects the existing **separate** Compose project `kaori-website-uat` and `/opt/kaori-website/uat/deploy-state`, with only `127.0.0.1:18083:8080` exposed to the host and no `edge-public` attachment. The adapter uses its existing UAT guards: pinned host trust, exact signed RC SHA/digest, separate path/symlink/port and minimum capacity checks, pre/post public container identity and health, signed release receipt/rollback, plus non-root/zero-capability process verification. This **still mutates the isolated UAT container and host state**, so obtain explicit operator authorization and valid release-specific signed candidate evidence first; a green CI check alone is insufficient. The UAT shares the host kernel and Docker daemon; it is not a separate VM or a security sandbox.
 
 Use the existing workflow with protected branch `kaori/staging`, exact immutable `candidate_tag`, `approval_reference=https://github.com/OXY7O/kaori-website/issues/284` **only after** the maintainer has explicitly authorized the host test, and `publish_existing_edge=false`. A public-slot replacement with `publish_existing_edge=true` is a separately authorized action, not an alternative UAT default. Follow the existing `verify.sh` and recorded production baseline: all NGINX processes must remain UID/GID 101, `CapEff=0`, `CapBnd=0`, `NoNewPrivs=1`; capture actual image digest, 18083 loopback health, restored prior UAT receipt if needed, and confirm `kaori-website/web` public container ID/digest/health remains unchanged before declaring security-sensitive UAT ready for Human Acceptance.
 
@@ -507,17 +524,21 @@ a new signed post-merge source revision plus explicit per-release cutover
 authorization. Parent [KAORI #4212](https://github.com/OXY7O/KAORI/issues/4212)
 remains the separate public-source rights audit authority.
 
-## Private release browser access (no shared-edge publication)
+## Historical private release browser access — retired for normal UAT
 
-For the initial website release, the deployment adapter can opt into a **loopback-only** Compose override with `KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1`. This binds the web service exclusively to `127.0.0.1:18080` on the target VPS and leaves 80/443 and shared-edge sites untouched. It is not a public deployment.
+The initial Website deployment used a loopback-only Compose override and an
+SSH browser tunnel before the public shared-edge route was accepted. That
+approach is **retired as normal Human UAT**. Do not establish a browser tunnel
+or substitute `http://127.0.0.1:18080/` or `127.0.0.1:18083` for acceptance
+through `https://kaori.cloud`.
 
-Once the container health and immutable digest have been verified, an authorized reviewer can open an SSH tunnel from their workstation (using their own trusted administrator access):
-
-```bash
-ssh -N -L 18080:127.0.0.1:18080 -p <SSH_PORT> <ADMIN_USER>@<VPS_HOST>
-```
-
-Visit `http://127.0.0.1:18080/` locally to inspect desktop/mobile layout, theme toggle and accessibility. Do not use an untrusted SSH host or disable host key checks. DNS/TLS/public edge publication is a separately reviewed workstream and is **not** implied by successful private release deployment.
+The original commands and rationale remain auditable in Git history and the
+historical [private RC.8 issue #194](https://github.com/OXY7O/kaori-website/issues/194).
+The approved public-domain transition is [#195](https://github.com/OXY7O/kaori-website/issues/195),
+with current release-specific approval and acceptance under
+[#288](https://github.com/OXY7O/kaori-website/issues/288). Internal loopback
+health verification and the separately authorized #284 security-only host test
+remain valid safety gates, **not private browser acceptance workflows**.
 
 ## Repository image namespace preflight for issue #10
 

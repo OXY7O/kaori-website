@@ -24,6 +24,8 @@ KAORI normalizes, orchestrates, correlates and governs committed evidence while 
 
 - `https://kaori.cloud` — KAORI Website static informational landing page and canonical/OG origin.
 - `https://app.kaori.cloud` — independent authenticated KAORI Application and destination of all **Open Application** CTAs.
-- `https://auto.kaori.cloud` — separate automation publication; not part of website or application migration.
+- `https://docs.kaori.cloud` — independent KAORI Docs publication and public documentation destination; not part of the Website runtime or Application deployment.
+
+The former `auto.kaori.cloud` automation service is **not** a current Website shared-edge readiness target. Historical automation/UAT observations belong to their original dated release evidence.
 
 The application hostname migration is governed by `OXY7O/KAORI#2210`. Public apex publication is a separate shared-edge/DNS/TLS operation with explicit operator approval, checks and rollback. Private SSH-tunnel release verification is not evidence of public-domain acceptance.
