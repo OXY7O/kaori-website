@@ -53,7 +53,7 @@ test("production release needs just stable tag; promotion PR is reviewed source 
 test("stable publisher validates reviewed notes before target mutation and appends technical proof", () => {
   const notesGate = publisher.indexOf("node scripts/release/release-notes.mjs verify");
   const runtimeMutation = publisher.indexOf("bash scripts/release/deploy-release.sh deploy");
-  const published = publisher.indexOf('curl --fail-with-body -sS -H "Authorization: Bearer $GH_TOKEN"');
+  const published = publisher.indexOf('published="$(curl --fail-with-body -sS');
   assert.ok(notesGate > 0);
   assert.ok(runtimeMutation > notesGate);
   assert.ok(published > runtimeMutation);
