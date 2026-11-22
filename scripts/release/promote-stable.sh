@@ -334,7 +334,7 @@ if [[ "$existing" == 404 ]]; then
   # details are appended only after successful signed target reconciliation.
   public_notes="$(node scripts/release/release-notes.mjs body "$stable_tag" "$pr")" ||
     fail 'reviewed public release notes cannot be rendered'
-  technical="$(jq -n --arg stable "$stable_tag" --arg main "$GITHUB_SHA" \
+  technical="$(jq -rn --arg stable "$stable_tag" --arg main "$GITHUB_SHA" \
     --arg rc "$rc_tag" --arg rcsha "$rc_sha" --arg digest "$digest" \
     --arg image "$image_ref" --arg uat "$evidence_url" --arg pr "$pr" --arg run "$GITHUB_RUN_ID" '
     ["- Stable release: " + $stable, "- Verified main source: " + $main,
