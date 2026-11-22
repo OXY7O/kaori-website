@@ -327,8 +327,11 @@ async function mockWebsiteReleaseReceipts(
     const response = await route.fetch();
     const html = (await response.text())
       .replace(/data-build-version="[^"]*"/, 'data-build-version="v0.1.4-rc.1"')
-      .replace(/data-build-sha="[^"]*"/, `data-build-sha="${receiptSource}"`)
+      // Astro can serialize an empty preview attribute as bare data-build-sha.
+      // The signed OCI build always supplies a non-empty source SHA.
+      .replace(/data-build-sha(?:="[^"]*")?(?=[\s>])/, `data-build-sha="${receiptSource}"`)
       .replace("Website build development", "Website build v0.1.4-rc.1");
+    expect(html).toContain(`data-build-sha="${receiptSource}"`);
     await route.fulfill({ response, body: html });
   });
   return requests;
