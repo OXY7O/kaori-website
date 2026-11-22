@@ -1,11 +1,18 @@
-.git
-.github
-.devcontainer
-node_modules
-dist
-.astro
-.env*
-*.log
-coverage
-test-results
-playwright-report
+# Default deny: only Dockerfile build inputs and the static site enter BuildKit.
+# Everything else (.git, .github, .devcontainer, docs, tests, CI, scripts,
+# secrets and host deployment utilities) is outside the Docker build context.
+**
+!Dockerfile
+!.dockerignore
+!package.json
+!package-lock.json
+!astro.config.mjs
+!tsconfig.json
+!.prettierrc.json
+!src/
+!src/**
+!public/
+!public/**
+!deploy/
+!deploy/server/
+!deploy/server/nginx.conf
