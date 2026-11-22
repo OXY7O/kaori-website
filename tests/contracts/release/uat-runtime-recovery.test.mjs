@@ -54,6 +54,7 @@ case "$1" in
         fi
         ;;
       *".HostConfig.SecurityOpt"*) printf '["no-new-privileges:true"]\n' ;;
+      *"range .Mounts"*) printf '%s:false\n' "$MOCK_METADATA_DIR" ;;
       *".Mounts"*) printf '[]\n' ;;
       *) exit 73 ;;
     esac
@@ -92,6 +93,8 @@ function fixture(t, { failCandidate = false } = {}) {
   const state = join(dir, "state");
   mkdirSync(bin);
   mkdirSync(state);
+  const metadataDir = join(state, "release-metadata");
+  mkdirSync(metadataDir);
   const scriptDir = join(dir, "server");
   mkdirSync(scriptDir);
   // UAT's real fixed state path guard must remain intact in the repository.
@@ -148,6 +151,7 @@ function fixture(t, { failCandidate = false } = {}) {
       MOCK_CANDIDATE_HTML: join(state, "candidate.html"),
       MOCK_PRIOR_HTML: join(state, "prior.html"),
       MOCK_CANDIDATE_SHA: candidateSha,
+      MOCK_METADATA_DIR: metadataDir,
       MOCK_FAIL_CANDIDATE: failCandidate ? "1" : "0",
       MOCK_CAP_DROP_BAD: "0",
       MOCK_PROC_ISOLATION_BAD: "0",

@@ -9,7 +9,9 @@ COPY src ./src
 # Publish the same exact RC/build identity that populates the runtime OCI version label.
 # Static Astro content is immutable; stable promotion reuses the accepted RC digest.
 ARG APP_VERSION=0.1.0-dev
-ENV PUBLIC_KAORI_WEBSITE_VERSION=${APP_VERSION}
+ARG APP_BUILD_SHA
+ENV PUBLIC_KAORI_WEBSITE_VERSION=${APP_VERSION} \
+    PUBLIC_KAORI_WEBSITE_BUILD_SHA=${APP_BUILD_SHA}
 RUN npm run check && npm run build && test -s dist/index.html
 
 # Pinned patched stable NGINX 1.30.7 on Alpine 3.24; Trivy remains authoritative.
