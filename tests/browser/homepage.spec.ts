@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const screenshots = [
   ["#how-it-works", "journey"],
@@ -281,6 +281,79 @@ test("keep UAT supporting copy on one desktop line without overflow", async ({ p
     if ((page.viewportSize()?.width ?? 0) >= 1024) {
       expect(geometry.visualLines).toBe(1);
     }
+  }
+});
+
+const receiptSource = "a".repeat(40);
+const receiptDigest = "sha256:" + "b".repeat(64);
+
+async function mockWebsiteReleaseReceipts(
+  page: Page,
+  options: { stable?: boolean; mismatch?: boolean } = {},
+) {
+  const requests = { count: 0 };
+  const stable = {
+    schema: 1,
+    status: "stable",
+    stable_tag: "v0.1.4",
+    build_tag: "v0.1.4-rc.1",
+    source_sha: receiptSource,
+    image_digest: receiptDigest,
+    main_sha: "c".repeat(40),
+  };
+  const active = {
+    schema: 1,
+    status: "active",
+    build_tag: "v0.1.4-rc.1",
+    source_sha: receiptSource,
+    image_digest: options.mismatch ? "sha256:" + "d".repeat(64) : receiptDigest,
+  };
+  await page.route("**/.well-known/kaori-website/*.json", async (route) => {
+    requests.count += 1;
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname.endsWith("/release.json") && !options.stable) {
+      await route.fulfill({ status: 404, body: "" });
+    } else {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        json: pathname.endsWith("/active.json") ? active : stable,
+      });
+    }
+  });
+  // The normal preview is a development build. Exercise the immutable RC
+  // label + real browser fetch path with a controlled, synthetic HTML fixture.
+  await page.route("**/", async (route) => {
+    const response = await route.fetch();
+    const html = (await response.text())
+      .replace(/data-build-version="[^"]*"/, 'data-build-version="v0.1.4-rc.1"')
+      .replace(/data-build-sha="[^"]*"/, `data-build-sha="${receiptSource}"`)
+      .replace("Website build development", "Website build v0.1.4-rc.1");
+    await route.fulfill({ response, body: html });
+  });
+  return requests;
+}
+
+test("show accepted stable and immutable RC build separately after signed receipt", async ({
+  page,
+}) => {
+  const requests = await mockWebsiteReleaseReceipts(page, { stable: true });
+  await page.goto("/");
+  await expect(page.locator(".footer-release-version")).toHaveText("Website stable v0.1.4");
+  await expect(page.locator(".footer-build-version")).toHaveText("Website build v0.1.4-rc.1");
+  expect(requests.count).toBe(2);
+});
+
+test("keep release unverified on signed RC before stable or mismatched active digest", async ({
+  page,
+}) => {
+  for (const options of [{ stable: false }, { stable: true, mismatch: true }]) {
+    await page.unrouteAll();
+    const requests = await mockWebsiteReleaseReceipts(page, options);
+    await page.goto("/");
+    await expect.poll(() => requests.count).toBe(2);
+    await expect(page.locator(".footer-release-version")).toHaveText("Stable release not verified");
+    await expect(page.locator(".footer-build-version")).toHaveText("Website build v0.1.4-rc.1");
   }
 });
 
