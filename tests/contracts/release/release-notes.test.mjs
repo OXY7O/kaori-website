@@ -11,6 +11,43 @@ const nextStableNotes = readFileSync("docs/releases/v0.1.3.md", "utf8");
 const workflow = readFileSync(".github/workflows/release-production.yml", "utf8");
 const publisher = readFileSync("scripts/release/promote-stable.sh", "utf8");
 
+test("published stable notes hide authority in GitHub Preview but preserve exact binding", () => {
+  for (const [source, version, promotionPr] of [
+    [publishedNotes, "v0.1.2", "219"],
+    [nextStableNotes, "v0.1.3", "273"],
+  ]) {
+    assert.match(source, /^<!--\r?\n/);
+    assert.match(source, /\n-->\r?\n\r?\n# KAORI Website /);
+    const notes = parseReleaseNotes(source, version);
+    assert.equal(notes.promotionPr, promotionPr);
+    assert.match(notes.body, /^# KAORI Website /);
+    assert.doesNotMatch(notes.body, /(?:^|\n)(?:stable_tag|promotion_pr):/);
+  }
+});
+
+test("legacy YAML authority remains readable; malformed and mixed delimiters fail closed", () => {
+  const historical = publishedNotes
+    .replace(/^<!--/, "---")
+    .replace(/\n-->\r?\n/, "\n---\n");
+  assert.equal(parseReleaseNotes(historical, "v0.1.2").promotionPr, "219");
+  assert.equal(
+    parseReleaseNotes(historical, "v0.1.2").body,
+    parseReleaseNotes(publishedNotes, "v0.1.2").body,
+  );
+  assert.throws(
+    () => parseReleaseNotes(publishedNotes.replace(/^<!--/, "---"), "v0.1.2"),
+    /require stable_tag and promotion_pr/,
+  );
+  assert.throws(
+    () => parseReleaseNotes(publishedNotes.replace(/\n-->\r?\n/, "\n---\n"), "v0.1.2"),
+    /require stable_tag and promotion_pr/,
+  );
+  assert.throws(
+    () => parseReleaseNotes(publishedNotes.replace("promotion_pr: 219", "promotion_pr: 0"), "v0.1.2"),
+    /require stable_tag and promotion_pr/,
+  );
+});
+
 test("v0.1.3 authored notes bind the planned independently reviewed promotion PR", () => {
   const notes = parseReleaseNotes(nextStableNotes, "v0.1.3");
   assert.equal(notes.stableTag, "v0.1.3");

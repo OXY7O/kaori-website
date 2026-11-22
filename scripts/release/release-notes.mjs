@@ -8,16 +8,22 @@ const headings = ["Highlights", "Improvements", "Fixes", "Known Limitations"];
 
 /**
  * Parse only a reviewed version-specific Markdown file in the tracked repository.
- * Its small frontmatter declares the promotion PR, but does not appear in public
- * release notes. No generated or arbitrary PR titles are published automatically.
+ * Strict stable_tag/promotion_pr authority is kept in a leading HTML comment
+ * so GitHub Preview starts with the release title, not a metadata table.
+ * Historical YAML frontmatter stays valid for source reproducibility.
+ * Neither form appears in the published release body.
  */
 export function parseReleaseNotes(source, requestedTag) {
   if (!tagPattern.test(requestedTag)) {
     throw new Error("stable version must be vX.Y.Z");
   }
-  const match = source.match(
+  const authorityPatterns = [
+    /^<!--\r?\nstable_tag: (v[0-9]+\.[0-9]+\.[0-9]+)\r?\npromotion_pr: ([1-9][0-9]*)\r?\n-->\r?\n\r?\n([\s\S]+)$/,
     /^---\r?\nstable_tag: (v[0-9]+\.[0-9]+\.[0-9]+)\r?\npromotion_pr: ([1-9][0-9]*)\r?\n---\r?\n\r?\n([\s\S]+)$/,
-  );
+  ];
+  const match = authorityPatterns
+    .map((pattern) => source.match(pattern))
+    .find(Boolean);
   if (!match) {
     throw new Error("reviewed notes require stable_tag and promotion_pr metadata");
   }
