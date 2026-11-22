@@ -59,6 +59,8 @@ test("stable publisher validates reviewed notes before target mutation and appen
   assert.ok(published > runtimeMutation);
   assert.match(publisher, /reviewed release notes select a different promotion PR/);
   assert.match(publisher, /## Technical Evidence/);
+  assert.match(publisher, /technical="\\$\\(jq -rn --arg stable/);
+  assert.doesNotMatch(publisher, /technical="\\$\\(jq -n --arg stable/);
   assert.match(publisher, /Human UAT evidence:/);
   assert.match(publisher, /Immutable digest:/);
   assert.doesNotMatch(publisher, /docker build|docker push/);
