@@ -98,7 +98,7 @@ test("stable publisher writes only after trusted GitHub publication and target v
     "verify signed stable Git tag before building public status",
   );
   assert.ok(
-    publisher.indexOf('fail \'published stable metadata differs') <
+    publisher.indexOf("fail 'published stable metadata differs") <
       publisher.indexOf('manifest="$(jq -cn'),
     "verify provider stable release before preparing public status",
   );
