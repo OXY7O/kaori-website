@@ -21,9 +21,7 @@ export function parseReleaseNotes(source, requestedTag) {
     /^<!--\r?\nstable_tag: (v[0-9]+\.[0-9]+\.[0-9]+)\r?\npromotion_pr: ([1-9][0-9]*)\r?\n-->\r?\n\r?\n([\s\S]+)$/,
     /^---\r?\nstable_tag: (v[0-9]+\.[0-9]+\.[0-9]+)\r?\npromotion_pr: ([1-9][0-9]*)\r?\n---\r?\n\r?\n([\s\S]+)$/,
   ];
-  const match = authorityPatterns
-    .map((pattern) => source.match(pattern))
-    .find(Boolean);
+  const match = authorityPatterns.map((pattern) => source.match(pattern)).find(Boolean);
   if (!match) {
     throw new Error("reviewed notes require stable_tag and promotion_pr metadata");
   }
