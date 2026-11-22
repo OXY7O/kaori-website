@@ -43,7 +43,10 @@ export function parseReleaseNotes(source, requestedTag) {
       throw new Error(`release notes missing or misordered ${title}`);
     }
     const nextHeading = markdown.indexOf("\n## ", index + heading.length);
-    const section = markdown.slice(index + heading.length, nextHeading < 0 ? undefined : nextHeading);
+    const section = markdown.slice(
+      index + heading.length,
+      nextHeading < 0 ? undefined : nextHeading,
+    );
     if (!section.trim() || /^[-*]\s*$/m.test(section.trim())) {
       throw new Error(`release notes ${title} is empty`);
     }
@@ -70,7 +73,9 @@ function main() {
   } else if (mode === "body") {
     process.stdout.write(`${notes.body}\n`);
   } else {
-    process.stdout.write(`PASS: human-reviewed release notes ${stableTag}, PR #${notes.promotionPr}\n`);
+    process.stdout.write(
+      `PASS: human-reviewed release notes ${stableTag}, PR #${notes.promotionPr}\n`,
+    );
   }
 }
 
