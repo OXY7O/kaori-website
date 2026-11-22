@@ -59,27 +59,54 @@ jobs:
           tag="$REQUEST_TAG"
           [[ "$tag" =~ ^v[0-9]+[.][0-9]+[.][0-9]+-rc[.][1-9][0-9]*$ ]] ||
             fail 'invalid requested RC tag'
-          printf 'tag=%s\nshould_publish=false\n' "$existing" >> "$GITHUB_OUTPUT"
-                printf 'PASS: RC %s already published; no duplicate\n' "$existing"
-                exit 0
-              fi
-              fail "RC tag $existing reserved without completed release (HTTP $status); operator recovery required"
-            fi
-            stable="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)"
-            [[ -n "$stable" ]] || fail 'stable Website base tag absent; manual bootstrap required'
-            IFS=. read -r major minor patch <<<"${stable#v}"
-            version="${major}.${minor}.$((patch + 1))"
-            highest=0
-            while IFS= read -r used; do
-              [[ -n "$used" ]] || continue
-              count="${used##*.}"
-              [[ "$count" =~ ^[1-9][0-9]*$ ]] || continue
-              if (( 10#$count > highest )); then highest=$((10#$count)); fi
-            done < <(git tag --list "v${version}-rc.*")
-            tag="v${version}-rc.$((highest + 1))"
-          else
-            fail 'unsupported release request event'
+          # Only publish the next patch RC derived from the latest stable release.
+          # The image is built once; a signed RC on this exact source is reused.
+          stable="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname |
+            grep -E '^v[0-9]+[.][0-9]+[.][0-9]+$' | head -n1 || true)"
+          [[ -n "$stable" ]] || fail 'stable Website base tag absent; manual bootstrap required'
+          IFS=. read -r major minor patch <<<"${stable#v}"
+          version="${major}.${minor}.$((patch + 1))"
+          [[ "${tag%-rc.*}" == "v$version" ]] ||
+            fail "requested RC must target the next stable v$version"
+
+          existing="$(git tag --points-at "$current" |
+            grep -E '^v[0-9]+[.][0-9]+[.][0-9]+-rc[.][1-9][0-9]*$' || true)"
+          if [[ -n "$existing" ]]; then
+            [[ "$(printf '%s\n' "$existing" | wc -l)" -eq 1 ]] ||
+              fail 'ambiguous signed RC tags for exact staging source'
+            [[ "$existing" == "$tag" ]] ||
+              fail "staging source already has signed candidate $existing; request the same tag"
+            release="$(curl -fsS "${headers[@]}" "$api/releases/tags/$existing")" ||
+              fail 'existing source RC has no published GitHub prerelease'
+            [[ "$(jq -r '.prerelease' <<<"$release")" == true ]] ||
+              fail 'existing source release is not a prerelease'
+            [[ "$(jq -r '.target_commitish' <<<"$release")" == "$current" ]] ||
+              fail 'existing RC release target differs from current staging source'
+            body="$(jq -r '.body // ""' <<<"$release")"
+            grep -Eq '^Immutable digest: sha256:[a-f0-9]{64}$' <<<"$body" ||
+              fail 'existing RC has no immutable digest evidence'
+            grep -Eq '^Deployment authority: [^[:space:]]+@sha256:[a-f0-9]{64}$' <<<"$body" ||
+              fail 'existing RC has no digest-qualified deployment authority'
+            [[ "$body" == *'Trivy security and signed SBOM/provenance: PASS'* ]] ||
+              fail 'existing RC has no signed evidence'
+            printf 'tag=%s\nshould_publish=false\n' "$existing" >> "$GITHUB_OUTPUT"
+            printf 'PASS: signed RC %s already published; no duplicate\n' "$existing"
+            exit 0
           fi
+
+          highest=0
+          while IFS= read -r used; do
+            [[ -n "$used" ]] || continue
+            count="${used##*.}"
+            [[ "$count" =~ ^[1-9][0-9]*$ ]] || continue
+            if (( 10#$count > highest )); then highest=$((10#$count)); fi
+          done < <(git tag --list "v${version}-rc.*")
+          expected="v${version}-rc.$((highest + 1))"
+          [[ "$tag" == "$expected" ]] ||
+            fail "requested RC must be next unused tag $expected"
+          status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/git/ref/tags/$tag")" ||
+            fail 'GitHub tag uniqueness lookup failed'
+          [[ "$status" == 404 ]] || fail "RC tag $tag reserved or GitHub API unavailable (HTTP $status)"
           printf 'tag=%s\nshould_publish=true\n' "$tag" >> "$GITHUB_OUTPUT"
           printf 'PASS: %s bound to admitted staging SHA %s\n' "$tag" "$current"
       - name: Verify admitted source and registry configuration
