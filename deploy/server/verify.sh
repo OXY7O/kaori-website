@@ -49,7 +49,28 @@ for attempt in $(seq 1 30); do
 done
 [[ "$status" == healthy ]] || { echo "BLOCK: website health $status" >&2; exit 1; }
 uid="$(docker exec "$container" id -u)"
-[[ "$uid" != 0 ]] || { echo 'BLOCK: website process runs as root' >&2; exit 1; }
+gid="$(docker exec "$container" id -g)"
+[[ "$uid" == 101 && "$gid" == 101 ]] ||
+    { echo 'BLOCK: website runtime UID/GID must be 101:101' >&2; exit 1; }
+[[ "$(docker inspect --format '{{.Config.User}}' "$container")" == "101:101" ]] ||
+    { echo 'BLOCK: Website configured runtime user is not 101:101' >&2; exit 1; }
+[[ "$(docker inspect --format '{{.HostConfig.ReadonlyRootfs}}' "$container")" == true ]] ||
+    { echo 'BLOCK: Website root filesystem must be read-only' >&2; exit 1; }
+[[ "$(docker inspect --format '{{.HostConfig.Privileged}}' "$container")" == false ]] ||
+    { echo 'BLOCK: privileged Website container forbidden' >&2; exit 1; }
+cap_drop="$(docker inspect --format '{{json .HostConfig.CapDrop}}' "$container")"
+[[ "$cap_drop" == '["ALL"]' || "$cap_drop" == '["all"]' ]] ||
+    { echo 'BLOCK: Website container must drop all Linux capabilities' >&2; exit 1; }
+security_opts="$(docker inspect --format '{{json .HostConfig.SecurityOpt}}' "$container")"
+[[ "$security_opts" == *no-new-privileges:true* ]] ||
+    { echo 'BLOCK: no-new-privileges container policy missing' >&2; exit 1; }
+mounts="$(docker inspect --format '{{json .Mounts}}' "$container")"
+[[ "$mounts" != *docker.sock* ]] ||
+    { echo 'BLOCK: Website runtime must not mount the Docker socket' >&2; exit 1; }
+docker exec "$container" sh -ec '
+    grep -Eq "^CapEff:[[:space:]]+0+$" /proc/self/status
+    grep -Eq "^NoNewPrivs:[[:space:]]+1$" /proc/self/status
+' || { echo 'BLOCK: effective Website process privileges differ from policy' >&2; exit 1; }
 docker exec "$container" wget -q -O - http://127.0.0.1:8080/healthz | grep -Fxq healthy
 # Consume the complete static HTML response before matching. With pipefail, using
 # wget | grep -q can report SIGPIPE even when a valid marker was already found.
