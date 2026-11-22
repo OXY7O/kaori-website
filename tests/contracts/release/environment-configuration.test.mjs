@@ -198,35 +198,33 @@ function manualRcRequest(t, overrides = {}) {
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const bin = join(dir, "bin");
   mkdirSync(bin);
-  const git = [
-    "#!/usr/bin/env bash",
-    "set -Eeuo pipefail",
-    'if [[ "$1" == rev-parse && "$2" == HEAD ]]; then',
-    '  printf "%s\\n" "$MOCK_STAGING_SHA"',
-    'elif [[ "$1" == tag && "$2" == --points-at ]]; then',
-    '  printf "%s" "$MOCK_SOURCE_TAGS"',
-    'elif [[ "$1" == tag && "$2" == --list ]]; then',
-    "  if [[ \"$3\" == 'v[0-9]*.[0-9]*.[0-9]*' ]]; then",
-    '    printf "v0.1.3\\n"',
-    "  else",
-    '    printf "%s" "$MOCK_NEXT_TAGS"',
-    "  fi",
-    "else",
-    "  exit 74",
-    "fi",
-  ].join("\n") + "\n";
-  const curl = [
-    "#!/usr/bin/env bash",
-    "set -Eeuo pipefail",
-    'for arg in "$@"; do url="$arg"; done',
-    'case "$url" in',
-    '  */git/ref/heads/kaori/staging)',
-    '    printf \'{"object":{"sha":"%s"}}\\n\' "$MOCK_STAGING_SHA" ;;',
-    '  */git/ref/tags/*) printf "%s" "$MOCK_TAG_STATUS" ;;',
-    '  */releases/tags/*) printf "%s\\n" "$MOCK_RELEASE_JSON" ;;',
-    "  *) exit 73 ;;",
-    "esac",
-  ].join("\n") + "\n";
+  const git = String.raw`#!/usr/bin/env bash
+set -Eeuo pipefail
+if [[ "$1" == rev-parse && "$2" == HEAD ]]; then
+  printf '%s\\n' "$MOCK_STAGING_SHA"
+elif [[ "$1" == tag && "$2" == --points-at ]]; then
+  printf '%s' "$MOCK_SOURCE_TAGS"
+elif [[ "$1" == tag && "$2" == --list ]]; then
+  if [[ "$3" == 'v[0-9]*.[0-9]*.[0-9]*' ]]; then
+    printf 'v0.1.3\\n'
+  else
+    printf '%s' "$MOCK_NEXT_TAGS"
+  fi
+else
+  exit 74
+fi
+`;
+  const curl = String.raw`#!/usr/bin/env bash
+set -Eeuo pipefail
+for arg in "$@"; do url="$arg"; done
+case "$url" in
+  */git/ref/heads/kaori/staging)
+    printf '{"object":{"sha":"%s"}}\\n' "$MOCK_STAGING_SHA" ;;
+  */git/ref/tags/*) printf '%s' "$MOCK_TAG_STATUS" ;;
+  */releases/tags/*) printf '%s\\n' "$MOCK_RELEASE_JSON" ;;
+  *) exit 73 ;;
+esac
+`;
   writeFileSync(join(bin, "git"), git, { mode: 0o755 });
   writeFileSync(join(bin, "curl"), curl, { mode: 0o755 });
   const output = join(dir, "outputs");
