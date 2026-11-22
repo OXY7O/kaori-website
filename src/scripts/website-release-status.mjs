@@ -19,7 +19,11 @@ export function verifiedWebsiteStable(metadata, active, currentBuild, currentSou
     metadata.stable_tag !== built[1] ||
     metadata.build_tag !== currentBuild ||
     metadata.source_sha !== currentSource ||
+    active.source_sha !== currentSource ||
+    active.build_tag !== currentBuild ||
     !digest.test(metadata.image_digest) ||
+    !digest.test(active.image_digest) ||
+    active.image_digest !== metadata.image_digest ||
     !sha.test(metadata.main_sha)
   ) {
     return null;
