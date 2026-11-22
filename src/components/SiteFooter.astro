@@ -4,6 +4,7 @@ const year = new Date().getFullYear();
 const suppliedVersion = import.meta.env.PUBLIC_KAORI_WEBSITE_VERSION;
 const websiteBuildVersion = suppliedVersion ? `v${suppliedVersion}` : "development";
 const websiteBuildLabel = `Website build ${websiteBuildVersion}`;
+const websiteBuildSource = import.meta.env.PUBLIC_KAORI_WEBSITE_BUILD_SHA ?? "";
 ---
 
 <footer class="site-footer" id="contact">
@@ -60,6 +61,40 @@ const websiteBuildLabel = `Website build ${websiteBuildVersion}`;
   <div class="container footer-bottom">
     <span>© {year} KAORI. All rights reserved.</span>
     <span>Public introduction · Access to the operational application requires authorization</span>
-    <span class="footer-build-version">{websiteBuildLabel}</span>
+    <div class="footer-release-details">
+      <span
+        class="footer-release-version"
+        data-website-release
+        data-build-version={websiteBuildVersion}
+        data-build-sha={websiteBuildSource}
+        aria-live="polite">Stable release not verified</span
+      >
+      <span class="footer-build-version">{websiteBuildLabel}</span>
+    </div>
   </div>
 </footer>
+
+<script>
+  import { verifiedWebsiteStable } from "../scripts/website-release-status.mjs";
+
+  const label = document.querySelector<HTMLElement>("[data-website-release]");
+  if (label) {
+    const build = label.dataset.buildVersion ?? "";
+    const source = label.dataset.buildSha ?? "";
+    if (/^v\d+\.\d+\.\d+-rc\.[1-9]\d*$/.test(build) && /^[a-f0-9]{40}$/.test(source)) {
+      fetch("/.well-known/kaori-website/release.json", {
+        cache: "no-store",
+        credentials: "same-origin",
+        redirect: "error",
+      })
+        .then(async (response) => (response.ok ? response.json() : null))
+        .then((metadata: unknown) => {
+          const stable = verifiedWebsiteStable(metadata, build, source);
+          if (stable) label.textContent = `Website stable ${stable}`;
+        })
+        .catch(() => {
+          // A missing/stale/invalid host receipt never authorizes a stable label.
+        });
+    }
+  }
+</script>
