@@ -21,7 +21,8 @@ test("human-reviewed historical stable notes bind exact tag and promotion PR", (
 test("release notes reject wrong version, tampered authority and placeholder text", () => {
   assert.throws(() => parseReleaseNotes(publishedNotes, "v0.1.3"), /does not match/);
   assert.throws(
-    () => parseReleaseNotes(publishedNotes.replace("promotion_pr: 219", "promotion_pr: no"), "v0.1.2"),
+    () =>
+      parseReleaseNotes(publishedNotes.replace("promotion_pr: 219", "promotion_pr: no"), "v0.1.2"),
     /promotion_pr/,
   );
   assert.throws(
