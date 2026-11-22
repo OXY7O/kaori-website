@@ -70,7 +70,6 @@ test("stable publisher validates reviewed notes before target mutation and appen
   assert.doesNotMatch(publisher, /docker build|docker push/);
 });
 
-
 test("read-only draft previews staging with GitHub's default config fallback", () => {
   const dir = mkdtempSync(join(tmpdir(), "kaori-release-draft-"));
   const log = join(dir, "gh-calls");
@@ -98,11 +97,10 @@ test("read-only draft previews staging with GitHub's default config fallback", (
       PATH: dir + ":" + process.env.PATH,
       KAORI_TEST_DRAFT_CALLS: log,
     };
-    const good = spawnSync(
-      "bash",
-      ["scripts/release/prepare-notes.sh", "v0.1.3"],
-      { encoding: "utf8", env },
-    );
+    const good = spawnSync("bash", ["scripts/release/prepare-notes.sh", "v0.1.3"], {
+      encoding: "utf8",
+      env,
+    });
     assert.equal(good.status, 0, good.stderr);
     assert.match(good.stdout, /EDITORIAL DRAFT ONLY/);
     assert.match(good.stdout, /Last stable baseline: v0\.1\.2/);
@@ -118,11 +116,10 @@ test("read-only draft previews staging with GitHub's default config fallback", (
     assert.match(calls[1], /target_commitish=kaori\/staging/);
     assert.doesNotMatch(calls.join("\n"), /configuration_file_path=/);
 
-    const invalid = spawnSync(
-      "bash",
-      ["scripts/release/prepare-notes.sh", "v0.1.3-rc.2"],
-      { encoding: "utf8", env },
-    );
+    const invalid = spawnSync("bash", ["scripts/release/prepare-notes.sh", "v0.1.3-rc.2"], {
+      encoding: "utf8",
+      env,
+    });
     assert.notEqual(invalid.status, 0);
     assert.match(invalid.stderr, /BLOCK: usage/);
     assert.equal(readFileSync(log, "utf8").trimEnd().split("\n").length, 2);
