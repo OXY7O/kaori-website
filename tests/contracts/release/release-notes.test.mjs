@@ -7,19 +7,55 @@ import test from "node:test";
 import { parseReleaseNotes } from "../../../scripts/release/release-notes.mjs";
 
 const publishedNotes = readFileSync("docs/releases/v0.1.2.md", "utf8");
-const nextStableNotes = readFileSync("docs/releases/v0.1.3.md", "utf8");
+const reviewedV013Notes = readFileSync("docs/releases/v0.1.3.md", "utf8");
 const workflow = readFileSync(".github/workflows/release-production.yml", "utf8");
 const publisher = readFileSync("scripts/release/promote-stable.sh", "utf8");
 
-test("v0.1.3 authored notes bind the planned independently reviewed promotion PR", () => {
-  const notes = parseReleaseNotes(nextStableNotes, "v0.1.3");
+test("published stable notes hide authority in GitHub Preview but preserve exact binding", () => {
+  for (const [source, version, promotionPr] of [
+    [publishedNotes, "v0.1.2", "219"],
+    [reviewedV013Notes, "v0.1.3", "273"],
+  ]) {
+    assert.match(source, /^<!--\r?\n/);
+    assert.match(source, /\n-->\r?\n\r?\n# KAORI Website /);
+    const notes = parseReleaseNotes(source, version);
+    assert.equal(notes.promotionPr, promotionPr);
+    assert.match(notes.body, /^# KAORI Website /);
+    assert.doesNotMatch(notes.body, /(?:^|\n)(?:stable_tag|promotion_pr):/);
+  }
+});
+
+test("legacy YAML authority remains readable; malformed and mixed delimiters fail closed", () => {
+  const historical = publishedNotes.replace(/^<!--/, "---").replace(/\n-->\r?\n/, "\n---\n");
+  assert.equal(parseReleaseNotes(historical, "v0.1.2").promotionPr, "219");
+  assert.equal(
+    parseReleaseNotes(historical, "v0.1.2").body,
+    parseReleaseNotes(publishedNotes, "v0.1.2").body,
+  );
+  assert.throws(
+    () => parseReleaseNotes(publishedNotes.replace(/^<!--/, "---"), "v0.1.2"),
+    /require stable_tag and promotion_pr/,
+  );
+  assert.throws(
+    () => parseReleaseNotes(publishedNotes.replace(/\n-->\r?\n/, "\n---\n"), "v0.1.2"),
+    /require stable_tag and promotion_pr/,
+  );
+  assert.throws(
+    () =>
+      parseReleaseNotes(publishedNotes.replace("promotion_pr: 219", "promotion_pr: 0"), "v0.1.2"),
+    /require stable_tag and promotion_pr/,
+  );
+});
+
+test("historical v0.1.3 notes retain their approved promotion PR identity", () => {
+  const notes = parseReleaseNotes(reviewedV013Notes, "v0.1.3");
   assert.equal(notes.stableTag, "v0.1.3");
   assert.equal(notes.promotionPr, "273");
   assert.match(notes.body, /^# KAORI Website v0\.1\.3/m);
   assert.match(notes.body, /## Highlights\n[\s\S]+## Improvements/);
   assert.match(notes.body, /## Fixes\n[\s\S]+## Known Limitations/);
   assert.doesNotMatch(notes.body, /## Technical Evidence|promotion_pr:/);
-  assert.throws(() => parseReleaseNotes(nextStableNotes, "v0.1.2"), /does not match/);
+  assert.throws(() => parseReleaseNotes(reviewedV013Notes, "v0.1.2"), /does not match/);
 });
 
 test("human-reviewed historical stable notes bind exact tag and promotion PR", () => {
