@@ -765,18 +765,34 @@ docker exec "$container" apk info -vv | grep -E '^(musl|musl-utils|zlib)-[0-9]'
 
 Do **not** use `docker compose down -v`, restart unrelated shared-edge services, discard rollback receipts, dispatch a new release, or infer `main`/stable acceptance from this documentation checkpoint. The earlier failed RC.6 private UAT run remains historical FAILURE.
 
-## GitHub Environment credential and SSH preflight (read-only) — #239
+## Retired read-only Environment credential preflight — #239 / #247 / #260
 
-The existing `.github/workflows/environment-credential-preflight.yml` reuses **the already configured** `staging`/`production` GitHub Environment variables and five encrypted secrets. It never provisions a VM, changes a server file, restarts Docker, deploys an image, publishes a tag or updates DNS. Runtime application configuration remains authoritative on the VM; there is **no GitHub `HOST_DEPLOY_ENV_FILE` setting or topology/slot-count mode**.
+The one-time `Environment Credential Preflight` GitHub Actions workflow was
+retired under Website #260 **after** the completed Environment-scoped
+credential migration and two independent read-only checks:
 
-The first approved protected-staging merge of this workflow runs a **staging-only** preflight once (file-change-scoped push). Later runs are explicit CLI dispatches:
+- [Staging preflight #44953987203](https://github.com/OXY7O/kaori-website/actions/runs/44953987203): SUCCESS.
+- [Production preflight #44953991481](https://github.com/OXY7O/kaori-website/actions/runs/44953991481): SUCCESS, after native protected reviewer approval.
 
-```bash
-gh workflow run environment-credential-preflight.yml -R OXY7O/kaori-website --ref kaori/staging -f target_environment=staging
-# Only after reviewed main promotion and native production Environment reviewer approval:
-gh workflow run environment-credential-preflight.yml -R OXY7O/kaori-website --ref main -f target_environment=production
-```
+Both checked the approved Environment-scoped registry configuration, pinned
+SSH host identity, prepared VM, existing release receipt and Docker access
+**without publishing, deploying, changing DNS, or mutating host state**.
+Historical workflow runs are preserved as audit evidence; the YAML is no longer
+part of normal GitHub Actions or release readiness gates. Do **not** dispatch
+`environment-credential-preflight.yml`: it has been removed from active source.
 
-The job fails closed on a wrong branch, absent credentials, mismatched registry/image prefix, unsafe deploy root, missing **pinned known_hosts**, rejected SSH key/passphrase, unreachable or untrusted VM, missing existing release receipt, or unavailable target Docker daemon. Registry login is stored only in a disposable hosted-runner config. Remote checks run as the configured SSH user and perform **existence/read-only inspections only**. Production requires a protected `main` branch and the actual GitHub `production` Environment review; a staging secret cannot be used to assert production readiness. No secret values or host files are printed.
+The read-only diagnostic shell implementation
+`scripts/environment-credential-preflight.sh` is intentionally retained as
+an archived operator utility, **not** a workflow trigger or an automatic release
+prerequisite. Running it requires a separately authorized, appropriately
+protected execution context and configured credentials; normal source checks
+must never execute it or expose secrets.
 
-A PASS proves credential transport and target access **at the time of the run**, not an accepted image digest, independent browser UAT, recovery, public-edge authority, or stable release. A failed check is an operational blocker; do not bypass it by switching to repository-level fallback secrets or running the normal deploy workflow as a test. Retain existing repository credentials until Environment-scoped preflight and required release checks are independently accepted.
+Current release controls are the existing Developer Check, protected
+Full Admission, accepted signed RC/UAT evidence and the explicit
+`release-production.yml` workflow with independent native production
+Environment approval. A past credential preflight PASS is not a perpetual
+validation of secrets, runtime health, rollback, DNS or deployment authority.
+If new host/registry credentials need validation, open a bounded issue and use
+an authorized read-only operator procedure; do not reintroduce a public
+GitHub Actions workflow just to test production connectivity.
