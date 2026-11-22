@@ -42,18 +42,18 @@ do not currently correspond to independently running services.
   and `previous-release.env` identify current and prior immutable
   Website images. An RC is never treated as automatically approved for
   production just because it is publicly accessible.
-- **Safety:** `KAORI_WEBSITE_AUTO_STAGING_ENABLED` and
-  `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` are independent Environment-scoped
-  opt-in switches; neither overrides rights, branch protection,
-  Environment review, SHA/digest evidence, health, or Human UAT.
-  GitHub Environment configuration Variables are referenced through `vars`
-  in the step-level `env` map after the protected Environment has been selected.
-  `scripts/release/resolve-environment.sh` maps these runner inputs into
-  existing adapter names; it never relies on implicit shell exports or pre-job
-  evaluation. Repository-level fallback must be removed only after scoped
-  values are independently verified. The Developer Check has no release
-  credentials. A main push can request protected production reviewer approval
-  before reading the switch; if false, stable publication remains inactive.
+- **Safety:** Staging's `KAORI_WEBSITE_AUTO_STAGING_ENABLED` is an
+  Environment-scoped, default-off RC publication switch. Production has **no
+  automatic main-push release path**; the former
+  `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` is retired from executable release
+  authority. A valid explicit `Production Release` dispatch from protected
+  `main` must include the requested stable SemVer and reviewed promotion PR,
+  pass exact main admission checks and reach independent native `production`
+  Environment approval before any privileged release step. It still must pass
+  rights, SHA/digest, signed Human UAT, receipt, rollback and health checks.
+  GitHub Environment Variables are mapped through step-local `vars` `env`
+  bindings after the protected Environment boundary, not implicit shell
+  exports. Developer Check has no release credentials.
 
 ### Moving to separate VMs later
 
@@ -196,28 +196,31 @@ Production image/Compose use an unprivileged server, health endpoint at `/health
 ## Repository Actions configuration
 
 The manual candidate publisher and deployment fallback retain issue-scoped
-authorization. Admitted automated release jobs bind to protected GitHub
-Environments `staging` and `production`. Configuration Variables are read
-through step-level `vars.*` mappings **after** the Environment boundary;
-runtime credentials are Environment-scoped Secrets, not repository Secrets.
-The two activation controls `KAORI_WEBSITE_AUTO_STAGING_ENABLED` (staging)
-and `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` (production) are explicitly
-Environment-scoped and default to `false`. Enabling one does not grant
-publication rights, bypass Human UAT or replace independent production review.
+authorization. Staging RC admission and explicitly dispatched production release
+jobs bind to protected GitHub Environments `staging` and `production`.
+Configuration Variables are read through step-level `vars.*` mappings
+**after** the Environment boundary; runtime credentials are Environment-scoped
+Secrets, not repository Secrets. The only active automated release activation
+switch is `KAORI_WEBSITE_AUTO_STAGING_ENABLED` (staging), default `false`.
+The historical `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` value is **unused**;
+neither editing it nor approving a source PR initiates production release.
+Production release requires explicit manual dispatch, independent protected
+review, and accepted signed evidence.
 
 - Required Variables in **each** Environment: `KAORI_WEBSITE_DOCKER_REGISTRY_HOST`, `KAORI_WEBSITE_DOCKER_REGISTRY_IMAGE`, `KAORI_WEBSITE_HOST`, `KAORI_WEBSITE_HOST_PORT`, `KAORI_WEBSITE_HOST_USER`, and `KAORI_WEBSITE_HOST_DEPLOY_ROOT`.
 - Optional Environment target overrides: `KAORI_WEBSITE_COMPOSE_PROJECT`, `KAORI_WEBSITE_STATE_DIR`, `KAORI_WEBSITE_LOOPBACK_PORT`, and `KAORI_WEBSITE_ATTACH_EXISTING_EDGE`, only for approved target topology.
 - Secrets scoped to the Environment: `KAORI_WEBSITE_DOCKER_REGISTRY_USERNAME`, `KAORI_WEBSITE_DOCKER_REGISTRY_PASSWORD`, `KAORI_WEBSITE_HOST_SSH_PRIVATE_KEY`, `KAORI_WEBSITE_HOST_SSH_PASSPHRASE` when required, and `KAORI_WEBSITE_HOST_KNOWN_HOSTS` pinned out of band.
 - `KAORI_WEBSITE_PUBLIC_DOMAIN` is a retired repository-level value; current release workflows do not consume it. The canonical public domain and edge acceptance remain governed by the reviewed deployment adapter and provider-owned routing.
 
-**Retirement gate — Website #247:** First confirm required Variables exist
-in **both** protected Environments and each activation switch is `false`
-in its intended scope. Confirm native release approvals and read-only
-staging/production credential preflight against the intended target.
-Then delete the nine historical repository Actions Variables through
-authenticated operator GitHub CLI and read back a zero Variable count.
-Do not delete Environment-scoped Variables or Secrets. Re-run read-only
-credential preflight after retirement; preserve no-mutation evidence.
+**Completed repository cleanup — Website #247:** Required Variables and
+Secrets were verified in both protected Environments and their read-only
+credential/SSH preflights succeeded. All nine old **repository-scoped** Actions
+Variables were deleted by the authorized operator with authenticated readback
+of zero repository Variables and zero Secrets. Environment-scoped credentials
+remain intact. The retired production auto-activation variable may still
+exist in Environment settings but is **not** read by the explicit production
+release workflow; it is not a release gate or permission. Preserve the
+no-mutation evidence from the cleanup issue.
 
 Reuse the KAORI Application's **registry host**, if appropriate, but not its image repository identity or runtime secrets. Use an independently scoped registry robot account and website deployment SSH identity. No database/API credentials are needed for static Astro output.
 
@@ -318,58 +321,78 @@ Website runtime**. Staging signed RCs may already be exposed at
 an **acceptance and stable metadata** operation on the same installed RC
 digest, not a second server/Compose project or a forced redeployment.
 
+**Current release authorization correction (Website #257, 2026-11-22):**
+The original #201/#203 workflow queued `production` approval after every
+`push main`, even when no release was requested. This is **superseded**.
+Now an issue-scoped code change can be merged to staging and promoted to
+`main` without requesting any production Environment approval or release.
+A manually requested stable release remains a separate, audited event.
+
 **Operator/admin configuration:** In repository Settings → Environments,
-configure `production` with deployment branch `main` only, designated
-required reviewer(s), prevent self-review, and prevent administrator bypass.
-Verify the actual reviewer gate blocks the job before credentials and stable
-publication. Populate protected **Environment-scoped**, not repository-level,
-`KAORI_WEBSITE_*` registry/SSH Variables and Secrets without exposing
-secret contents. The repository Actions Variable fallback is retired under
-Website #247. The production Environment activation switch must remain
-`false` unless an independently approved, release-specific operational
-change authorizes deployment or stable publication. An approval to enter
-the Environment is not itself a release activation.
+restrict `production` to `main`, designate independent required reviewer(s),
+prevent self-review, and disallow administrator bypass. Keep protected
+Environment-scoped registry/SSH Variables and Secrets. Confirm an ordinary
+source-only `main` push has no production Environment job; a manually dispatched
+`release-production.yml` run alone requests the approval. Do not enable the
+retired production auto-activation switch; it is not consumed by the workflow.
 
-**Normal promotion:**
+**Normal source and release flow:**
 
-1. Observe staging signed RC admitted and deployed to the **existing**
-   public Website with immutable digest, receipt, shared edge and
-   Website/App/Docs health PASS. Record real Human Visual UAT separately.
-2. An authorized maintainer records one issue comment with the exact
+1. Review/merge work to `kaori/staging` and pass Full Admission. An
+   authorized staging release produces a signed immutable
+   `vX.Y.Z-rc.N` and deploys the configured staging target for
+   independent browser/live/rollback UAT. No RC is implicitly stable.
+2. After release-bound Human Acceptance, an authorized maintainer records
    `KAORI_WEBSITE_UAT_ACCEPTED:<staging SHA>:<RC tag>:<sha256 digest>`
-   marker, after inspecting the live RC and its rollback evidence.
-3. Open/review the normal `kaori/staging` → `main` promotion PR.
-   Include `Human UAT evidence: <full issue comment URL>` in the PR body.
-   The Human UAT marker must precede the PR merge. The promotion PR must
-   have an independent APPROVED review, not only CI PASS. For a prior
-   already-accepted signed RC whose later staging commits affect **only**
-   release governance, tests or documentation, the accepted RC SHA must be
-   an ancestor of the reviewed promotion head, and Git must prove no changes
-   in **any shipped build inputs** from accepted RC source through `main`.
-   A prior signed UAT must not be copied onto a source with runtime drift.
-4. After protected main merge and 4/4 Full Admission, GitHub Actions
-   reaches the actual `production` Environment approval; the operator
-   clicks **Approve and deploy**. There is no manual workflow dispatch or
-   per-RC approval-variable editing.
-5. Postapproval `promote-stable.sh` verifies the merge lineage, exact
-   signed/attested RC, human acceptance, immutable digest and actual
-   **current** public container/receipt using the existing server
-   `deploy/server/verify.sh` over pinned SSH, then verifies
-   `kaori.cloud`, `app.kaori.cloud` and `docs.kaori.cloud`.
-   **If staging has replaced that digest with a newer RC, BLOCK:** do not
-   publish stable metadata for an image no longer active.
-6. Stable SemVer is derived from the RC, published as an immutable
-   GitHub Release on `main` referencing the exact original digest;
-   no Docker rebuild/retag/host mutation. Review evidence and preserve
-   the last installed signed rollback receipt. The footer still shows
-   the RC build identity by design because the bytes are unchanged.
+   in the appropriate Website issue comment. The accepted RC's source SHA,
+   signed image/digest, manifest, provenance and rollback must be known.
+3. Review the official `kaori/staging → main` promotion PR with independent
+   current-head approval. Include exactly one literal
+   `Human UAT evidence: https://github.com/OXY7O/kaori-website/issues/<issue>#issuecomment-<comment>`
+   line in its body. Subsequent docs-only source promotion is allowed if
+   git ancestry and all shipped Website inputs remain unchanged.
+4. Merge to protected `main` and verify exact-main Full Admission 4/4 and
+   relevant GitHub CodeQL security gates. **Stop here unless the maintainer
+   explicitly requests a production release.** No production reviewer prompt,
+   stable GitHub Release or production deployment happens on a main push.
+5. Once the maintainer actually requests release, dispatch **Production Release**
+   on `main` with the intended stable `vX.Y.Z` and the already-reviewed
+   promotion PR number. Example only, with placeholders:
 
-**Failure and recovery:** A failed production gate or stale public digest
-does not change the running Website or create a stable tag. Reconcile
-staging image/accepted Human UAT and submit a new reviewed promotion
-if necessary; do not force main, rewrite a stable tag or bypass environment
-review. Keep the same `kaori-website-release-deploy` concurrency group as
-the staging deploy, protecting the single Website slot. Shared-edge,
+   ```bash
+   gh workflow run release-production.yml -R OXY7O/kaori-website --ref main \
+     -f stable_tag=vX.Y.Z -f promotion_pr=123
+   ```
+
+   The unprivileged request gate verifies version, permitted initiator, exact
+   current main Full Admission, and the merged promotion's Human UAT reference
+   **before** requesting native `production` Environment approval.
+
+6. After Doni/another authorized independent reviewer approves that
+   **specific release run**, the restricted runner revalidates independent
+   source review, signed RC/Digest/SBOM/provenance, the trusted UAT marker,
+   no runtime input drift, exact current main, host SSH trust, current release
+   receipt, rollback and authorized public edge. If target digest already
+   matches, do **not** redeploy the same image; if the prepared target differs,
+   deploy the exact **same signed immutable OCI digest** via the existing
+   receipt-backed adapter, then verify host and Website/App/Docs HTTPS.
+7. Only after the configured production target is verified/reconciled, create
+   stable GitHub Release/tag `vX.Y.Z` bound to approved `main`, with original
+   RC digest/provenance, source SHA, UAT and production approval evidence.
+   **Stable tag is not `-rc.N`.** No new Docker build or mutable retag occurs.
+   The signed image's original RC **build** label and static footer remain
+   immutable provenance; they must not be confused with the separately
+   governed `vX.Y.Z` stable GitHub Release identity.
+
+**Failure and recovery:** A failed explicit request, missing UAT, approval
+rejection, stale/different unhealthy target, wrong signed digest or missing
+rollback evidence fails closed; no stable tag should be created. A prepared
+healthy target with a different accepted digest may be reconciled only through
+the existing governed adapter and separate target/edge authorization. Reconcile
+signed RC/Human UAT evidence and request a new reviewed release as needed;
+never force main, rewrite a tag or bypass independent Environment review.
+The shared `kaori-website-release-deploy` concurrency group serializes
+production with staging deployment of the same public Website slot. Shared-edge,
 DNS/TLS and App/Docs infrastructure remain outside this workflow.
 
 ## Release deployment dispatch (manual only)

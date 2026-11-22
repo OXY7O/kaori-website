@@ -4,11 +4,14 @@ mode="${1:?expected preflight or deploy}"
 [[ "$mode" == preflight || "$mode" == deploy ]] || { echo 'BLOCK: unsupported operation' >&2; exit 1; }
 fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 production_deploy=false
-if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/main ]]; then
-  [[ "$GITHUB_WORKFLOW_REF" == "$GITHUB_REPOSITORY/.github/workflows/quality.yml@refs/heads/main" ]] ||
-    fail 'production deployment must originate from canonical protected main workflow'
-  [[ "${APPROVAL_REF:-}" =~ ^https://github.com/OXY7O/kaori-website/pull/[1-9][0-9]*$ ]] ||
+if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch && "$GITHUB_REF" == refs/heads/main ]]; then
+  [[ "$GITHUB_WORKFLOW_REF" == "$GITHUB_REPOSITORY/.github/workflows/release-production.yml@refs/heads/main" ]] ||
+    fail 'production deployment must originate from canonical explicit release workflow'
+  [[ "${PRODUCTION_PROMOTION_PR:-}" =~ ^[1-9][0-9]*$ &&
+     "${APPROVAL_REF:-}" == "https://github.com/OXY7O/kaori-website/pull/$PRODUCTION_PROMOTION_PR" ]] ||
     fail 'production deploy requires reviewed promotion PR authority'
+  [[ "${PRODUCTION_STABLE_TAG:-}" =~ ^v[0-9]+[.][0-9]+[.][0-9]+$ ]] ||
+    fail 'production deploy requires explicit stable tag'
   production_deploy=true
 elif [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging &&
       "$(printenv KAORI_WEBSITE_STAGING_AUTO || true)" == 1 ]]; then
@@ -36,6 +39,10 @@ else
   [[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || fail 'staged source SHA mismatch'
 fi
 [[ "$RC_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'invalid prerelease tag'
+if [[ "$production_deploy" == true ]]; then
+  [[ "${RC_TAG%-rc.*}" == "$PRODUCTION_STABLE_TAG" ]] ||
+    fail 'production stable identity does not match accepted signed RC'
+fi
 [[ "$APPROVAL_REF" =~ ^https://github.com/OXY7O/kaori-website/(issues|pull)/[0-9]+ ]] || fail 'explicit GitHub authorization reference is required'
 [[ "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" =~ ^[01]$ ]] || fail 'public edge deployment option must be 0 or 1'
 [[ -n "${REGISTRY_HOST:-}" && "$REGISTRY_IMAGE" == "$REGISTRY_HOST/"* ]] || fail 'website registry variables missing or inconsistent'
