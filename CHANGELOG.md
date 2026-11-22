@@ -1,10 +1,26 @@
 # Changelog
 
-User-facing changes for KAORI Website. Release tags and immutable OCI digests remain the authoritative deployed artifact references.
+User-facing changes to the public KAORI Website, listed by **published stable releases**. RC builds are staging candidates, not stable releases. For the full signed artifact, Human UAT and deployment evidence, follow the linked release notes.
 
-## [0.1.1] — publication gated by issue #94
+## [0.1.2] — 2026-11-21
 
-This release will promote the already signed `v0.1.1-rc.3` image **without rebuilding** only after full public mobile/desktop Human Acceptance, reviewed staging-to-main promotion and exact-main admission.
+A reliability-focused stable release of the public KAORI Website, promoting the previously accepted signed RC.11 build without rebuilding the application.
+
+### Improved
+
+- More reliable stable production publication and verification of the accepted Website image.
+- Traceability from production release to the signed immutable RC digest, UAT evidence and deployed Website receipt.
+- Separate production approval and verification preserved alongside the validated website experience.
+
+### Fixed
+
+- Resolved incompatible GitHub API curl flags that previously prevented the stable preflight from completing.
+
+See [v0.1.2 release notes](docs/releases/v0.1.2.md) and [published stable v0.1.2](https://github.com/OXY7O/kaori-website/releases/tag/v0.1.2). The accepted source is `v0.1.2-rc.11` and the image digest is unchanged.
+
+## [0.1.1] — 2026-10-19
+
+Published stable release of the already accepted signed `v0.1.1-rc.3` image **without rebuilding**, after reviewed main promotion and protected release checks.
 
 ### Improved
 
@@ -20,9 +36,9 @@ This release will promote the already signed `v0.1.1-rc.3` image **without rebui
 - Source: `f3260718ccb37a77738fa53f6ea6838863ab46a6`
 - Signed immutable OCI digest: `sha256:4f0d1dbd583a7791978295388e29602d9c2c88ae12645fd7e22520a2b65e15c0`
 - [Full Admission #67](https://github.com/OXY7O/kaori-website/actions/runs/39253519430) PASS (108/108 browser tests), [Candidate #5](https://github.com/OXY7O/kaori-website/actions/runs/39258412521) PASS, [Public deployment #3](https://github.com/OXY7O/kaori-website/actions/runs/39259512178) PASS
-- Previous signed stable `v0.1.0` remains the fallback while promotion is pending.
+- Previously published `v0.1.0` remains part of the historical release and rollback record.
 
-See [v0.1.1 release notes](docs/releases/v0.1.1.md) and [release authority #94](https://github.com/OXY7O/kaori-website/issues/94). This document does not itself authorize the stable promotion marker.
+See [v0.1.1 release notes](docs/releases/v0.1.1.md) and [release authority #94](https://github.com/OXY7O/kaori-website/issues/94). This historical entry records the already-published stable version; it does not authorize any future release.
 
 ## [0.1.0] — 2026-10-18
 

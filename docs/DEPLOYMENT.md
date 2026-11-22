@@ -47,8 +47,9 @@ do not currently correspond to independently running services.
   automatic main-push release path**; the former
   `KAORI_WEBSITE_AUTO_PRODUCTION_ENABLED` is retired from executable release
   authority. A valid explicit `Production Release` dispatch from protected
-  `main` must include the requested stable SemVer and reviewed promotion PR,
-  pass exact main admission checks and reach independent native `production`
+  `main` needs **only the stable SemVer input**. The independently approved
+  promotion PR is derived from a previously reviewed release notes file. The
+  request must pass exact-main admission checks and native `production`
   Environment approval before any privileged release step. It still must pass
   rights, SHA/digest, signed Human UAT, receipt, rollback and health checks.
   GitHub Environment Variables are mapped through step-local `vars` `env`
@@ -355,18 +356,30 @@ retired production auto-activation switch; it is not consumed by the workflow.
    relevant GitHub CodeQL security gates. **Stop here unless the maintainer
    explicitly requests a production release.** No production reviewer prompt,
    stable GitHub Release or production deployment happens on a main push.
+   Prepare public release notes as **reviewable source**, not inside a
+   privileged release job: generate a read-only categorized PR draft via
+   `bash scripts/release/prepare-notes.sh vX.Y.Z`. Edit the narrative into
+   `docs/releases/vX.Y.Z.md` with required **Highlights**, **Improvements**,
+   **Fixes**, **Known Limitations** and frontmatter
+   `stable_tag: vX.Y.Z` plus `promotion_pr: 123` (the actual approved
+   staging→main source PR). Submit the notes through an issue-linked PR,
+   independently review, pass staging/main admission. Notes added after a
+   signed RC are documentation-only and never replace its trusted UAT.
 5. Once the maintainer actually requests release, dispatch **Production Release**
-   on `main` with the intended stable `vX.Y.Z` and the already-reviewed
-   promotion PR number. Example only, with placeholders:
+   on `main` with **only** the intended stable `vX.Y.Z`. The reviewed
+   notes metadata provides the authorized source promotion PR automatically.
+   Example only, with a placeholder stable version:
 
    ```bash
    gh workflow run release-production.yml -R OXY7O/kaori-website --ref main \
-     -f stable_tag=vX.Y.Z -f promotion_pr=123
+     -f stable_tag=vX.Y.Z
    ```
 
-   The unprivileged request gate verifies version, permitted initiator, exact
-   current main Full Admission, and the merged promotion's Human UAT reference
+   The unprivileged request gate verifies the authored version-specific
+   release notes, derives the promotion PR, checks permitted initiator, exact
+   current main Full Admission, reviewed promotion and Human UAT reference
    **before** requesting native `production` Environment approval.
+   Missing, placeholder, mismatched or unreviewed notes fail closed.
 
 6. After Doni/another authorized independent reviewer approves that
    **specific release run**, the restricted runner revalidates independent
@@ -377,9 +390,14 @@ retired production auto-activation switch; it is not consumed by the workflow.
    deploy the exact **same signed immutable OCI digest** via the existing
    receipt-backed adapter, then verify host and Website/App/Docs HTTPS.
 7. Only after the configured production target is verified/reconciled, create
-   stable GitHub Release/tag `vX.Y.Z` bound to approved `main`, with original
-   RC digest/provenance, source SHA, UAT and production approval evidence.
-   **Stable tag is not `-rc.N`.** No new Docker build or mutable retag occurs.
+   stable GitHub Release/tag `vX.Y.Z` bound to approved `main`, publishing
+   the **reviewed, user-friendly release description first**, followed by a
+   separately generated **Technical Evidence** section: signed original RC
+   digest/provenance, source SHA, UAT, promotion PR and native production
+   approval run. `CHANGELOG.md` lists published stable versions only;
+   synchronize it through a reviewed documentation PR if the release was
+   finalized after the original notes PR. **Stable tag is not `-rc.N`.**
+   No new Docker build or mutable retag occurs.
    The signed image's original RC **build** label and static footer remain
    immutable provenance; they must not be confused with the separately
    governed `vX.Y.Z` stable GitHub Release identity.

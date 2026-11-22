@@ -33,14 +33,17 @@ reuse Website-specific implementation, host credentials, or public ingress.
 - **Production source:** Promote through an independently approved
   `kaori/staging → main` PR and the main-target admission. **Merging main is
   not a production release request.**
-- **Explicit production release:** Only after a maintainer requests
-  `vX.Y.Z` via `release-production.yml` with the approved promotion PR
-  does GitHub validate main admission and require the protected `production`
-  Environment reviewer. The release verifies or reconciles the configured
-  runtime with the Human-Accepted signed RC's **exact OCI digest**. The
-  resulting GitHub Release is stable `vX.Y.Z`, never an RC release tag.
-  No rebuild or registry retag occurs; when that digest is already deployed
-  and healthy on the same target, redundant deployment is skipped.
+- **Explicit production release:** After signed RC Human Acceptance,
+  independently reviewed source promotion and a reviewed human-friendly
+  `docs/releases/vX.Y.Z.md` file, the maintainer requests `vX.Y.Z`
+  through `release-production.yml` using **one stable-tag input**. GitHub
+  derives the promotion PR from the reviewed file, validates exact main
+  admission and trusted UAT, and requires the independent protected
+  `production` Environment reviewer. Production verifies or reconciles the
+  Human-Accepted signed RC's **exact OCI digest**; the public release notes
+  lead with user impact, while immutable SHA/digest and deployment proof
+  are appended in a separate Technical Evidence section. No rebuild or
+  retag occurs; a healthy matching target is not redeployed.
 - **Stale RC protection:** If a newer staging RC has displaced the accepted
   live digest, stable publication must fail closed until the correct artifact,
   acceptance, and runtime evidence are reconciled.
@@ -51,6 +54,16 @@ reuse Website-specific implementation, host credentials, or public ingress.
   executable release authority. Only a valid explicit stable release dispatch
   with an independent production reviewer may proceed. No switch or reviewer
   alone replaces accepted signed evidence or Human UAT.
+
+**Release notes policy:** Use GitHub's native `.github/release.yml`
+categories for a **read-only draft**, then turn it into a concise, meaningful,
+version-specific Markdown file reviewed through the same staging/main flow.
+The stable publisher will refuse missing, placeholder or mismatched notes;
+it never publishes machine-generated internal PR titles as the final story.
+`CHANGELOG.md` lists **published stable versions only** and may be
+synchronized by a follow-up reviewed documentation PR after publication.
+See [release-note preparation](CI_CD.md#explicit-production-release-request--website-257).
+An accepted RC or a green main CI run alone is never release permission.
 
 GitHub `staging` and `production` are **logical governance/credential
 scopes**, not statements that two servers already exist. They share the

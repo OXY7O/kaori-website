@@ -59,7 +59,9 @@ test("only explicit main dispatch enters protected production release", () => {
   assert.match(production, /name: Release Accepted Artifact to Production/);
   assert.match(production, /name: production\n      url: https:\/\/kaori\.cloud/);
   assert.match(production, /inputs\.stable_tag/);
-  assert.match(production, /inputs\.promotion_pr/);
+  assert.doesNotMatch(production, /inputs\.promotion_pr/);
+  assert.match(production, /steps\.reviewed-notes\.outputs\.promotion_pr/);
+  assert.match(production, /needs\.release-request\.outputs\.promotion_pr/);
   assert.match(production, /head_sha=\$GITHUB_SHA/);
   assert.match(production, /scripts\/release\/promote-stable\.sh preflight/);
   assert.match(production, /scripts\/release\/promote-stable\.sh publish/);
