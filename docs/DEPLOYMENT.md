@@ -189,7 +189,7 @@ Review these non-secret checks on an authorized host with the correct Docker con
 ```bash
 docker info --format '{{json .SecurityOptions}}'
 docker compose -f deploy/server/compose.website.yml config --format json
-docker image inspect --format '{{.Config.User}} {{.Config.Labels.org.opencontainers.image.version}}' IMAGE@sha256:DIGEST
+docker image inspect --format '{{.Config.User}} {{index .Config.Labels "org.opencontainers.image.version"}}' IMAGE@sha256:DIGEST
 docker inspect CONTAINER --format '{{.Config.User}} {{.HostConfig.ReadonlyRootfs}} {{json .HostConfig.CapDrop}} {{json .HostConfig.SecurityOpt}}'
 docker exec CONTAINER sh -c "grep -E '^(CapEff|NoNewPrivs):' /proc/self/status"
 ```
