@@ -73,8 +73,14 @@ security_opts="$(docker inspect --format '{{json .HostConfig.SecurityOpt}}' "$co
 mounts="$(docker inspect --format '{{json .Mounts}}' "$container")"
 [[ "$mounts" != *docker.sock* ]] ||
     { echo 'BLOCK: Website runtime must not mount the Docker socket' >&2; exit 1; }
+# The stable receipt is independently committed after the protected GitHub
+# Release; only that exact read-only mount may supply public status metadata.
+metadata_mount="$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/usr/share/nginx/html/.well-known/kaori-website"}}{{.Source}}:{{.RW}}{{end}}{{end}}' "$container")"
+[[ "$metadata_mount" == "$metadata_dir:false" ]] ||
+    { echo 'BLOCK: read-only release-status mount does not belong to runtime receipt' >&2; exit 1; }
 docker exec "$container" sh -ec '
     grep -Eq "^CapEff:[[:space:]]+0+$" /proc/self/status
+    grep -Eq "^CapBnd:[[:space:]]+0+$" /proc/self/status
     grep -Eq "^NoNewPrivs:[[:space:]]+1$" /proc/self/status
 ' || { echo 'BLOCK: effective Website process privileges differ from policy' >&2; exit 1; }
 docker exec "$container" wget -q -O - http://127.0.0.1:8080/healthz | grep -Fxq healthy
