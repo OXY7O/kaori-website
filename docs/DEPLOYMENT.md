@@ -198,7 +198,6 @@ Replace `IMAGE@sha256:DIGEST` and `CONTAINER` with the **exact selected signed r
 
 After any security-sensitive source change, require the existing `scripts/container_smoke.sh` checks (image UID, `CapEff=0`, `NoNewPrivs=1`, minimal static image contents, NGINX HTTP health), Trivy HIGH/CRITICAL, signed SBOM/provenance and protected admission gates. A passing Docker smoke is not a public Website or Human UAT acceptance. Keep the previously signed v0.1.3 digest unchanged until a **new independently approved** RC and explicit production release; rollback must use the prior accepted digest and verified receipt, not a rebuilt image.
 
-
 ## Predeployment prerequisites (verify for each release)
 
 1. Review SSH identity and permissions for a **separate website deployment identity**. Follow KAORI's `kaori-deploy` trust practices; do not repurpose or overwrite its private key, registration or server runtime.
