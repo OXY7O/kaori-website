@@ -72,7 +72,8 @@ export KAORI_WEBSITE_IMAGE="$image"
 docker compose "${compose_args[@]}" config --quiet || fail 'Compose validation failed'
 
 candidate="$(mktemp "$state_dir/.release-candidate.XXXXXXXX")"
-cleanup() { rm -f -- "$candidate"; }
+active_candidate=''
+cleanup() { rm -f -- "$candidate" "${active_candidate:-$candidate}"; }
 trap cleanup EXIT
 printf 'KAORI_WEBSITE_IMAGE=%s\nKAORI_WEBSITE_SOURCE_SHA=%s\nKAORI_WEBSITE_VERSION=%s\n' "$image" "$source_sha" "$release_version" > "$candidate"
 
@@ -112,10 +113,21 @@ if ! docker compose "${compose_args[@]}" up -d --pull never --no-build web || ! 
     fail 'candidate deployment rejected'
 fi
 
+# Commit the selected active OCI identity independently of any prior stable
+# release. A future candidate or rollback therefore invalidates a stale stable
+# release.json whenever its immutable digest/source/build differs.
+[[ ! -L "$metadata_dir/active.json" ]] ||
+    fail 'active release metadata must not be a symlink'
+active_candidate="$(mktemp "$metadata_dir/.active.json.XXXXXXXX")" ||
+    fail 'active metadata cannot be staged'
+printf '{"schema":1,"status":"active","build_tag":"%s","source_sha":"%s","image_digest":"%s"}\n' \
+    "$release_version" "$source_sha" "${image##*@}" > "$active_candidate"
+chmod 0644 "$active_candidate"
 if [[ -f "$state_dir/release.env" ]]; then
     cp -- "$state_dir/release.env" "$state_dir/previous-release.env"
 fi
 mv -- "$candidate" "$state_dir/release.env"
+mv -- "$active_candidate" "$metadata_dir/active.json"
 trap - EXIT
 printf 'PASS: website release committed: %s / %s\n' "$release_version" "$source_sha"
 printf 'External shared-edge publication is a separate operation.\n'
