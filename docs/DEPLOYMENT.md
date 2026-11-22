@@ -178,6 +178,27 @@ docker run --rm --network none --read-only \
 
 Production image/Compose use an unprivileged server, health endpoint at `/healthz`, read-only root, limited process/memory/CPU budget and rotated logs. Static assets are built inside the Docker build and never require Node on the server. The website is a public informational site and never calls operational provider APIs from the browser.
 
+### Static Website image boundary — #277
+
+The release image uses an explicit multi-stage build. Node.js exists **only in the builder**. The pinned `nginx-unprivileged` Alpine runtime receives the generated `/build/dist/` static site and reviewed `deploy/server/nginx.conf`; it does not copy the source tree or Node/npm packages. The root `.dockerignore` is **default deny** and re-includes only the Dockerfile/build metadata, `package.json` / lockfile, Astro/TypeScript/Prettier config, `src/**`, `public/**` and `deploy/server/nginx.conf`. `.git/`, `.github/`, `.devcontainer/`, `docs/`, `tests/`, scripts, host deploy files and environment files must not be sent as build context or present in the final image. The public license notices under `public/licenses/` remain **intentionally included** in the static output.
+
+The common `deploy/server/compose.website.yml` enforces UID/GID `101:101`, `cap_drop: [ALL]`, read-only root, `no-new-privileges`, a bounded `/tmp` mount using `noexec,nosuid`, PID/CPU/memory limits, restricted network and localhost release/UAT overlays. HTTP 8080 needs no privileged port-binding capability. Existing Docker default seccomp/LSM policies still depend on the actual **host**; do not claim they are configured without `docker inspect` or host evidence. Release Docker image UID and application process UID are **not** proof the Docker Engine itself runs in rootless mode.
+
+Review these non-secret checks on an authorized host with the correct Docker context:
+
+```bash
+docker info --format '{{json .SecurityOptions}}'
+docker compose -f deploy/server/compose.website.yml config --format json
+docker image inspect --format '{{.Config.User}} {{.Config.Labels.org.opencontainers.image.version}}' IMAGE@sha256:DIGEST
+docker inspect CONTAINER --format '{{.Config.User}} {{.HostConfig.ReadonlyRootfs}} {{json .HostConfig.CapDrop}} {{json .HostConfig.SecurityOpt}}'
+docker exec CONTAINER sh -c "grep -E '^(CapEff|NoNewPrivs):' /proc/self/status"
+```
+
+Replace `IMAGE@sha256:DIGEST` and `CONTAINER` with the **exact selected signed release image/container**; do not run a deployment to gather read-only evidence. The Docker engine's `rootless` SecurityOption is a host-level decision and may require a separate test of networking, cgroup delegation, release runner socket, and SSH deployment. The current NGINX Alpine runtime is **not distroless** and deliberately retains a shell/`wget` for existing health and operational verification; switching to a shell-less image would require replacing those probes, independent base supply-chain review and a separate host-sensitive UAT (#279).
+
+After any security-sensitive source change, require the existing `scripts/container_smoke.sh` checks (image UID, `CapEff=0`, `NoNewPrivs=1`, minimal static image contents, NGINX HTTP health), Trivy HIGH/CRITICAL, signed SBOM/provenance and protected admission gates. A passing Docker smoke is not a public Website or Human UAT acceptance. Keep the previously signed v0.1.3 digest unchanged until a **new independently approved** RC and explicit production release; rollback must use the prior accepted digest and verified receipt, not a rebuilt image.
+
+
 ## Predeployment prerequisites (verify for each release)
 
 1. Review SSH identity and permissions for a **separate website deployment identity**. Follow KAORI's `kaori-deploy` trust practices; do not repurpose or overwrite its private key, registration or server runtime.
