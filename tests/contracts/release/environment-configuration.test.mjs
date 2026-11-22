@@ -121,3 +121,43 @@ test("multiline Environment value cannot inject runner configuration", () => {
   assert.notEqual(result.status, 0);
   assert.doesNotMatch(result.data, /INJECTED=/);
 });
+
+test("Docker build context allows only the static Website inputs", () => {
+  const rules = readFileSync(".dockerignore", "utf8")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#"));
+  assert.deepEqual(rules, [
+    "**",
+    "!Dockerfile",
+    "!.dockerignore",
+    "!package.json",
+    "!package-lock.json",
+    "!astro.config.mjs",
+    "!tsconfig.json",
+    "!.prettierrc.json",
+    "!src/",
+    "!src/**",
+    "!public/",
+    "!public/**",
+    "!deploy/",
+    "!deploy/server/",
+    "!deploy/server/nginx.conf",
+  ]);
+  const dockerfile = readFileSync("Dockerfile", "utf8");
+  assert.doesNotMatch(dockerfile, /^COPY\s+\.(?:\/|\s)/m);
+  assert.match(dockerfile, /COPY --from=build \/build\/dist\/ \/usr\/share\/nginx\/html\//);
+  assert.match(dockerfile, /COPY deploy\/server\/nginx\.conf \/etc\/nginx\/conf\.d\/default\.conf/);
+});
+
+test("shared production/UAT Compose runtime uses zero-capability non-root isolation", () => {
+  const compose = readFileSync("deploy/server/compose.website.yml", "utf8");
+  assert.match(compose, /user: "101:101"/);
+  assert.match(compose, /cap_drop:\n\s+- ALL/);
+  assert.match(compose, /read_only: true/);
+  assert.match(compose, /no-new-privileges:true/);
+  assert.match(compose, /\/tmp:rw,noexec,nosuid,size=64m/);
+  assert.match(compose, /pids_limit: 100/);
+  assert.match(compose, /internal: true/);
+  assert.doesNotMatch(compose, /privileged:\s*true|network_mode:\s*host|pid:\s*host/);
+});
