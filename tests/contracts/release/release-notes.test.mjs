@@ -105,7 +105,7 @@ test("read-only draft previews staging with GitHub's default config fallback", (
     assert.match(good.stdout, /EDITORIAL DRAFT ONLY/);
     assert.match(good.stdout, /Last stable baseline: v0\.1\.2/);
     assert.match(good.stdout, /## Generated preview/);
-    assert.match(good.stdout, /built-in category defaults may be used/);
+    assert.match(good.stdout, /inspect the generated output for the release\.yml source/);
 
     const calls = readFileSync(log, "utf8").trimEnd().split("\n");
     assert.equal(calls.length, 2);
