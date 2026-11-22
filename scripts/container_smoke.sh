@@ -8,6 +8,13 @@ docker compose version >/dev/null
 export KAORI_WEBSITE_IMAGE="example.invalid/kaori-website@sha256:$(printf '%064d' 0)"
 docker compose -f deploy/server/compose.website.yml config --quiet
 docker compose -f deploy/server/compose.website.yml -f deploy/server/compose.release.yml config --quiet
+# Check effective shared Compose policy; UAT and release overlays must inherit it.
+base_config="$(docker compose -f deploy/server/compose.website.yml config --format json)"
+[[ "$base_config" == *'"user": "101:101"'* ]] || { echo 'BLOCK: runtime UID/GID must be unprivileged' >&2; exit 1; }
+[[ "$base_config" == *'"cap_drop": ['* && "$base_config" == *'"ALL"'* ]] ||
+  { echo 'BLOCK: runtime must drop all ambient Linux capabilities' >&2; exit 1; }
+[[ "$base_config" == *'"read_only": true'* && "$base_config" == *'no-new-privileges:true'* ]] ||
+  { echo 'BLOCK: runtime must be read-only and disallow privilege escalation' >&2; exit 1; }
 # Release remains loopback-only with a separate publishable bridge; no host 0.0.0.0.
 config="$(docker compose -f deploy/server/compose.website.yml -f deploy/server/compose.release.yml config --format json)"
 printf '%s' "$config" | grep -Fq '"host_ip": "127.0.0.1"' || { echo 'BLOCK: Release host binding not localhost-only' >&2; exit 1; }
@@ -36,10 +43,25 @@ docker build --target production \
   --tag "$image" .
 revision="$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$image")"
 [[ "$revision" == "$source_sha" ]] || { echo 'BLOCK: OCI label source mismatch' >&2; exit 1; }
-docker run --rm --network none --read-only \
+[[ "$(docker image inspect --format '{{.Config.User}}' "$image")" == '101:101' ]] ||
+  { echo 'BLOCK: OCI runtime USER must be explicitly non-root' >&2; exit 1; }
+docker run --rm --network none --read-only --cap-drop ALL \
+  --security-opt no-new-privileges \
   --tmpfs /tmp:rw,noexec,nosuid,size=64m \
   --entrypoint /bin/sh "$image" -ec '
-    test "$(id -u)" != 0
+    test "$(id -u)" = 101
+    test "$(id -g)" = 101
+    grep -Eq "^CapEff:[[:space:]]+0+$" /proc/self/status
+    grep -Eq "^NoNewPrivs:[[:space:]]+1$" /proc/self/status
+    ! command -v node >/dev/null 2>&1
+    ! command -v npm >/dev/null 2>&1
+    for forbidden in /build /usr/share/nginx/html/node_modules \
+      /usr/share/nginx/html/.git /usr/share/nginx/html/.github \
+      /usr/share/nginx/html/.devcontainer /usr/share/nginx/html/docs \
+      /usr/share/nginx/html/tests /usr/share/nginx/html/deploy \
+      /usr/share/nginx/html/src; do
+      test ! -e "$forbidden"
+    done
     nginx -t
     nginx -g "daemon off;" &
     nginx_pid="$!"
@@ -60,4 +82,4 @@ docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock \
   aquasec/trivy:0.74.0 image --cache-dir /root/.cache/trivy \
   --exit-code 1 --ignore-unfixed --severity HIGH,CRITICAL \
   --scanners vuln "$image"
-printf 'PASS: static Docker container starts non-root, read-only, no host ports or edge changes\n'
+printf 'PASS: static Docker container non-root, zero capabilities, no-new-privileges, read-only, minimal contents; no host ports or edge changes\n'
