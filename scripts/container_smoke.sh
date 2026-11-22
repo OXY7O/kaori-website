@@ -35,6 +35,14 @@ if printf '%s' "$uat_config" | grep -Fq 'edge-public'; then
   exit 1
 fi
 
+# The release metadata is NOT baked into the signed static OCI image.
+# Exercise the exact read-only mount NGINX uses for a postpublication receipt.
+metadata_fixture="$(mktemp -d)"
+trap 'rm -rf -- "$metadata_fixture"' EXIT
+chmod 0755 "$metadata_fixture"
+printf '{"schema":1,"smoke":"receipt-only"}\n' > "$metadata_fixture/release.json"
+chmod 0644 "$metadata_fixture/release.json"
+
 image="kaori-website-smoke:${source_sha:0:12}"
 docker build --target production \
   --build-arg APP_BUILD_SHA="$source_sha" \
@@ -47,11 +55,13 @@ revision="$(docker image inspect --format '{{index .Config.Labels "org.openconta
   { echo 'BLOCK: OCI runtime USER must be explicitly non-root' >&2; exit 1; }
 docker run --rm --network none --read-only --cap-drop ALL \
   --security-opt no-new-privileges \
+  --mount "type=bind,source=$metadata_fixture,target=/usr/share/nginx/html/.well-known/kaori-website,readonly" \
   --tmpfs /tmp:rw,noexec,nosuid,size=64m \
   --entrypoint /bin/sh "$image" -ec '
     test "$(id -u)" = 101
     test "$(id -g)" = 101
     grep -Eq "^CapEff:[[:space:]]+0+$" /proc/self/status
+    grep -Eq "^CapBnd:[[:space:]]+0+$" /proc/self/status
     grep -Eq "^NoNewPrivs:[[:space:]]+1$" /proc/self/status
     ! command -v node >/dev/null 2>&1
     ! command -v npm >/dev/null 2>&1
@@ -75,6 +85,8 @@ docker run --rm --network none --read-only --cap-drop ALL \
     html="$(wget -q -O - http://127.0.0.1:8080/)"
     printf "%s" "$html" | grep -qi KAORI
     printf "%s" "$html" | grep -Fq "Website build v0.1.0-rc.1"
+    status="$(wget -q -O - http://127.0.0.1:8080/.well-known/kaori-website/release.json)"
+    test "$status" = "{\"schema\":1,\"smoke\":\"receipt-only\"}"
   '
 # Image security is release-authoritative; fail early during Docker-path validation too.
 docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock \
