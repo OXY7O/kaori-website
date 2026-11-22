@@ -415,6 +415,13 @@ web="$(docker ps --filter "label=com.docker.compose.project=$runtime_project" \
 mount="$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/usr/share/nginx/html/.well-known/kaori-website"}}{{.Source}}:{{.RW}}{{end}}{{end}}' "$web")"
 [[ "$mount" == "$metadata_dir:false" ]] ||
   fail 'runtime does not serve the trusted read-only stable release mount'
+active_file="$metadata_dir/active.json"
+[[ -f "$active_file" && ! -L "$active_file" ]] ||
+  fail 'committed active signed image status is unavailable'
+expected_active="$(printf '{"schema":1,"status":"active","build_tag":"%s","source_sha":"%s","image_digest":"%s"}' \
+  "$expected_rc" "$expected_sha" "${expected_image##*@}")"
+[[ "$(cat "$active_file")" == "$expected_active" ]] ||
+  fail 'committed active image digest/source/build differs from signed stable target'
 umask 022
 candidate="$(mktemp "$metadata_dir/.release.json.XXXXXXXX")" ||
   fail 'cannot stage atomic stable status'
