@@ -169,7 +169,7 @@ test("manual protected staging edge-disabled deployment selects isolated UAT pro
   assert.match(adapter, /public Website lost health during private UAT deployment/);
   assert.match(adapter, /UAT container is attached to edge-public/);
   assert.match(adapter, /export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1/);
-  assert.match(deploy, /previous-release\\.env/);
+  assert.match(deploy, /previous-release\.env/);
 });
 
 test("manual edge enabled, automatic staging and protected production preserve public target", () => {
@@ -195,9 +195,9 @@ test("manual edge enabled, automatic staging and protected production preserve p
     assert.equal(result.status, 0, result.stderr);
     assert.equal(result.stdout.trim(), expected);
   }
-  assert.match(adapter, /reattach-existing-site\\.sh" preflight/);
-  assert.match(adapter, /reattach-existing-site\\.sh" attach/);
-  assert.match(adapter, /if \\[\\[ "\\$attach_existing_edge" == 1 \\]\\]/);
+  assert.match(adapter, /reattach-existing-site\.sh" preflight/);
+  assert.match(adapter, /reattach-existing-site\.sh" attach/);
+  assert.match(adapter, /if \[\[ "\$attach_existing_edge" == 1 \]\]/);
 });
 
 test("public-edge target rejects unexpected project and private UAT cannot reuse public slot", () => {
