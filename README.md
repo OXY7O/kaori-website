@@ -4,6 +4,17 @@
 
 <h1 align="center">KAORI Website</h1>
 <p align="center"><strong>Meet KAORI. Operate with Clarity.</strong></p>
+<p align="center">
+  <a href="https://github.com/OXY7O/kaori-website/actions/workflows/quality.yml">
+    <img alt="Full Admission on main" src="https://github.com/OXY7O/kaori-website/actions/workflows/quality.yml/badge.svg?branch=main" />
+  </a>
+  <a href="https://github.com/OXY7O/kaori-website/releases/latest">
+    <img alt="Latest stable release" src="https://img.shields.io/github/v/release/OXY7O/kaori-website?label=stable&amp;include_prereleases=false" />
+  </a>
+  <a href="LICENSE">
+    <img alt="Software source license: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue" />
+  </a>
+</p>
 <p align="center">Discover a more connected way to understand infrastructure operations.</p>
 
 <p align="center">
@@ -48,7 +59,7 @@ Then open [http://localhost:4321](http://localhost:4321). See the [development g
 
 Have an idea or noticed a problem with the website? Share a non-security report in [Website Issues](https://github.com/OXY7O/kaori-website/issues). Proposals are reviewed by the maintainers; submitting one does not mean it is automatically accepted.
 
-For code proposals or controlled fork testing, follow the [contributor walkthrough](docs/DEVELOPMENT.md#external-fork-prs--controlled-pre-launch-procedure) and [OXY7O contributing guidance](https://github.com/OXY7O/.github/blob/main/CONTRIBUTING.md). These guides explain the review process and current contribution boundaries.
+Want to suggest a change? Start with the [contributing guide](CONTRIBUTING.md). It explains how to propose an idea, fork the staging branch, and get safe CI feedback. External code acceptance is still controlled pending community-launch and rights review; a passing fork check does not automatically approve or merge a contribution.
 
 For a potential security vulnerability, use [private vulnerability reporting](https://github.com/OXY7O/kaori-website/security/advisories/new) rather than a public issue. If that option is unavailable, see the [security reporting guidance](https://github.com/OXY7O/.github/blob/main/SECURITY.md).
 
