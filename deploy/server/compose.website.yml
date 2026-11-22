@@ -5,7 +5,12 @@ services:
     image: ${KAORI_WEBSITE_IMAGE:?KAORI_WEBSITE_IMAGE must be an immutable digest reference}
     restart: unless-stopped
     init: true
+    # Enforce NGINX's unprivileged runtime identity even if the image defaults drift.
+    user: "101:101"
     read_only: true
+    # Static port 8080 requires no ambient Linux capabilities.
+    cap_drop:
+      - ALL
     security_opt:
       - no-new-privileges:true
     tmpfs:
