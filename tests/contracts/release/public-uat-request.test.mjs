@@ -135,7 +135,8 @@ function selectedRuntime(overrides = {}) {
     "set -Eeuo pipefail",
     'fail() { printf "BLOCK: %s\\n" "$*" >&2; exit 1; }',
     selection,
-    'printf "%s|%s|%s|%s|%s\\n" "$runtime_env" "$runtime_project" "$remote_state_dir" "$runtime_loopback" "$remote_release"',
+    'printf "%s|%s|%s|%s|%s\\n" "$runtime_env" "$runtime_project" ' +
+      '"$remote_state_dir" "$runtime_loopback" "$remote_release"',
   ].join("\n");
   const result = spawnSync("bash", ["-c", command], {
     encoding: "utf8",
@@ -165,7 +166,10 @@ test("manual protected staging edge-disabled deployment selects isolated UAT pro
       "/opt/kaori-website/uat/releases/" +
       sha,
   );
-  assert.match(adapter, /expected exactly one running public Website container before isolated UAT/);
+  assert.match(
+    adapter,
+    /expected exactly one running public Website container before isolated UAT/,
+  );
   assert.match(adapter, /stable public Website container changed during isolated UAT/);
   assert.match(adapter, /public Website lost health during private UAT deployment/);
   assert.match(adapter, /UAT container is attached to edge-public/);
@@ -173,7 +177,7 @@ test("manual protected staging edge-disabled deployment selects isolated UAT pro
   assert.match(deploy, /previous-release\.env/);
 });
 
-test("manual edge enabled, automatic staging and protected production preserve public target", () => {
+test("manual/public/protected production retain the canonical Website target", () => {
   const expected =
     "production|kaori-website|/var/lib/kaori-website/deploy-state|18080|" +
     "/opt/kaori-website/releases/" +
@@ -201,14 +205,17 @@ test("manual edge enabled, automatic staging and protected production preserve p
   assert.match(adapter, /if \[\[ "\$attach_existing_edge" == 1 \]\]/);
 });
 
-test("public-edge target rejects unexpected project and private UAT cannot reuse public slot", () => {
+test("public edge rejects unexpected project and production cannot select UAT", () => {
   const unexpectedPublic = selectedRuntime({
     KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "1",
     WEBSITE_COMPOSE_PROJECT: "kaori-website-preview",
     WEBSITE_STATE_DIR: "/var/lib/kaori-website-preview/deploy-state",
   });
   assert.notEqual(unexpectedPublic.status, 0);
-  assert.match(unexpectedPublic.stderr, /BLOCK: existing public edge is bound to canonical Website runtime/);
+  assert.match(
+    unexpectedPublic.stderr,
+    /BLOCK: existing public edge is bound to canonical Website runtime/,
+  );
 
   const prodCannotSelectUat = selectedRuntime({
     GITHUB_EVENT_NAME: "workflow_dispatch",
@@ -218,7 +225,10 @@ test("public-edge target rejects unexpected project and private UAT cannot reuse
     KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "0",
   });
   assert.notEqual(prodCannotSelectUat.status, 0);
-  assert.match(prodCannotSelectUat.stderr, /BLOCK: production project must be a distinct Website namespace/);
+  assert.match(
+    prodCannotSelectUat.stderr,
+    /BLOCK: production project must be a distinct Website namespace/,
+  );
 });
 
 test("manual deployment inputs remain explicit and staging-bound", () => {
