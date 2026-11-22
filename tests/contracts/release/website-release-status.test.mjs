@@ -36,7 +36,12 @@ test("signed RC build has no stable status until independently committed stable 
 test("postpublication stable label requires matching committed active signed digest", () => {
   assert.equal(verifiedWebsiteStable(stable, active, build, source), "v0.1.4");
   assert.equal(
-    verifiedWebsiteStable({ ...stable, published_at: "2026-11-22T09:00:00Z" }, active, build, source),
+    verifiedWebsiteStable(
+      { ...stable, published_at: "2026-11-22T09:00:00Z" },
+      active,
+      build,
+      source,
+    ),
     "v0.1.4",
   );
 });
