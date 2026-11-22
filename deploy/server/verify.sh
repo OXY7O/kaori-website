@@ -22,6 +22,12 @@ else
         echo 'BLOCK: production loopback port must be between 1024 and 65535' >&2; exit 1;
     }
 fi
+state_dir="${KAORI_WEBSITE_STATE_DIR:-/var/lib/${COMPOSE_PROJECT_NAME:-kaori-website}/deploy-state}"
+metadata_dir="$state_dir/release-metadata"
+[[ -d "$metadata_dir" && ! -L "$metadata_dir" ]] || {
+    echo 'BLOCK: Website release metadata mount source missing or symlinked' >&2; exit 1;
+}
+export KAORI_WEBSITE_RELEASE_METADATA_DIR="$metadata_dir"
 expected_image="${KAORI_WEBSITE_IMAGE:?Set KAORI_WEBSITE_IMAGE to the accepted digest-qualified image}"
 [[ "$expected_image" =~ @sha256:[a-f0-9]{64}$ ]] || { echo 'BLOCK: digest-qualified image required' >&2; exit 1; }
 command -v docker >/dev/null || { echo 'BLOCK: Docker is not available' >&2; exit 1; }
