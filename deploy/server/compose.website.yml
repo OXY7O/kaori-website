@@ -13,6 +13,10 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
+    # Versioned public release status is controlled by the host receipt, never by the signed image.
+    # Per-deployment adapter overrides this path for the isolated UAT project.
+    volumes:
+      - ${KAORI_WEBSITE_RELEASE_METADATA_DIR:-/var/lib/kaori-website/deploy-state/release-metadata}:/usr/share/nginx/html/.well-known/kaori-website:ro
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
     expose:
