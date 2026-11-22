@@ -205,6 +205,7 @@ test("public-edge target rejects unexpected project and private UAT cannot reuse
   const unexpectedPublic = selectedRuntime({
     KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "1",
     WEBSITE_COMPOSE_PROJECT: "kaori-website-preview",
+    WEBSITE_STATE_DIR: "/var/lib/kaori-website-preview/deploy-state",
   });
   assert.notEqual(unexpectedPublic.status, 0);
   assert.match(unexpectedPublic.stderr, /BLOCK: existing public edge is bound to canonical Website runtime/);
