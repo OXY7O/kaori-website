@@ -108,7 +108,7 @@ test("stable publisher writes only after trusted GitHub publication and target v
   assert.match(deployed, /mv -- "\$candidate" "\$state_dir\/release.env"/);
   assert.match(deployed, /mv -- "\$active_candidate" "\$metadata_dir\/active.json"/);
   assert.match(verifier, /CapBnd:\[\[:space:\]\]\+0\+/);
-  assert.match(compose, /release-metadata:ro/);
+  assert.match(compose, /release-metadata\}:\/usr\/share\/nginx\/html\/\.well-known\/kaori-website:ro/);
   assert.match(nginx, /Cache-Control "no-store" always/);
   assert.match(nginx, /active\|release/);
   assert.match(dockerfile, /PUBLIC_KAORI_WEBSITE_BUILD_SHA=\$\{APP_BUILD_SHA\}/);
