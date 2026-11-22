@@ -22,6 +22,12 @@ else
         echo 'BLOCK: production loopback port must be between 1024 and 65535' >&2; exit 1;
     }
 fi
+state_dir="${KAORI_WEBSITE_STATE_DIR:-/var/lib/${COMPOSE_PROJECT_NAME:-kaori-website}/deploy-state}"
+metadata_dir="$state_dir/release-metadata"
+[[ -d "$metadata_dir" && ! -L "$metadata_dir" ]] || {
+    echo 'BLOCK: Website release metadata mount source missing or symlinked' >&2; exit 1;
+}
+export KAORI_WEBSITE_RELEASE_METADATA_DIR="$metadata_dir"
 expected_image="${KAORI_WEBSITE_IMAGE:?Set KAORI_WEBSITE_IMAGE to the accepted digest-qualified image}"
 [[ "$expected_image" =~ @sha256:[a-f0-9]{64}$ ]] || { echo 'BLOCK: digest-qualified image required' >&2; exit 1; }
 command -v docker >/dev/null || { echo 'BLOCK: Docker is not available' >&2; exit 1; }
@@ -49,7 +55,34 @@ for attempt in $(seq 1 30); do
 done
 [[ "$status" == healthy ]] || { echo "BLOCK: website health $status" >&2; exit 1; }
 uid="$(docker exec "$container" id -u)"
-[[ "$uid" != 0 ]] || { echo 'BLOCK: website process runs as root' >&2; exit 1; }
+gid="$(docker exec "$container" id -g)"
+[[ "$uid" == 101 && "$gid" == 101 ]] ||
+    { echo 'BLOCK: website runtime UID/GID must be 101:101' >&2; exit 1; }
+[[ "$(docker inspect --format '{{.Config.User}}' "$container")" == "101:101" ]] ||
+    { echo 'BLOCK: Website configured runtime user is not 101:101' >&2; exit 1; }
+[[ "$(docker inspect --format '{{.HostConfig.ReadonlyRootfs}}' "$container")" == true ]] ||
+    { echo 'BLOCK: Website root filesystem must be read-only' >&2; exit 1; }
+[[ "$(docker inspect --format '{{.HostConfig.Privileged}}' "$container")" == false ]] ||
+    { echo 'BLOCK: privileged Website container forbidden' >&2; exit 1; }
+cap_drop="$(docker inspect --format '{{json .HostConfig.CapDrop}}' "$container")"
+[[ "$cap_drop" == '["ALL"]' || "$cap_drop" == '["all"]' ]] ||
+    { echo 'BLOCK: Website container must drop all Linux capabilities' >&2; exit 1; }
+security_opts="$(docker inspect --format '{{json .HostConfig.SecurityOpt}}' "$container")"
+[[ "$security_opts" == *no-new-privileges:true* ]] ||
+    { echo 'BLOCK: no-new-privileges container policy missing' >&2; exit 1; }
+mounts="$(docker inspect --format '{{json .Mounts}}' "$container")"
+[[ "$mounts" != *docker.sock* ]] ||
+    { echo 'BLOCK: Website runtime must not mount the Docker socket' >&2; exit 1; }
+# The stable receipt is independently committed after the protected GitHub
+# Release; only that exact read-only mount may supply public status metadata.
+metadata_mount="$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/usr/share/nginx/html/.well-known/kaori-website"}}{{.Source}}:{{.RW}}{{end}}{{end}}' "$container")"
+[[ "$metadata_mount" == "$metadata_dir:false" ]] ||
+    { echo 'BLOCK: read-only release-status mount does not belong to runtime receipt' >&2; exit 1; }
+docker exec "$container" sh -ec '
+    grep -Eq "^CapEff:[[:space:]]+0+$" /proc/self/status
+    grep -Eq "^CapBnd:[[:space:]]+0+$" /proc/self/status
+    grep -Eq "^NoNewPrivs:[[:space:]]+1$" /proc/self/status
+' || { echo 'BLOCK: effective Website process privileges differ from policy' >&2; exit 1; }
 docker exec "$container" wget -q -O - http://127.0.0.1:8080/healthz | grep -Fxq healthy
 # Consume the complete static HTML response before matching. With pipefail, using
 # wget | grep -q can report SIGPIPE even when a valid marker was already found.

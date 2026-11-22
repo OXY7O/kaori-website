@@ -53,21 +53,43 @@ fi
 port="${WEBSITE_SSH_PORT:-22}"
 [[ "$port" =~ ^[0-9]{1,5}$ ]] && (( port >= 1 && port <= 65535 )) || fail 'invalid SSH port'
 [[ "$WEBSITE_DEPLOY_ROOT" == /opt/kaori-website ]] || fail 'website release root must be /opt/kaori-website'
-# The GitHub Environment resolves the target; no synthetic slot-count flag.
+# The configured Environment selects the normal public/production Website.
+# Only an explicitly manual protected-staging edge-disabled request may select
+# the *existing* dedicated UAT Compose project; never reuse a live public slot.
+runtime_env=production
 runtime_project="${WEBSITE_COMPOSE_PROJECT:-kaori-website}"
 remote_state_dir="${WEBSITE_STATE_DIR:-/var/lib/kaori-website/deploy-state}"
 runtime_loopback="${WEBSITE_LOOPBACK_PORT:-18080}"
-[[ "$runtime_project" =~ ^kaori-website(-[a-z0-9][a-z0-9-]*)?$ &&
-   "$runtime_project" != kaori-website-uat ]] ||
-  fail 'production project must be a distinct Website namespace'
-[[ "$remote_state_dir" == "/var/lib/$runtime_project/deploy-state" ]] ||
-  fail 'production state must belong to the configured Website project'
-[[ "$runtime_loopback" =~ ^[0-9]{4,5}$ ]] &&
-   (( 10#$runtime_loopback >= 1024 && 10#$runtime_loopback <= 65535 )) ||
-  fail 'production loopback port must be between 1024 and 65535'
-if [[ "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" == 1 ]]; then
-  [[ "$runtime_project" == kaori-website && "$runtime_loopback" == 18080 ]] ||
-    fail 'existing public edge is bound to canonical Website runtime; separately approve other routing'
+remote_release="$WEBSITE_DEPLOY_ROOT/releases/$ACCEPTED_SHA"
+if [[ "$production_deploy" == false &&
+      "$GITHUB_EVENT_NAME" == workflow_dispatch &&
+      "$GITHUB_REF" == refs/heads/kaori/staging &&
+      "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" == 0 ]]; then
+  runtime_env=uat
+  runtime_project=kaori-website-uat
+  remote_state_dir="$WEBSITE_DEPLOY_ROOT/uat/deploy-state"
+  runtime_loopback=18083
+  remote_release="$WEBSITE_DEPLOY_ROOT/uat/releases/$ACCEPTED_SHA"
+fi
+if [[ "$runtime_env" == uat ]]; then
+  [[ "$runtime_project" == kaori-website-uat &&
+     "$remote_state_dir" == "$WEBSITE_DEPLOY_ROOT/uat/deploy-state" &&
+     "$runtime_loopback" == 18083 &&
+     "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" == 0 ]] ||
+    fail 'isolated UAT must use the existing dedicated project, state and loopback port'
+else
+  [[ "$runtime_project" =~ ^kaori-website(-[a-z0-9][a-z0-9-]*)?$ &&
+     "$runtime_project" != kaori-website-uat ]] ||
+    fail 'production project must be a distinct Website namespace'
+  [[ "$remote_state_dir" == "/var/lib/$runtime_project/deploy-state" ]] ||
+    fail 'production state must belong to the configured Website project'
+  [[ "$runtime_loopback" =~ ^[0-9]{4,5}$ ]] &&
+     (( 10#$runtime_loopback >= 1024 && 10#$runtime_loopback <= 65535 )) ||
+    fail 'production loopback port must be between 1024 and 65535'
+  if [[ "${KAORI_WEBSITE_ATTACH_EXISTING_EDGE:-0}" == 1 ]]; then
+    [[ "$runtime_project" == kaori-website && "$runtime_loopback" == 18080 ]] ||
+      fail 'existing public edge is bound to canonical Website runtime; separately approve other routing'
+  fi
 fi
 [[ -n "${WEBSITE_SSH_KEY:-}" && -n "${WEBSITE_KNOWN_HOSTS:-}" ]] || fail 'SSH private key/known_hosts missing'
 command -v ssh-keygen >/dev/null && command -v ssh >/dev/null && command -v scp >/dev/null || fail 'SSH runner dependencies missing'
@@ -102,8 +124,10 @@ if [[ "$mode" == preflight ]]; then
   echo 'PASS: source, immutable prerelease evidence and required credential names are present'
   if [[ "$production_deploy" == true ]]; then
     echo 'PASS: protected main production Environment deployment of accepted signed RC digest'
+  elif [[ "$runtime_env" == uat ]]; then
+    echo 'PASS: manual protected staging candidate targets isolated UAT project, port 18083; no public edge'
   elif [[ "$GITHUB_REF" == refs/heads/kaori/staging ]]; then
-    echo 'PASS: authorized protected staging auto-deployment of signed public RC'
+    echo 'PASS: authorized protected staging public RC request; explicit approval remains required'
   else
     echo 'NOTE: manual approval_reference is an audit pointer, not an automated reviewer/branch-protection gate'
   fi
@@ -137,11 +161,8 @@ setsid -w ssh-add "$key_file" </dev/null >/dev/null
 target="$WEBSITE_SSH_USER@$WEBSITE_HOST"
 ssh_opts=(-p "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
 scp_opts=(-P "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
-# The approved request branch and manual fallback select the one existing public
-# Compose project when edge=1. Manual edge=0 behavior remains guarded below.
-# The older isolated UAT project is left untouched for separately scoped cleanup.
-runtime_env=production
-remote_release="$WEBSITE_DEPLOY_ROOT/releases/$ACCEPTED_SHA"
+# Runtime identity was selected and validated before release/SSH checks.
+# Manual edge-disabled staging uses the separate UAT project, never the public slot.
 {
   printf 'set -Eeuo pipefail\n'
   printf 'deploy_root=%q\nremote_release=%q\nremote_state_dir=%q\nruntime_env=%q\n' "$WEBSITE_DEPLOY_ROOT" "$remote_release" "$remote_state_dir" "$runtime_env"

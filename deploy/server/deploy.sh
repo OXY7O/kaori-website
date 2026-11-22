@@ -40,6 +40,15 @@ case "$runtime_env" in
 esac
 [[ -f "$compose_file" && ! -L "$compose_file" ]] || fail 'compose file missing or symlinked'
 [[ -d "$state_dir" && ! -L "$state_dir" && -w "$state_dir" ]] || fail 'website release state directory must be prepared and writable by deployment identity'
+# Stable status is an independently committed host receipt, not part of the OCI image.
+# A new candidate may have no release.json; the Website must show the RC fallback.
+metadata_dir="$state_dir/release-metadata"
+[[ ! -L "$metadata_dir" ]] || fail 'Website release-metadata directory must not be a symlink'
+if [[ ! -d "$metadata_dir" ]]; then
+    mkdir -m 0755 -- "$metadata_dir" || fail 'release metadata directory cannot be prepared'
+fi
+[[ -d "$metadata_dir" && ! -L "$metadata_dir" ]] || fail 'Website metadata path is not a directory'
+export KAORI_WEBSITE_RELEASE_METADATA_DIR="$metadata_dir"
 docker info >/dev/null || fail 'Docker daemon unavailable'
 compose_args=(-f "$compose_file")
 if [[ "${KAORI_WEBSITE_RELEASE_LOCAL_ONLY:-}" == 1 ]]; then
@@ -63,7 +72,8 @@ export KAORI_WEBSITE_IMAGE="$image"
 docker compose "${compose_args[@]}" config --quiet || fail 'Compose validation failed'
 
 candidate="$(mktemp "$state_dir/.release-candidate.XXXXXXXX")"
-cleanup() { rm -f -- "$candidate"; }
+active_candidate=''
+cleanup() { rm -f -- "$candidate" "${active_candidate:-$candidate}"; }
 trap cleanup EXIT
 printf 'KAORI_WEBSITE_IMAGE=%s\nKAORI_WEBSITE_SOURCE_SHA=%s\nKAORI_WEBSITE_VERSION=%s\n' "$image" "$source_sha" "$release_version" > "$candidate"
 
@@ -103,10 +113,21 @@ if ! docker compose "${compose_args[@]}" up -d --pull never --no-build web || ! 
     fail 'candidate deployment rejected'
 fi
 
+# Commit the selected active OCI identity independently of any prior stable
+# release. A future candidate or rollback therefore invalidates a stale stable
+# release.json whenever its immutable digest/source/build differs.
+[[ ! -L "$metadata_dir/active.json" ]] ||
+    fail 'active release metadata must not be a symlink'
+active_candidate="$(mktemp "$metadata_dir/.active.json.XXXXXXXX")" ||
+    fail 'active metadata cannot be staged'
+printf '{"schema":1,"status":"active","build_tag":"%s","source_sha":"%s","image_digest":"%s"}\n' \
+    "$release_version" "$source_sha" "${image##*@}" > "$active_candidate"
+chmod 0644 "$active_candidate"
 if [[ -f "$state_dir/release.env" ]]; then
     cp -- "$state_dir/release.env" "$state_dir/previous-release.env"
 fi
 mv -- "$candidate" "$state_dir/release.env"
+mv -- "$active_candidate" "$metadata_dir/active.json"
 trap - EXIT
 printf 'PASS: website release committed: %s / %s\n' "$release_version" "$source_sha"
 printf 'External shared-edge publication is a separate operation.\n'

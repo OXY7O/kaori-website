@@ -60,6 +60,13 @@ categories for a **read-only draft**, then turn it into a concise, meaningful,
 version-specific Markdown file reviewed through the same staging/main flow.
 The stable publisher will refuse missing, placeholder or mismatched notes;
 it never publishes machine-generated internal PR titles as the final story.
+
+**Readable GitHub Preview:** Keep `stable_tag` and `promotion_pr` in a strict
+leading HTML comment in version-specific notes so GitHub displays the human
+release title first. The existing parser validates this hidden source metadata
+and strips it from published release notes; historical YAML metadata remains
+accepted for reproducible review. Never delete or alter release authority just
+to improve Markdown presentation.
 `CHANGELOG.md` lists **published stable versions only** and may be
 synchronized by a follow-up reviewed documentation PR after publication.
 See [release-note preparation](CI_CD.md#explicit-production-release-request--website-257).
