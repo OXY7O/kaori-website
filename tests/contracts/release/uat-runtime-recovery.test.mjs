@@ -178,7 +178,10 @@ test("UAT verifier fails closed if Linux capability isolation is absent", (t) =>
     MOCK_CAP_DROP_BAD: "1",
   });
   assert.notEqual(missingCapabilities.status, 0);
-  assert.match(missingCapabilities.stderr, /BLOCK: Website container must drop all Linux capabilities/);
+  assert.match(
+    missingCapabilities.stderr,
+    /BLOCK: Website container must drop all Linux capabilities/,
+  );
 
   const unsafeProcess = run("deploy/server/verify.sh", [], {
     ...env,
