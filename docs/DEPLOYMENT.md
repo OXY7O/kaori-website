@@ -442,6 +442,10 @@ identity. This is a **manual recovery path**, never an implicit bypass of
 staging admission, public-slot authorization or required production
 Environment review. No feature-branch dispatch is an automatic deployment.
 
+**Isolated manual security UAT (#284):** For a signed RC that has already passed protected staging Full Admission, an explicitly authorized manual `deploy-staging-host.yml` dispatch with `publish_existing_edge=false` now selects the existing **separate** Compose project `kaori-website-uat` and `/opt/kaori-website/uat/deploy-state`, with only `127.0.0.1:18083:8080` exposed to the host and no `edge-public` attachment. The adapter uses its existing UAT guards: pinned host trust, exact signed RC SHA/digest, separate path/symlink/port and minimum capacity checks, pre/post public container identity and health, signed release receipt/rollback, plus non-root/zero-capability process verification. This **still mutates the isolated UAT container and host state**, so obtain explicit operator authorization and valid release-specific signed candidate evidence first; a green CI check alone is insufficient. The UAT shares the host kernel and Docker daemon; it is not a separate VM or a security sandbox.
+
+Use the existing workflow with protected branch `kaori/staging`, exact immutable `candidate_tag`, `approval_reference=https://github.com/OXY7O/kaori-website/issues/284` **only after** the maintainer has explicitly authorized the host test, and `publish_existing_edge=false`. A public-slot replacement with `publish_existing_edge=true` is a separately authorized action, not an alternative UAT default. Follow the existing `verify.sh` and recorded production baseline: all NGINX processes must remain UID/GID 101, `CapEff=0`, `CapBnd=0`, `NoNewPrivs=1`; capture actual image digest, 18083 loopback health, restored prior UAT receipt if needed, and confirm `kaori-website/web` public container ID/digest/health remains unchanged before declaring security-sensitive UAT ready for Human Acceptance.
+
 ## Legacy public UAT request fallback — #195
 
 This is the previously approved request-branch contract that superseded

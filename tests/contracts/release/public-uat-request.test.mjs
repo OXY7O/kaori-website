@@ -126,23 +126,108 @@ test("retired request-branch push rejects before SSH or Docker mutation", () => 
   }
 });
 
-test("approved request selects existing single public slot, not parallel UAT", () => {
-  assert.match(
-    adapter,
-    /runtime_env=production\nremote_release="\$WEBSITE_DEPLOY_ROOT\/releases\/\$ACCEPTED_SHA"/,
+function selectedRuntime(overrides = {}) {
+  const start = adapter.indexOf("runtime_env=production\nruntime_project=");
+  const end = adapter.indexOf('[[ -n "${WEBSITE_SSH_KEY:-}"', start);
+  assert.ok(start > 0 && end > start, "bounded runtime selection source not found");
+  const selection = adapter.slice(start, end);
+  const command = [
+    "set -Eeuo pipefail",
+    'fail() { printf "BLOCK: %s\\n" "$*" >&2; exit 1; }',
+    selection,
+    'printf "%s|%s|%s|%s|%s\\n" "$runtime_env" "$runtime_project" ' +
+      '"$remote_state_dir" "$runtime_loopback" "$remote_release"',
+  ].join("\n");
+  const result = spawnSync("bash", ["-c", command], {
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      WEBSITE_DEPLOY_ROOT: "/opt/kaori-website",
+      WEBSITE_COMPOSE_PROJECT: "kaori-website",
+      WEBSITE_STATE_DIR: "/var/lib/kaori-website/deploy-state",
+      WEBSITE_LOOPBACK_PORT: "18080",
+      ACCEPTED_SHA: sha,
+      production_deploy: "false",
+      GITHUB_EVENT_NAME: "workflow_dispatch",
+      GITHUB_REF: "refs/heads/kaori/staging",
+      KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "0",
+      ...overrides,
+    },
+  });
+  return result;
+}
+
+test("manual protected staging edge-disabled deployment selects isolated UAT project", () => {
+  const result = selectedRuntime();
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(
+    result.stdout.trim(),
+    "uat|kaori-website-uat|/opt/kaori-website/uat/deploy-state|18083|" +
+      "/opt/kaori-website/uat/releases/" +
+      sha,
   );
   assert.match(
     adapter,
-    /remote_state_dir="\$\{WEBSITE_STATE_DIR:-\/var\/lib\/kaori-website\/deploy-state\}"/,
+    /expected exactly one running public Website container before isolated UAT/,
   );
+  assert.match(adapter, /stable public Website container changed during isolated UAT/);
+  assert.match(adapter, /public Website lost health during private UAT deployment/);
+  assert.match(adapter, /UAT container is attached to edge-public/);
+  assert.match(adapter, /export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1/);
+  assert.match(deploy, /previous-release\.env/);
+});
+
+test("manual/public/protected production retain the canonical Website target", () => {
+  const expected =
+    "production|kaori-website|/var/lib/kaori-website/deploy-state|18080|" +
+    "/opt/kaori-website/releases/" +
+    sha;
+  for (const values of [
+    { KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "1" },
+    {
+      GITHUB_EVENT_NAME: "push",
+      GITHUB_REF: "refs/heads/kaori/staging",
+      KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "1",
+    },
+    {
+      GITHUB_EVENT_NAME: "workflow_dispatch",
+      GITHUB_REF: "refs/heads/main",
+      KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "1",
+      production_deploy: "true",
+    },
+  ]) {
+    const result = selectedRuntime(values);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), expected);
+  }
   assert.match(adapter, /reattach-existing-site\.sh" preflight/);
   assert.match(adapter, /reattach-existing-site\.sh" attach/);
-  assert.match(adapter, /export KAORI_WEBSITE_RELEASE_LOCAL_ONLY=1/);
   assert.match(adapter, /if \[\[ "\$attach_existing_edge" == 1 \]\]/);
-  assert.match(deploy, /previous-release\.env/);
-  assert.doesNotMatch(
-    adapter,
-    /if \[\[ "\$GITHUB_EVENT_NAME" == push \]\]; then\s+runtime_env=uat/,
+});
+
+test("public edge rejects unexpected project and production cannot select UAT", () => {
+  const unexpectedPublic = selectedRuntime({
+    KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "1",
+    WEBSITE_COMPOSE_PROJECT: "kaori-website-preview",
+    WEBSITE_STATE_DIR: "/var/lib/kaori-website-preview/deploy-state",
+  });
+  assert.notEqual(unexpectedPublic.status, 0);
+  assert.match(
+    unexpectedPublic.stderr,
+    /BLOCK: existing public edge is bound to canonical Website runtime/,
+  );
+
+  const prodCannotSelectUat = selectedRuntime({
+    GITHUB_EVENT_NAME: "workflow_dispatch",
+    GITHUB_REF: "refs/heads/main",
+    production_deploy: "true",
+    WEBSITE_COMPOSE_PROJECT: "kaori-website-uat",
+    KAORI_WEBSITE_ATTACH_EXISTING_EDGE: "0",
+  });
+  assert.notEqual(prodCannotSelectUat.status, 0);
+  assert.match(
+    prodCannotSelectUat.stderr,
+    /BLOCK: production project must be a distinct Website namespace/,
   );
 });
 
