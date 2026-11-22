@@ -133,6 +133,7 @@ function selectedRuntime(overrides = {}) {
   const selection = adapter.slice(start, end);
   const command = [
     "set -Eeuo pipefail",
+    'fail() { printf "BLOCK: %s\\n" "$*" >&2; exit 1; }',
     selection,
     'printf "%s|%s|%s|%s|%s\\n" "$runtime_env" "$runtime_project" "$remote_state_dir" "$runtime_loopback" "$remote_release"',
   ].join("\n");
