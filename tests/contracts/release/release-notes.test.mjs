@@ -7,8 +7,20 @@ import test from "node:test";
 import { parseReleaseNotes } from "../../../scripts/release/release-notes.mjs";
 
 const publishedNotes = readFileSync("docs/releases/v0.1.2.md", "utf8");
+const nextStableNotes = readFileSync("docs/releases/v0.1.3.md", "utf8");
 const workflow = readFileSync(".github/workflows/release-production.yml", "utf8");
 const publisher = readFileSync("scripts/release/promote-stable.sh", "utf8");
+
+test("v0.1.3 authored notes bind the planned independently reviewed promotion PR", () => {
+  const notes = parseReleaseNotes(nextStableNotes, "v0.1.3");
+  assert.equal(notes.stableTag, "v0.1.3");
+  assert.equal(notes.promotionPr, "273");
+  assert.match(notes.body, /^# KAORI Website v0\.1\.3/m);
+  assert.match(notes.body, /## Highlights\n[\s\S]+## Improvements/);
+  assert.match(notes.body, /## Fixes\n[\s\S]+## Known Limitations/);
+  assert.doesNotMatch(notes.body, /## Technical Evidence|promotion_pr:/);
+  assert.throws(() => parseReleaseNotes(nextStableNotes, "v0.1.2"), /does not match/);
+});
 
 test("human-reviewed historical stable notes bind exact tag and promotion PR", () => {
   const notes = parseReleaseNotes(publishedNotes, "v0.1.2");
