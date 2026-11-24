@@ -87,7 +87,25 @@ test("consent and sanitized events", async ({ page, request, baseURL }) => {
   await disclosure.press("Enter");
   const panel = page.locator(".footer-privacy-panel");
   await expect(panel).toBeVisible();
-  expect((await panel.boundingBox())!.width).toBeLessThanOrEqual(760);
+  const geometry = await panel.evaluate((element) => {
+    const parent = element.parentElement!;
+    const buttons = Array.from(element.querySelectorAll("button"));
+    const [allow, deny] = buttons.map((button) => button.getBoundingClientRect());
+    const link = document.querySelector(".footer-links a")!;
+    const copy = element.querySelector("p")!;
+    return {
+      aligned: Math.abs(element.clientWidth - parent.clientWidth) <= 2,
+      buttonsAligned: Math.abs(allow.top - deny.top) <= 1,
+      sameHeight: Math.abs(allow.height - deny.height) <= 1,
+      sameType: getComputedStyle(copy).fontSize === getComputedStyle(link).fontSize,
+    };
+  });
+  expect(geometry).toEqual({
+    aligned: true,
+    buttonsAligned: true,
+    sameHeight: true,
+    sameType: true,
+  });
   const fits = () => panel.evaluate((element) => element.scrollWidth <= element.clientWidth);
   await expect.poll(fits).toBe(true);
   await page.getByRole("button", { name: "Allow analytics" }).click();
