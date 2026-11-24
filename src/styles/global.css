@@ -2640,7 +2640,10 @@ svg {
   }
 }
 
-/* Analytics preference is a footer utility, not a navigation-column feature. */
+/* Analytics preference: compact footer utility, outside navigation. */
+.site-footer .footer-content {
+  padding-bottom: 28px;
+}
 .footer-privacy {
   padding-bottom: 16px;
   color: var(--content-secondary);
@@ -2648,15 +2651,37 @@ svg {
   line-height: 1.55;
 }
 .footer-privacy-disclosure {
+  width: 100%;
+  max-width: 760px;
   min-width: 0;
 }
 .footer-privacy-disclosure > summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   width: fit-content;
   max-width: 100%;
-  padding-block: 6px;
+  min-height: 36px;
   cursor: pointer;
+  list-style: none;
   font-size: 13px;
   font-weight: 600;
+}
+.footer-privacy-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.footer-privacy-disclosure > summary::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+}
+.footer-privacy-disclosure[open] > summary::before {
+  transform: rotate(45deg);
 }
 .footer-privacy-disclosure > summary:hover {
   color: var(--violet);
@@ -2665,18 +2690,28 @@ svg {
   outline: 3px solid var(--violet);
   outline-offset: 3px;
 }
+.footer-privacy-state {
+  padding: 2px 8px;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--content-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
 .footer-privacy-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 280px);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 236px);
+  align-items: start;
   gap: 16px 24px;
-  margin-top: 8px;
-  padding: 16px;
+  margin-top: 6px;
+  padding: 16px 18px;
   border: 1px solid var(--outline);
   border-radius: 12px;
   background: var(--surface-card);
 }
 .footer-privacy-copy {
-  max-width: 70ch;
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 .footer-privacy-copy p,
@@ -2687,14 +2722,19 @@ svg {
   line-height: inherit;
 }
 .footer-privacy-copy p + p {
-  margin-top: 8px;
+  margin-top: 6px;
+}
+.footer-privacy-panel .footer-privacy-heading {
+  color: var(--content-primary);
+  font-weight: 650;
 }
 .footer-privacy-controls {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 8px;
-  align-items: flex-start;
+  padding-inline-start: 16px;
+  border-inline-start: 1px solid var(--outline);
 }
 .footer-privacy-actions {
   display: flex;
@@ -2707,17 +2747,26 @@ svg {
   font-size: 12px;
   line-height: 1.35;
   white-space: normal;
+}
+.footer-privacy-actions .button-secondary {
   border-color: var(--outline-strong);
 }
-.footer-privacy-controls [role="status"] {
+.footer-privacy-controls [role="status"],
+.footer-privacy-controls .footer-privacy-hint {
   color: var(--content-secondary);
   font-size: 12px;
   overflow-wrap: anywhere;
 }
-@media (max-width: 700px) {
+@media (max-width: 600px) {
   .footer-privacy-panel {
     grid-template-columns: minmax(0, 1fr);
     gap: 12px;
     padding: 12px;
+  }
+  .footer-privacy-controls {
+    padding-inline-start: 0;
+    padding-top: 12px;
+    border-inline-start: 0;
+    border-top: 1px solid var(--outline);
   }
 }
