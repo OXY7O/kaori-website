@@ -1,6 +1,7 @@
 ---
 import Icon from "./Icon.astro";
 const year = new Date().getFullYear();
+const consentButton = { class: "button button-secondary", type: "button" } as const;
 const suppliedVersion = import.meta.env.PUBLIC_KAORI_WEBSITE_VERSION;
 const websiteBuildVersion = suppliedVersion ? `v${suppliedVersion}` : "development";
 const websiteBuildLabel = `Website build ${websiteBuildVersion}`;
@@ -54,13 +55,9 @@ const websiteBuildSource = import.meta.env.PUBLIC_KAORI_WEBSITE_BUILD_SHA ?? "";
           <p>Network metadata is processed for session and location statistics.</p>
           <p>No query strings, fragments, custom identities, search terms or replay.</p>
           <p>Browser privacy signals are honored. Your choice is stored locally.</p>
-          <div class="hero-actions">
-            <button class="button button-secondary" type="button" data-kaori-analytics-choice="allow"
-              >Allow analytics</button
-            >
-            <button class="button button-secondary" type="button" data-kaori-analytics-choice="deny"
-              >Disable analytics</button
-            >
+          <div>
+            <button {...consentButton} data-kaori-analytics-choice="allow">Allow analytics</button>
+            <button {...consentButton} data-kaori-analytics-choice="deny">Disable analytics</button>
           </div>
           <p role="status" data-kaori-analytics-status></p>
         </details>
