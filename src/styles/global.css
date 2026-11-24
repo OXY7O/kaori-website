@@ -2714,9 +2714,6 @@ svg {
   font-size: 12px;
   overflow-wrap: anywhere;
 }
-.footer-privacy-controls [role="status"]:empty {
-  display: none;
-}
 @media (max-width: 700px) {
   .footer-privacy-panel {
     grid-template-columns: minmax(0, 1fr);
