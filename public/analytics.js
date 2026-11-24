@@ -1,0 +1,174 @@
+// Umami v3.5: explicit manual pageviews/events; never delay navigation.
+(() => {
+  const origin = "https://kaori.cloud";
+  const trackerUrl = "https://analytics.kaori.cloud/script.js";
+  const configUrl = "/.well-known/kaori-analytics/config.json";
+  const preference = "kaori-analytics-consent";
+  if (location.origin !== origin || window.top !== window) return;
+
+  const routeAllowed = () =>
+    !/^\/(editorial-preview|review|search)(\/|$)/i.test(location.pathname);
+
+  const browserOptOut = () =>
+    navigator.globalPrivacyControl === true ||
+    navigator.doNotTrack === "1" ||
+    navigator.doNotTrack === "yes" ||
+    window.doNotTrack === "1";
+
+  const permitted = () => {
+    try {
+      return (
+        routeAllowed() &&
+        !browserOptOut() &&
+        localStorage.getItem(preference) === "allow" &&
+        !localStorage.getItem("umami.disabled")
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  const validConfig = (value) =>
+    value !== null &&
+    typeof value === "object" &&
+    Object.keys(value).sort().join(",") === "enabled,hostname,schema,trackerUrl,websiteId" &&
+    value.schema === 1 &&
+    value.enabled === true &&
+    value.hostname === location.hostname &&
+    value.trackerUrl === trackerUrl &&
+    typeof value.websiteId === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value.websiteId,
+    );
+
+  const referrerOrigin = () => {
+    try {
+      const referrer = new URL(document.referrer);
+      return ["http:", "https:"].includes(referrer.protocol) && referrer.origin !== origin
+        ? referrer.origin
+        : "";
+    } catch {
+      return "";
+    }
+  };
+
+  const eventNames = new Set(["open_application", "open_documentation", "open_github", "view_release"]);
+  let initialization;
+  let lastPath;
+  let ready = false;
+
+  const initialize = () => {
+    if (!permitted()) return Promise.resolve(false);
+    initialization ??= (async () => {
+      const response = await fetch(configUrl, {
+        cache: "no-store",
+        credentials: "same-origin",
+        redirect: "error",
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok || !response.headers.get("content-type")?.includes("application/json"))
+        return false;
+      const config = await response.json();
+      if (!validConfig(config) || !permitted() || window.umami) return false;
+
+      window.umamiConfig = {
+        websiteId: config.websiteId,
+        domains: [location.hostname],
+        autoTrack: false,
+        doNotTrack: true,
+        excludeSearch: true,
+        excludeHash: true,
+        fetchCredentials: "omit",
+        beforeSend: (type, payload) => {
+          if (!permitted() || type !== "event") return null;
+          if (payload.name !== undefined && !eventNames.has(payload.name)) return null;
+          return {
+            website: config.websiteId,
+            hostname: location.hostname,
+            url: location.pathname,
+            referrer: referrerOrigin(),
+            title: document.title,
+            screen: `${screen.width}x${screen.height}`,
+            language: navigator.language,
+            ...(payload.name ? { name: payload.name } : {}),
+          };
+        },
+      };
+
+      return new Promise((resolve) => {
+        const script = document.createElement("script");
+        script.src = trackerUrl;
+        script.async = true;
+        script.referrerPolicy = "no-referrer";
+        script.onload = () => resolve(typeof window.umami?.track === "function");
+        script.onerror = () => resolve(false);
+        document.head.append(script);
+      });
+    })()
+      .then((loaded) => {
+        ready = loaded;
+        return loaded;
+      })
+      .catch(() => false);
+    return initialization;
+  };
+
+  const track = (name) => {
+    if (!ready || !permitted()) return;
+    try {
+      Promise.resolve(window.umami.track(name)).catch(() => {});
+    } catch {
+      // Analytics must never interfere with page rendering or navigation.
+    }
+  };
+
+  const pageview = async () => {
+    if (!(await initialize()) || !permitted() || lastPath === location.pathname) return;
+    lastPath = location.pathname;
+    track();
+  };
+
+  const eventFor = (href) => {
+    try {
+      const target = new URL(href, origin);
+      if (target.origin === "https://app.kaori.cloud") return "open_application";
+      if (target.origin === "https://docs.kaori.cloud") return "open_documentation";
+      if (target.origin === "https://github.com" && /^\/OXY7O\//i.test(target.pathname)) {
+        return /\/releases(?:\/|$)/.test(target.pathname) ? "view_release" : "open_github";
+      }
+    } catch {
+      // Invalid links are not analytics events.
+    }
+  };
+
+  document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+    const choice = event.target.closest("[data-kaori-analytics-choice]");
+    if (choice) {
+      const value = choice.getAttribute("data-kaori-analytics-choice");
+      const status = document.querySelector("[data-kaori-analytics-status]");
+      if (value !== "allow" && value !== "deny") return;
+      try {
+        localStorage.setItem(preference, value);
+        lastPath = undefined;
+        if (status) {
+          status.textContent =
+            value === "allow" && !browserOptOut()
+              ? "Preference saved. Analytics runs only when enabled by the operator."
+              : "Analytics disabled in this browser.";
+        }
+        if (value === "allow") void pageview();
+      } catch {
+        if (status) status.textContent = "Preference could not be saved. Analytics remains off.";
+      }
+      return;
+    }
+    const link = event.target.closest("a[href]");
+    const name = link && eventFor(link.href);
+    if (name) track(name);
+  });
+
+  window.addEventListener("kaori:analytics-route", () => void pageview());
+  window.addEventListener("pageshow", () => void pageview());
+  void pageview();
+})();
