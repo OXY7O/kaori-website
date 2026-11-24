@@ -185,6 +185,25 @@
     }
   };
 
+  // Preference reflects browser choice, not provider availability or collection state.
+  const updatePreference = () => {
+    const label = document.querySelector("[data-kaori-analytics-preference]");
+    if (!label) return;
+    let state = "Off by default";
+    try {
+      if (browserOptOut() || localStorage.getItem("umami.disabled")) {
+        state = "Privacy signal: off";
+      } else if (localStorage.getItem(preference) === "allow") {
+        state = "Preference: allowed";
+      } else if (localStorage.getItem(preference) === "deny") {
+        state = "Preference: disabled";
+      }
+    } catch {
+      state = "Storage unavailable: off";
+    }
+    label.textContent = state;
+  };
+
   document.addEventListener("click", (event) => {
     if (!(event.target instanceof Element)) return;
     const choice = event.target.closest("[data-kaori-analytics-choice]");
@@ -195,12 +214,13 @@
       try {
         const previous = localStorage.getItem(preference);
         localStorage.setItem(preference, value);
+        updatePreference();
         if (previous !== value) lastPath = undefined;
         if (status) {
           status.textContent =
             value === "allow" && !browserOptOut()
-              ? "Preference saved. Analytics runs only when enabled by the operator."
-              : "Analytics disabled in this browser.";
+              ? "Preference saved."
+              : "Preference saved. Analytics is off.";
         }
         if (value === "allow") void pageview();
       } catch {
@@ -215,10 +235,16 @@
     if (name) track(name);
   });
 
-  window.addEventListener("kaori:analytics-route", () => void pageview());
-  window.addEventListener("pageshow", (event) => {
-    if (event.persisted) lastPath = undefined;
+  window.addEventListener("kaori:analytics-route", () => {
+    updatePreference();
     void pageview();
   });
+  window.addEventListener("storage", updatePreference);
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) lastPath = undefined;
+    updatePreference();
+    void pageview();
+  });
+  updatePreference();
   void pageview();
 })();
