@@ -189,8 +189,9 @@
       const status = document.querySelector("[data-kaori-analytics-status]");
       if (value !== "allow" && value !== "deny") return;
       try {
+        const previous = localStorage.getItem(preference);
         localStorage.setItem(preference, value);
-        lastPath = undefined;
+        if (previous !== value) lastPath = undefined;
         if (status) {
           status.textContent =
             value === "allow" && !browserOptOut()
