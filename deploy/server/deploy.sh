@@ -49,6 +49,15 @@ if [[ ! -d "$metadata_dir" ]]; then
 fi
 [[ -d "$metadata_dir" && ! -L "$metadata_dir" ]] || fail 'Website metadata path is not a directory'
 export KAORI_WEBSITE_RELEASE_METADATA_DIR="$metadata_dir"
+# Public analytics configuration is independent of private release receipts.
+# An empty directory is intentional: no tracking until operator activation.
+analytics_dir="$state_dir/analytics-public"
+[[ ! -L "$analytics_dir" ]] || fail 'analytics-public directory must not be a symlink'
+if [[ ! -d "$analytics_dir" ]]; then
+    mkdir -m 0755 -- "$analytics_dir" || fail 'analytics-public directory cannot be prepared'
+fi
+[[ -d "$analytics_dir" && ! -L "$analytics_dir" ]] || fail 'analytics-public path is not a directory'
+export KAORI_WEBSITE_ANALYTICS_DIR="$analytics_dir"
 docker info >/dev/null || fail 'Docker daemon unavailable'
 compose_args=(-f "$compose_file")
 if [[ "${KAORI_WEBSITE_RELEASE_LOCAL_ONLY:-}" == 1 ]]; then
