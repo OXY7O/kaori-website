@@ -79,7 +79,14 @@ test("consent and sanitized events", async ({ page, request, baseURL }) => {
   expect(mock.trackerRequests()).toBe(0);
   expect(mock.configRequests()).toBe(0);
 
-  await page.getByText("Analytics privacy", { exact: true }).click();
+  const disclosure = page.getByText("Analytics privacy", { exact: true });
+  await expect(page.locator("footer nav summary")).toHaveCount(0);
+  await disclosure.focus();
+  await disclosure.press("Enter");
+  const panel = page.locator(".footer-privacy-panel");
+  await expect(panel).toBeVisible();
+  const fits = () => panel.evaluate((element) => element.scrollWidth <= element.clientWidth);
+  await expect.poll(fits).toBe(true);
   await page.getByRole("button", { name: "Allow analytics" }).click();
   await expect.poll(() => events(page)).toHaveLength(1);
   expect(mock.trackerRequests()).toBe(1);
