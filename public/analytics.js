@@ -189,19 +189,23 @@
   const updatePreference = () => {
     const label = document.querySelector("[data-kaori-analytics-preference]");
     if (!label) return;
-    let state = "Off by default";
+    let state = "Optional";
     try {
       if (browserOptOut() || localStorage.getItem("umami.disabled")) {
-        state = "Privacy signal: off";
+        state = "Disabled";
       } else if (localStorage.getItem(preference) === "allow") {
-        state = "Preference: allowed";
+        state = "Allowed";
       } else if (localStorage.getItem(preference) === "deny") {
-        state = "Preference: disabled";
+        state = "Disabled";
       }
     } catch {
-      state = "Storage unavailable: off";
+      state = "Disabled";
     }
     label.textContent = state;
+    const status = document.querySelector("[data-kaori-analytics-status]");
+    if (status) {
+      status.textContent = permitted() ? "Subject to activation." : "Analytics is off.";
+    }
   };
 
   document.addEventListener("click", (event) => {
@@ -216,16 +220,10 @@
         localStorage.setItem(preference, value);
         updatePreference();
         if (previous !== value) lastPath = undefined;
-        if (status) {
-          status.textContent =
-            value === "allow" && !browserOptOut()
-              ? "Preference saved."
-              : "Preference saved. Analytics is off.";
-        }
         if (value === "allow") void pageview();
       } catch {
         if (status) {
-          status.textContent = "Preference could not be saved. Analytics remains off.";
+          status.textContent = "Could not save preference.";
         }
       }
       return;

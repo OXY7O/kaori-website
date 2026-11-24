@@ -1,10 +1,9 @@
 ---
 import Icon from "./Icon.astro";
 const analyticsNotice = [
-  "Optional Umami analytics measures page paths, referring sites, devices, languages and selected clicks.",
-  "Network metadata supports session and location statistics.",
-  "No query strings, fragments, identities, search terms or replay.",
-  "Privacy signals are respected; your choice stays in this browser.",
+  "We use optional, privacy-friendly analytics to understand website usage.",
+  "No custom identifiers or session recordings.",
+  "You can change your preference anytime.",
 ].join(" ");
 
 const year = new Date().getFullYear();
@@ -71,7 +70,7 @@ const websiteBuildSource = import.meta.env.PUBLIC_KAORI_WEBSITE_BUILD_SHA ?? "";
     <details class="footer-privacy-disclosure">
       <summary>
         <span>Analytics privacy</span>
-        <span data-kaori-analytics-preference>Off by default</span>
+        <span data-kaori-analytics-preference>Optional</span>
       </summary>
       <div class="footer-privacy-panel">
         <div class="footer-privacy-copy">
@@ -84,8 +83,7 @@ const websiteBuildSource = import.meta.env.PUBLIC_KAORI_WEBSITE_BUILD_SHA ?? "";
         </div>
         <div class="footer-privacy-controls">
           <div class="footer-privacy-feedback">
-            <p class="footer-privacy-hint">Operator activation required.</p>
-            <p role="status" data-kaori-analytics-status></p>
+            <p role="status" data-kaori-analytics-status>Analytics is off.</p>
           </div>
           <div class="footer-privacy-actions">
             <button {...allowButton} data-kaori-analytics-choice="allow">Allow analytics</button>
