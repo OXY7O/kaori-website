@@ -2690,7 +2690,7 @@ svg {
   outline: 3px solid var(--violet);
   outline-offset: 3px;
 }
-.footer-privacy-state {
+.footer-privacy-disclosure [data-kaori-analytics-preference] {
   padding: 2px 8px;
   border: 1px solid var(--outline);
   border-radius: 999px;
