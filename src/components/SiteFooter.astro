@@ -68,20 +68,25 @@ const websiteBuildSource = import.meta.env.PUBLIC_KAORI_WEBSITE_BUILD_SHA ?? "";
       </summary>
       <div class="footer-privacy-panel">
         <div class="footer-privacy-copy">
-          <p class="footer-privacy-heading">Your privacy, your choice.</p>
-          <p>Optional Umami analytics measures pages, referring sites and clicks.</p>
-          <p>Device, language and network data support session and location statistics.</p>
-          <p>No query strings, fragments, identities, search terms or session replay.</p>
-          <p>Privacy signals are respected. Your choice stays in this browser.</p>
+          <span class="footer-privacy-icon">
+            <Icon name="chart-no-axes-column" size={18} />
+          </span>
+          <div>
+            <p>Optional Umami analytics measures pages, referring sites and clicks.</p>
+            <p>Device, language and network data support session and location statistics.</p>
+            <p>No query strings, fragments, identities, search terms or replay.</p>
+            <p>Privacy signals are respected. Your choice stays in this browser.</p>
+          </div>
         </div>
         <div class="footer-privacy-controls">
-          <p class="footer-privacy-heading">Your preference</p>
+          <div class="footer-privacy-feedback">
+            <p class="footer-privacy-hint">Operator activation required.</p>
+            <p role="status" data-kaori-analytics-status></p>
+          </div>
           <div class="footer-privacy-actions">
             <button {...allowButton} data-kaori-analytics-choice="allow">Allow analytics</button>
             <button {...denyButton} data-kaori-analytics-choice="deny">Disable analytics</button>
           </div>
-          <p role="status" data-kaori-analytics-status></p>
-          <p class="footer-privacy-hint">Runs only when enabled by the operator.</p>
         </div>
       </div>
     </details>
