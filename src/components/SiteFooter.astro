@@ -62,22 +62,15 @@ const websiteBuildSource = import.meta.env.PUBLIC_KAORI_WEBSITE_BUILD_SHA ?? "";
     <details class="footer-privacy-disclosure">
       <summary>
         <span>Analytics privacy</span>
-        <span class="footer-privacy-state" data-kaori-analytics-preference>
-          Off by default
-        </span>
+        <span data-kaori-analytics-preference>Off by default</span>
       </summary>
       <div class="footer-privacy-panel">
         <div class="footer-privacy-copy">
           <p class="footer-privacy-heading">Your privacy, your choice.</p>
-          <p>
-            Optional Umami analytics measures page paths, referring sites, device and language
-            information, and selected clicks. Network metadata supports session and location
-            statistics.
-          </p>
-          <p>
-            No query strings, fragments, identities, search terms or replay. Privacy signals
-            are respected; your choice stays in this browser.
-          </p>
+          <p>Optional analytics measures page paths, referring sites, devices and clicks.</p>
+          <p>Umami uses language and network metadata for session and location statistics.</p>
+          <p>No query strings, fragments, identities, search terms or session replay.</p>
+          <p>Privacy signals are respected. Your choice stays in this browser.</p>
         </div>
         <div class="footer-privacy-controls">
           <p class="footer-privacy-heading">Your preference</p>
