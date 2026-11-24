@@ -49,16 +49,18 @@ const websiteBuildSource = import.meta.env.PUBLIC_KAORI_WEBSITE_BUILD_SHA ?? "";
         >
         <details>
           <summary>Analytics privacy</summary>
-          <p>
-            If you allow analytics and the operator enables it, self-hosted Umami measures page paths, referring sites, device and language information, and selected link clicks. Network metadata is processed to derive session and location statistics. Query strings, URL fragments, custom identities, search terms and session recordings are excluded. Browser privacy signals are respected. Your preference is stored in this browser; disable analytics at any time.
-          </p>
+          <p>Analytics runs only with your permission and operator activation.</p>
+          <p>Umami records page paths, referrer origins, devices and selected clicks.</p>
+          <p>Network metadata is processed for session and location statistics.</p>
+          <p>No query strings, fragments, custom identities, search terms or replay.</p>
+          <p>Browser privacy signals are honored. Your choice is stored locally.</p>
           <div class="hero-actions">
-            <button class="button button-secondary" type="button" data-kaori-analytics-choice="allow">
-              Allow analytics
-            </button>
-            <button class="button button-secondary" type="button" data-kaori-analytics-choice="deny">
-              Disable analytics
-            </button>
+            <button class="button button-secondary" type="button" data-kaori-analytics-choice="allow"
+              >Allow analytics</button
+            >
+            <button class="button button-secondary" type="button" data-kaori-analytics-choice="deny"
+              >Disable analytics</button
+            >
           </div>
           <p role="status" data-kaori-analytics-status></p>
         </details>
