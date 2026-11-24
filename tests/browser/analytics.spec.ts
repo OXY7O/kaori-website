@@ -154,5 +154,5 @@ test("tracker outage does not block the public page", async ({ page, request, ba
   await page.goto(origin + "/");
   await expect.poll(() => mock.trackerRequests()).toBe(1);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await expect(page.locator('a[href="https://app.kaori.cloud"]').first()).toBeVisible();
+  await expect(page.locator('a[href="https://app.kaori.cloud"]:visible').first()).toBeVisible();
 });
