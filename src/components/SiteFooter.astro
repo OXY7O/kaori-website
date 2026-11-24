@@ -60,23 +60,30 @@ const websiteBuildSource = import.meta.env.PUBLIC_KAORI_WEBSITE_BUILD_SHA ?? "";
   </div>
   <div class="container footer-privacy">
     <details class="footer-privacy-disclosure">
-      <summary>Analytics privacy</summary>
+      <summary>
+        <span>Analytics privacy</span>
+        <span class="footer-privacy-state" data-kaori-analytics-preference>
+          Off by default
+        </span>
+      </summary>
       <div class="footer-privacy-panel">
         <div class="footer-privacy-copy">
-          <p>Analytics is optional and requires your consent.</p>
+          <p class="footer-privacy-heading">Your privacy, your choice.</p>
           <p>
-            Umami measures page paths, referring sites, device and language information, and
-            selected clicks. Network metadata supports session and location statistics.
+            Optional Umami analytics measures page paths, referring sites, device and language
+            information, and selected clicks. Network metadata supports session and location
+            statistics.
           </p>
           <p>
-            No query strings, fragments, custom identities, search terms or session recordings.
-            Privacy signals are respected. Your choice is stored locally.
+            No query strings, fragments, identities, search terms or replay. Privacy signals
+            are respected; your choice stays in this browser.
           </p>
         </div>
         <div class="footer-privacy-controls">
+          <p class="footer-privacy-heading">Your preference</p>
           <div class="footer-privacy-actions">
             <button
-              class="button button-secondary"
+              class="button button-primary"
               type="button"
               data-kaori-analytics-choice="allow"
             >
@@ -91,6 +98,7 @@ const websiteBuildSource = import.meta.env.PUBLIC_KAORI_WEBSITE_BUILD_SHA ?? "";
             </button>
           </div>
           <p role="status" data-kaori-analytics-status></p>
+          <p class="footer-privacy-hint">Runs only when enabled by the operator.</p>
         </div>
       </div>
     </details>
