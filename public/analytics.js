@@ -54,25 +54,57 @@
 
   const eventNames = new Set(["open_application", "open_documentation", "open_github", "view_release"]);
   let initialization;
+  let activeWebsite;
   let lastPath;
   let ready = false;
+  let runtimeConfig = null;
+  let expiresAt = 0;
+  let checking;
 
-  const initialize = () => {
-    if (!permitted()) return Promise.resolve(false);
-    initialization ??= (async () => {
+  const getConfig = () => {
+    if (Date.now() < expiresAt) return Promise.resolve(runtimeConfig);
+    checking ??= (async () => {
       const response = await fetch(configUrl, {
         cache: "no-store",
         credentials: "same-origin",
         redirect: "error",
         signal: AbortSignal.timeout(5000),
       });
-      if (!response.ok || !response.headers.get("content-type")?.includes("application/json"))
-        return false;
+      if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) {
+        return null;
+      }
       const config = await response.json();
-      if (!validConfig(config) || !permitted() || window.umami) return false;
+      return validConfig(config) ? config : null;
+    })()
+      .catch(() => null)
+      .then((config) => {
+        runtimeConfig = config;
+        expiresAt = Date.now() + 60000;
+        return config;
+      })
+      .finally(() => {
+        checking = undefined;
+      });
+    return checking;
+  };
 
+  const canSend = () =>
+    permitted() &&
+    Date.now() < expiresAt &&
+    runtimeConfig?.websiteId === activeWebsite &&
+    !!activeWebsite;
+
+  const initialize = async () => {
+    if (!permitted()) return false;
+    const config = await getConfig();
+    if (!config || !permitted() || (activeWebsite && config.websiteId !== activeWebsite)) {
+      return false;
+    }
+    if (!initialization) {
+      if (window.umami) return false;
+      activeWebsite = config.websiteId;
       window.umamiConfig = {
-        websiteId: config.websiteId,
+        websiteId: activeWebsite,
         domains: [location.hostname],
         autoTrack: false,
         doNotTrack: true,
@@ -80,10 +112,10 @@
         excludeHash: true,
         fetchCredentials: "omit",
         beforeSend: (type, payload) => {
-          if (!permitted() || type !== "event") return null;
+          if (!canSend() || type !== "event") return null;
           if (payload.name !== undefined && !eventNames.has(payload.name)) return null;
           return {
-            website: config.websiteId,
+            website: activeWebsite,
             hostname: location.hostname,
             url: location.pathname,
             referrer: referrerOrigin(),
@@ -94,8 +126,7 @@
           };
         },
       };
-
-      return new Promise((resolve) => {
+      initialization = new Promise((resolve) => {
         const script = document.createElement("script");
         script.src = trackerUrl;
         script.async = true;
@@ -103,18 +134,19 @@
         script.onload = () => resolve(typeof window.umami?.track === "function");
         script.onerror = () => resolve(false);
         document.head.append(script);
-      });
-    })()
-      .then((loaded) => {
+      }).then((loaded) => {
         ready = loaded;
         return loaded;
-      })
-      .catch(() => false);
+      });
+    }
     return initialization;
   };
 
   const track = (name) => {
-    if (!ready || !permitted()) return;
+    if (!ready || !canSend()) {
+      if (permitted()) void initialize().catch(() => {});
+      return;
+    }
     try {
       Promise.resolve(window.umami.track(name)).catch(() => {});
     } catch {
@@ -123,9 +155,17 @@
   };
 
   const pageview = async () => {
-    if (!(await initialize()) || !permitted() || lastPath === location.pathname) return;
-    lastPath = location.pathname;
-    track();
+    if (!permitted()) {
+      lastPath = undefined;
+      return;
+    }
+    try {
+      if (!(await initialize()) || !canSend() || lastPath === location.pathname) return;
+      lastPath = location.pathname;
+      track();
+    } catch {
+      // Missing, unavailable or invalid provider configuration is disabled.
+    }
   };
 
   const eventFor = (href) => {
@@ -169,6 +209,9 @@
   });
 
   window.addEventListener("kaori:analytics-route", () => void pageview());
-  window.addEventListener("pageshow", () => void pageview());
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) lastPath = undefined;
+    void pageview();
+  });
   void pageview();
 })();
