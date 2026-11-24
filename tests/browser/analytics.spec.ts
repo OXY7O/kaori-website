@@ -82,7 +82,9 @@ test("consent and sanitized events", async ({ page, request, baseURL }) => {
   const disclosure = page.locator(".footer-privacy-disclosure > summary");
   await expect(page.locator("footer nav summary")).toHaveCount(0);
   const preference = page.locator("[data-kaori-analytics-preference]");
-  await expect(preference).toHaveText("Off by default");
+  await expect(preference).toHaveText("Optional");
+  const status = page.locator("[data-kaori-analytics-status]");
+  await expect(status).toHaveText("Analytics is off.");
   await disclosure.focus();
   await disclosure.press("Enter");
   const panel = page.locator(".footer-privacy-panel");
@@ -109,7 +111,8 @@ test("consent and sanitized events", async ({ page, request, baseURL }) => {
   const fits = () => panel.evaluate((element) => element.scrollWidth <= element.clientWidth);
   await expect.poll(fits).toBe(true);
   await page.getByRole("button", { name: "Allow analytics" }).click();
-  await expect(preference).toHaveText("Preference: allowed");
+  await expect(preference).toHaveText("Allowed");
+  await expect(status).toHaveText("Subject to activation.");
   await expect.poll(() => events(page)).toHaveLength(1);
   expect(mock.trackerRequests()).toBe(1);
   const initial = (await events(page))[0];
@@ -135,7 +138,8 @@ test("consent and sanitized events", async ({ page, request, baseURL }) => {
     await page.getByText("Analytics privacy", { exact: true }).click();
   }
   await disable.click();
-  await expect(preference).toHaveText("Preference: disabled");
+  await expect(preference).toHaveText("Disabled");
+  await expect(status).toHaveText("Analytics is off.");
   await clickApplication(page);
   expect(await events(page)).toHaveLength(2);
 });
