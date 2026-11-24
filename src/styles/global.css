@@ -2639,3 +2639,85 @@ svg {
     justify-items: start;
   }
 }
+
+/* Analytics preference is a footer utility, not a navigation-column feature. */
+.footer-privacy {
+  padding-bottom: 16px;
+  color: var(--content-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.footer-privacy-disclosure {
+  min-width: 0;
+}
+.footer-privacy-disclosure > summary {
+  width: fit-content;
+  max-width: 100%;
+  padding-block: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.footer-privacy-disclosure > summary:hover {
+  color: var(--violet);
+}
+.footer-privacy-disclosure > summary:focus-visible {
+  outline: 3px solid var(--violet);
+  outline-offset: 3px;
+}
+.footer-privacy-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 280px);
+  gap: 16px 24px;
+  margin-top: 8px;
+  padding: 16px;
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  background: var(--surface-card);
+}
+.footer-privacy-copy {
+  max-width: 70ch;
+  overflow-wrap: anywhere;
+}
+.footer-privacy-copy p,
+.footer-privacy-controls p {
+  margin: 0;
+  color: var(--content-secondary);
+  font-size: inherit;
+  line-height: inherit;
+}
+.footer-privacy-copy p + p {
+  margin-top: 8px;
+}
+.footer-privacy-controls {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.footer-privacy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.footer-privacy-actions .button {
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: normal;
+  border-color: var(--outline-strong);
+}
+.footer-privacy-controls [role="status"] {
+  color: var(--content-secondary);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .footer-privacy-panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px;
+  }
+}
