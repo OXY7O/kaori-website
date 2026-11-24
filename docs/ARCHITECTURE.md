@@ -29,3 +29,32 @@ KAORI normalizes, orchestrates, correlates and governs committed evidence while 
 The former `auto.kaori.cloud` automation service is **not** a current Website shared-edge readiness target. Historical automation/UAT observations belong to their original dated release evidence.
 
 The application hostname migration is governed by `OXY7O/KAORI#2210`. Public apex publication is a separate shared-edge/DNS/TLS operation with explicit operator approval, checks and rollback. Private SSH-tunnel release verification is not evidence of public-domain acceptance.
+
+## Public analytics
+
+Umami is an independent, self-hosted provider at
+`https://analytics.kaori.cloud` (KAORI #5190, #5191; consumer #301).
+The Astro static build remains immutable; no application
+credential, public Website ID, or enablement flag is embedded in the image.
+The host-owned read-only `/.well-known/kaori-analytics/config.json` projection
+is separate from release receipts and defaults to disabled when absent,
+malformed, or explicitly off. Its schema requires the canonical HTTPS host,
+exact provider script URL, UUIDv4, and explicit enablement.
+
+The browser never loads the provider until the visitor explicitly allows
+analytics using the footer privacy disclosure and the runtime config is valid.
+DNT, Global Privacy Control, blocked storage and explicit opt-out fail closed.
+Umami automatic pageview and click handling are disabled; the shared Astro layout sends one manual
+pageview per pathname and bounded approved outbound CTA events without
+preventing navigation. Query strings, fragments, referrer paths, custom
+identities, event data, error/performance capture and session replay are
+excluded. The loader sends only the canonical host, pathname, page title,
+referring origin, language, screen dimensions and approved event name.
+The provider processes network metadata; the authenticated application is
+excluded. Local development and real CI traffic are excluded by exact
+canonical origin; browser tests intercept all requests with local mocks.
+
+No analytics provider failure may block rendering or navigation. Runtime
+authorization is cached for at most 60 seconds in an open tab; expiry or
+invalid config blocks sending until revalidated. Changing a Website ID
+requires a fresh page load, not a rebuilt image.
