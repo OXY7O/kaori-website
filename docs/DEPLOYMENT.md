@@ -869,3 +869,61 @@ validation of secrets, runtime health, rollback, DNS or deployment authority.
 If new host/registry credentials need validation, open a bounded issue and use
 an authorized read-only operator procedure; do not reintroduce a public
 GitHub Actions workflow just to test production connectivity.
+
+## Public analytics runtime configuration (issue #301)
+
+The deploy adapter prepares a dedicated `analytics-public` directory beneath
+the approved project state directory. The unprivileged NGINX container mounts
+only that directory read-only. Only
+`/.well-known/kaori-analytics/config.json` is served, with `Cache-Control: no-store`;
+other files under that path return 404. Never place private release receipts,
+credentials, tokens, logs or backups here. No analytics configuration is
+required to deploy: an empty directory means off. This does not modify
+the signed artifact or receipt.
+
+After the provider's operational acceptance (KAORI #5191), independently
+admitted candidate, privacy/retention review and explicit activation approval,
+an authorized deployment operator may atomically publish the public config
+on the canonical host. Keep isolated/local CI and previews disabled. Use the
+dedicated public UUID supplied under #301; do not reuse the other site's
+identifier. This is public configuration, not a GitHub Secret. If a GitHub
+Environment variable is used to pass the UUID to the operator, it must be
+environment-scoped and must not become a build argument. No workflow or
+Environment change is made by this source PR.
+
+```bash
+(
+set -euo pipefail
+dir=/var/lib/kaori-website/deploy-state/analytics-public
+test -d "$dir" && test ! -L "$dir"
+read -r -p 'Approved public Website UUID: ' website_id
+[[ "$website_id" =~ ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$ ]]
+read -r -p 'Enable analytics (true/false): ' enabled
+[[ "$enabled" == true || "$enabled" == false ]]
+tmp="$(mktemp "$dir/.config.XXXXXXXX")"
+trap 'rm -f -- "$tmp"' EXIT
+printf '{"schema":1,"enabled":%s,"hostname":"kaori.cloud","trackerUrl":"https://analytics.kaori.cloud/script.js","websiteId":"%s"}\n' \
+  "$enabled" "$website_id" > "$tmp"
+chmod 0644 "$tmp"
+mv -T -- "$tmp" "$dir/config.json"
+trap - EXIT
+curl -fsS -D - https://kaori.cloud/.well-known/kaori-analytics/config.json
+)
+```
+
+A disabled flag (or missing config) stops tracking without rebuilding,
+recreating or retagging the container. Fresh page loads fail closed;
+authorization of existing tabs expires within 60 seconds and revalidation
+must succeed before any further sends. Reload the browser to apply a changed
+Website ID. A previously loaded provider script does not mean data is sent.
+Visitor opt-out is immediate for subsequent sends. Do not enable until
+the footer notice and approved retention policy are accepted. Public config
+readback must match exactly, with JSON content type and no-store headers.
+
+Use the existing Browser Quality and release checks: off/missing/invalid
+config, denied consent and privacy signals, mock pageviews and CTA events,
+provider outage, desktop/mobile/light/dark and accessibility. Validate a
+disposable property with synthetic traffic, then independently verify a real
+consented pageview and CTA in only the intended public property after the
+authorized RC publication. Capture sanitized aggregate evidence, never raw
+visitor records. Do not claim tracking success from HTTP 200 or CI alone.

@@ -17,6 +17,7 @@ services:
     # Per-deployment adapter overrides this path for the isolated UAT project.
     volumes:
       - ${KAORI_WEBSITE_RELEASE_METADATA_DIR:-/var/lib/kaori-website/deploy-state/release-metadata}:/usr/share/nginx/html/.well-known/kaori-website:ro
+      - ${KAORI_WEBSITE_ANALYTICS_DIR:-/var/lib/kaori-website/deploy-state/analytics-public}:/usr/share/nginx/html/.well-known/kaori-analytics:ro
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
     expose:
