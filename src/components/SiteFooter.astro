@@ -47,6 +47,21 @@ const websiteBuildSource = import.meta.env.PUBLIC_KAORI_WEBSITE_BUILD_SHA ?? "";
         <a href="https://github.com/OXY7O/kaori-website/security/advisories/new"
           >Report a vulnerability <Icon name="arrow-up-right" size={14} /></a
         >
+        <details>
+          <summary>Analytics privacy</summary>
+          <p>
+            If you allow analytics and the operator enables it, self-hosted Umami measures page paths, referring sites, device and language information, and selected link clicks. Network metadata is processed to derive session and location statistics. Query strings, URL fragments, custom identities, search terms and session recordings are excluded. Browser privacy signals are respected. Your preference is stored in this browser; disable analytics at any time.
+          </p>
+          <div class="hero-actions">
+            <button class="button button-secondary" type="button" data-kaori-analytics-choice="allow">
+              Allow analytics
+            </button>
+            <button class="button button-secondary" type="button" data-kaori-analytics-choice="deny">
+              Disable analytics
+            </button>
+          </div>
+          <p role="status" data-kaori-analytics-status></p>
+        </details>
         <a href="mailto:lethisaputri@gmail.com">Contact us <Icon name="mail" size={14} /></a>
       </div>
       <div class="footer-contact">
