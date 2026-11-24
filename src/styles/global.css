@@ -2640,33 +2640,35 @@ svg {
   }
 }
 
-/* Analytics preference: compact footer utility, outside navigation. */
+/* Analytics privacy: full-width utility strip aligned with footer navigation. */
 .site-footer .footer-content {
   padding-bottom: 28px;
 }
 .footer-privacy {
-  padding-bottom: 16px;
+  padding-bottom: 24px;
   color: var(--content-secondary);
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.5;
 }
 .footer-privacy-disclosure {
   width: 100%;
-  max-width: 760px;
   min-width: 0;
+  border-top: 1px solid var(--outline);
+  padding-top: 12px;
 }
 .footer-privacy-disclosure > summary {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   width: fit-content;
   max-width: 100%;
   min-height: 36px;
   cursor: pointer;
   list-style: none;
-  font-size: 13px;
-  font-weight: 600;
+  color: var(--content-primary);
+  font-size: inherit;
+  font-weight: 700;
 }
 .footer-privacy-disclosure > summary::-webkit-details-marker {
   display: none;
@@ -2676,6 +2678,7 @@ svg {
   width: 6px;
   height: 6px;
   flex: none;
+  color: var(--violet);
   border-right: 1.5px solid currentColor;
   border-bottom: 1.5px solid currentColor;
   transform: rotate(-45deg);
@@ -2691,28 +2694,41 @@ svg {
   outline-offset: 3px;
 }
 .footer-privacy-disclosure [data-kaori-analytics-preference] {
-  padding: 2px 8px;
-  border: 1px solid var(--outline);
+  padding: 2px 9px;
+  border: 1px solid var(--outline-strong);
   border-radius: 999px;
-  background: var(--surface-muted);
   color: var(--content-secondary);
-  font-size: 11px;
+  font-size: inherit;
   font-weight: 500;
 }
 .footer-privacy-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 236px);
-  align-items: start;
-  gap: 16px 24px;
-  margin-top: 6px;
-  padding: 16px 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px 16px;
   border: 1px solid var(--outline);
   border-radius: 12px;
   background: var(--surface-card);
 }
 .footer-privacy-copy {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+.footer-privacy-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--violet-soft);
+  color: var(--violet);
 }
 .footer-privacy-copy p,
 .footer-privacy-controls p {
@@ -2721,52 +2737,65 @@ svg {
   font-size: inherit;
   line-height: inherit;
 }
-.footer-privacy-copy p + p {
-  margin-top: 6px;
-}
-.footer-privacy-panel .footer-privacy-heading {
-  color: var(--content-primary);
-  font-weight: 650;
-}
 .footer-privacy-controls {
   display: flex;
+  align-items: center;
   min-width: 0;
-  flex-direction: column;
-  gap: 8px;
+  gap: 16px;
   padding-inline-start: 16px;
   border-inline-start: 1px solid var(--outline);
 }
+.footer-privacy-feedback {
+  min-width: 0;
+  max-width: 176px;
+  overflow-wrap: anywhere;
+}
 .footer-privacy-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 .footer-privacy-actions .button {
   min-height: 40px;
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: inherit;
   line-height: 1.35;
-  white-space: normal;
+  white-space: nowrap;
 }
 .footer-privacy-actions .button-secondary {
   border-color: var(--outline-strong);
 }
-.footer-privacy-controls [role="status"],
-.footer-privacy-controls .footer-privacy-hint {
-  color: var(--content-secondary);
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-@media (max-width: 600px) {
+@media (max-width: 1100px) {
   .footer-privacy-panel {
     grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
-    padding: 12px;
   }
   .footer-privacy-controls {
+    justify-content: space-between;
     padding-inline-start: 0;
     padding-top: 12px;
     border-inline-start: 0;
     border-top: 1px solid var(--outline);
+  }
+}
+@media (max-width: 600px) {
+  .footer-privacy-panel {
+    gap: 12px;
+    padding: 12px;
+  }
+  .footer-privacy-copy {
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .footer-privacy-controls {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .footer-privacy-feedback {
+    max-width: none;
+  }
+  .footer-privacy-actions .button {
+    min-width: 0;
+    white-space: normal;
   }
 }
