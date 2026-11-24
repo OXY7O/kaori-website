@@ -6,8 +6,8 @@
   const preference = "kaori-analytics-consent";
   if (location.origin !== origin || window.top !== window) return;
 
-  const routeAllowed = () =>
-    !/^\/(editorial-preview|review|search)(\/|$)/i.test(location.pathname);
+  const excludedRoute = /^\/(editorial-preview|review|search)(\/|$)/i;
+  const routeAllowed = () => !excludedRoute.test(location.pathname);
 
   const browserOptOut = () =>
     navigator.globalPrivacyControl === true ||
@@ -28,31 +28,35 @@
     }
   };
 
+  const configKeys = "enabled,hostname,schema,trackerUrl,websiteId";
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const validConfig = (value) =>
     value !== null &&
     typeof value === "object" &&
-    Object.keys(value).sort().join(",") === "enabled,hostname,schema,trackerUrl,websiteId" &&
+    Object.keys(value).sort().join(",") === configKeys &&
     value.schema === 1 &&
     value.enabled === true &&
     value.hostname === location.hostname &&
     value.trackerUrl === trackerUrl &&
     typeof value.websiteId === "string" &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      value.websiteId,
-    );
+    uuid.test(value.websiteId);
 
   const referrerOrigin = () => {
     try {
       const referrer = new URL(document.referrer);
-      return ["http:", "https:"].includes(referrer.protocol) && referrer.origin !== origin
-        ? referrer.origin
-        : "";
+      const isWeb = ["http:", "https:"].includes(referrer.protocol);
+      return isWeb && referrer.origin !== origin ? referrer.origin : "";
     } catch {
       return "";
     }
   };
 
-  const eventNames = new Set(["open_application", "open_documentation", "open_github", "view_release"]);
+  const eventNames = new Set([
+    "open_application",
+    "open_documentation",
+    "open_github",
+    "view_release",
+  ]);
   let initialization;
   let activeWebsite;
   let lastPath;
@@ -70,7 +74,8 @@
         redirect: "error",
         signal: AbortSignal.timeout(5000),
       });
-      if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) {
+      const contentType = response.headers.get("content-type");
+      if (!response.ok || !contentType?.includes("application/json")) {
         return null;
       }
       const config = await response.json();
@@ -97,9 +102,8 @@
   const initialize = async () => {
     if (!permitted()) return false;
     const config = await getConfig();
-    if (!config || !permitted() || (activeWebsite && config.websiteId !== activeWebsite)) {
-      return false;
-    }
+    if (!config || !permitted()) return false;
+    if (activeWebsite && config.websiteId !== activeWebsite) return false;
     if (!initialization) {
       if (window.umami) return false;
       activeWebsite = config.websiteId;
@@ -200,7 +204,9 @@
         }
         if (value === "allow") void pageview();
       } catch {
-        if (status) status.textContent = "Preference could not be saved. Analytics remains off.";
+        if (status) {
+          status.textContent = "Preference could not be saved. Analytics remains off.";
+        }
       }
       return;
     }
