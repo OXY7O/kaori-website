@@ -1,7 +1,6 @@
 ---
 import Icon from "./Icon.astro";
 const year = new Date().getFullYear();
-const consentButton = { class: "button button-secondary", type: "button" } as const;
 const suppliedVersion = import.meta.env.PUBLIC_KAORI_WEBSITE_VERSION;
 const websiteBuildVersion = suppliedVersion ? `v${suppliedVersion}` : "development";
 const websiteBuildLabel = `Website build ${websiteBuildVersion}`;
@@ -48,19 +47,6 @@ const websiteBuildSource = import.meta.env.PUBLIC_KAORI_WEBSITE_BUILD_SHA ?? "";
         <a href="https://github.com/OXY7O/kaori-website/security/advisories/new"
           >Report a vulnerability <Icon name="arrow-up-right" size={14} /></a
         >
-        <details>
-          <summary>Analytics privacy</summary>
-          <p>Analytics runs only with your permission and operator activation.</p>
-          <p>Umami records page paths, referrer origins, devices and selected clicks.</p>
-          <p>Network metadata is processed for session and location statistics.</p>
-          <p>No query strings, fragments, custom identities, search terms or replay.</p>
-          <p>Browser privacy signals are honored. Your choice is stored locally.</p>
-          <div>
-            <button {...consentButton} data-kaori-analytics-choice="allow">Allow analytics</button>
-            <button {...consentButton} data-kaori-analytics-choice="deny">Disable analytics</button>
-          </div>
-          <p role="status" data-kaori-analytics-status></p>
-        </details>
         <a href="mailto:lethisaputri@gmail.com">Contact us <Icon name="mail" size={14} /></a>
       </div>
       <div class="footer-contact">
@@ -71,6 +57,44 @@ const websiteBuildSource = import.meta.env.PUBLIC_KAORI_WEBSITE_BUILD_SHA ?? "";
         </a>
       </div>
     </nav>
+  </div>
+  <div class="container footer-privacy">
+    <details class="footer-privacy-disclosure">
+      <summary>Analytics privacy</summary>
+      <div class="footer-privacy-panel">
+        <div class="footer-privacy-copy">
+          <p>Analytics is optional and runs only with your permission.</p>
+          <p>
+            Self-hosted Umami measures page paths, referring sites, device and language
+            information, and selected link clicks. Network metadata supports session and location
+            statistics.
+          </p>
+          <p>
+            No query strings, fragments, custom identities, search terms or session recordings.
+            Browser privacy signals are respected. Change your preference at any time.
+          </p>
+        </div>
+        <div class="footer-privacy-controls">
+          <div class="footer-privacy-actions">
+            <button
+              class="button button-secondary"
+              type="button"
+              data-kaori-analytics-choice="allow"
+            >
+              Allow analytics
+            </button>
+            <button
+              class="button button-secondary"
+              type="button"
+              data-kaori-analytics-choice="deny"
+            >
+              Disable analytics
+            </button>
+          </div>
+          <p role="status" data-kaori-analytics-status></p>
+        </div>
+      </div>
+    </details>
   </div>
   <div class="container footer-bottom">
     <span>© {year} KAORI. All rights reserved.</span>
