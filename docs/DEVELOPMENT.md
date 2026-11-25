@@ -1,6 +1,6 @@
 # Development and DevContainer
 
-The DevContainer uses a dedicated Docker Compose project (`kaori-website-dev`), the Node.js 22 toolchain matching the KAORI application frontend baseline, and a separate local Astro port (`4321`). No PostgreSQL, Redis, Celery, Kubernetes provider, or external operational secret is needed.
+The DevContainer uses a dedicated Docker Compose project (`kaori-website-dev`), the Node.js 22.23.5 / npm 10.9.9 toolchain, and a separate local Astro port (`4321`). No PostgreSQL, Redis, Celery, Kubernetes provider, or external operational secret is needed.
 
 ## VS Code
 
