@@ -46,16 +46,19 @@ test.beforeEach(async ({ page }, testInfo) => {
             vitals.layoutShiftEvents.push({
               value: shift.value ?? 0,
               timeMs: shift.startTime,
-              sources: (shift.sources ?? []).map((source) => ({
-                element:
-                  source.node instanceof Element
-                    ? `${source.node.tagName.toLowerCase()}.${String(source.node.className)
-                        .trim()
-                        .replace(/\s+/g, ".")}`
-                    : null,
-                beforeY: source.previousRect?.y ?? null,
-                afterY: source.currentRect?.y ?? null,
-              })),
+              sources: (shift.sources ?? []).map((source) => {
+                const node = source.node;
+                let element: string | null = null;
+                if (node instanceof Element) {
+                  const className = String(node.className).trim().replace(/\s+/g, ".");
+                  element = `${node.tagName.toLowerCase()}.${className}`;
+                }
+                return {
+                  element,
+                  beforeY: source.previousRect?.y ?? null,
+                  afterY: source.currentRect?.y ?? null,
+                };
+              }),
             });
           }
         }
@@ -337,9 +340,10 @@ async function mockWebsiteReleaseReceipts(
   return requests;
 }
 
-test("show accepted stable and immutable RC build separately after signed receipt", async ({
-  page,
-}) => {
+const acceptedReceiptTest =
+  "show accepted stable and immutable RC build separately after signed receipt";
+
+test(acceptedReceiptTest, async ({ page }) => {
   const requests = await mockWebsiteReleaseReceipts(page, { stable: true });
   await page.goto("/");
   await expect(page.locator(".footer-release-version")).toHaveText("Website stable v0.1.4");
@@ -347,9 +351,10 @@ test("show accepted stable and immutable RC build separately after signed receip
   expect(requests.count).toBe(2);
 });
 
-test("keep release unverified on signed RC before stable or mismatched active digest", async ({
-  page,
-}) => {
+const unverifiedReceiptTest =
+  "keep release unverified on signed RC before stable or mismatched active digest";
+
+test(unverifiedReceiptTest, async ({ page }) => {
   for (const options of [{ stable: false }, { stable: true, mismatch: true }]) {
     await page.unrouteAll();
     const requests = await mockWebsiteReleaseReceipts(page, options);
@@ -425,9 +430,9 @@ test("enforce responsive geometry and focus visibility", async ({ page }) => {
   expect(focus?.outline || focus?.shadow).toBe(true);
 });
 
-test("produce automated WCAG rule results without claiming manual coverage", async ({
-  page,
-}, testInfo) => {
+const automatedWcagTest = "produce automated WCAG rule results without claiming manual coverage";
+
+test(automatedWcagTest, async ({ page }, testInfo) => {
   const findings = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
     .analyze();
@@ -466,9 +471,8 @@ test("collect browser-observed lab paint and layout shift budgets", async ({ pag
         };
       }
     ).__kaoriLabVitals;
-    const navigation = performance.getEntriesByType("navigation")[0] as
-      | PerformanceNavigationTiming
-      | undefined;
+    type NavigationEntry = PerformanceNavigationTiming | undefined;
+    const navigation = performance.getEntriesByType("navigation")[0] as NavigationEntry;
     return {
       measuredAt: new Date().toISOString(),
       source: location.pathname,
@@ -502,9 +506,10 @@ test("collect browser-observed lab paint and layout shift budgets", async ({ pag
   expect(metrics.inpFieldP75).toBeNull();
 });
 
-test("route Website community issues and security findings to the owning repository", async ({
-  page,
-}) => {
+const communityRoutingTest =
+  "route Website community issues and security findings to the owning repository";
+
+test(communityRoutingTest, async ({ page }) => {
   const footer = page.locator(".footer-links");
   const issueLink = footer.getByRole("link", { name: "Website issues" });
   const securityLink = footer.getByRole("link", { name: "Report a vulnerability" });
