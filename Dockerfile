@@ -15,7 +15,7 @@ ENV PUBLIC_KAORI_WEBSITE_VERSION=${APP_VERSION} \
 RUN npm run check && npm run build && test -s dist/index.html
 
 # Digest-pinned NGINX 1.31.9 on Alpine 3.24; Trivy remains authoritative.
-FROM ghcr.io/nginx/nginx-unprivileged:1.31.9-alpine3.24-slim@sha256:75e85a09b0f25bd46d49a9fd85589ffa70b0459c8ed5ee0dc6596fd642e1f829 AS production
+FROM ghcr.io/nginx/nginx-unprivileged:1.31.10-alpine3.24-slim@sha256:f4afc48254dc77ea692ec6979d220e5b1176331c636a4d51c502ffdded6789bd AS production
 ARG APP_BUILD_SHA
 ARG APP_VERSION=0.1.0-dev
 ARG APP_BUILD_DATE
