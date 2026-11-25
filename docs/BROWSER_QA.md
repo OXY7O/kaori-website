@@ -4,7 +4,7 @@
 
 Issue [#58](https://github.com/OXY7O/kaori-website/issues/58) establishes browser quality evidence for the public website. Reuse the KAORI application [Visual QA standard](https://github.com/OXY7O/KAORI/blob/main/docs/design/KAORI_VISUAL_QA.md): six canonical viewport widths (1440, 1280, 1024, 768, 390, 360), light/dark via the **real theme control**, machine-enforced geometry, candidate screenshot artifacts, and independent human baseline approval.
 
-Current implementation uses pinned Playwright 1.56.1 and @axe-core/playwright 4.10.2 in the committed npm lockfile. Browser binary is installed explicitly by a CI step, not pulled into the production website. A failed browser install or test is **FAIL/BLOCKED**, never reported PASS.
+Current implementation uses pinned Playwright 1.65.1 and @axe-core/playwright 4.14.0 in the committed npm lockfile. CI uses the matching Microsoft Playwright 1.65.1 Noble image; the production website does not contain browsers. A failed browser install or test is **FAIL/BLOCKED**, never reported PASS.
 
 ## Execute locally in the website DevContainer
 
@@ -34,7 +34,7 @@ The browser lab report records navigation and paint/layout signals with `inpFiel
 
 ## Browser runtime isolation remediation — #58
 
-[Staging run #39126351997](https://github.com/OXY7O/kaori-website/actions/runs/39126351997) executed all 72 tests but each failed before page navigation because the self-hosted runner lacks required Linux Chromium libraries. The exact-SHA failure artifact was retained. The existing `browser-evidence` job now uses Microsoft's version-matched `mcr.microsoft.com/playwright:v1.56.1-noble` image on the **existing self-hosted kaori-ci runner**, with `--init --ipc=host --user 1001` as documented by Playwright. The image includes browser binaries and Linux libraries; `npm ci` continues installing the locked `@playwright/test@1.56.1` and `@axe-core/playwright` packages. The job checks its CLI version before the test matrix.
+[Staging run #39126351997](https://github.com/OXY7O/kaori-website/actions/runs/39126351997) executed all 72 tests but each failed before page navigation because the self-hosted runner lacks required Linux Chromium libraries. The exact-SHA failure artifact was retained. At that historical checkpoint, the `browser-evidence` job used Microsoft's version-matched `mcr.microsoft.com/playwright:v1.56.1-noble` image on the **existing self-hosted kaori-ci runner**, with `--init --ipc=host --user 1001` as documented by Playwright. The image includes browser binaries and Linux libraries; `npm ci` continues installing the locked `@playwright/test@1.56.1` and `@axe-core/playwright` packages. The job checks its CLI version before the test matrix.
 
 This is isolated to the Browser Quality Evidence job; the application's production image, canonical workflow trigger, other admission jobs, CI runner OS, and deployment are not changed. Do not install `sudo playwright install-deps` or mutate the shared CI host from a test job. The container tag is version-pinned but not an immutable OCI digest; evaluate a registry-verified SHA digest once the exact signed container provenance is available. Container startup and screenshot compatibility must be confirmed in real GitHub Actions before claiming PASS. Automated axe checks are not a replacement for manual accessibility acceptance or Lighthouse/field Core Web Vitals.
 
